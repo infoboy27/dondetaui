@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import ProductComparisonCard from '../components/ProductComparisonCard'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
-import { PRODUCTS } from '../data/mock'
 import { getBestOffer, getOfferTotal } from '../domain/offers'
+import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
 interface Props {
@@ -19,11 +19,12 @@ export default function ResultsScreen({ query, onBack, onProduct }: Props) {
   const [selectedStores, setSelectedStores] = useState<string[]>(STORE_FILTERS)
   const [stockOnly, setStockOnly] = useState(false)
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
+  const { products } = useCatalogProducts(query)
 
   const displayResults = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
-    const filtered = PRODUCTS.filter(product => {
+    const filtered = products.filter(product => {
       const matchesQuery = !normalizedQuery ||
         product.name.toLowerCase().includes(normalizedQuery) ||
         product.category.toLowerCase().includes(normalizedQuery) ||
@@ -53,7 +54,7 @@ export default function ResultsScreen({ query, onBack, onProduct }: Props) {
 
       return getOfferTotal(aOffer) - getOfferTotal(bOffer)
     })
-  }, [query, selectedStores, stockOnly, freeShippingOnly, sortBy])
+  }, [products, query, selectedStores, stockOnly, freeShippingOnly, sortBy])
 
   const toggleStore = (store: string) => {
     setSelectedStores(current => {

@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react'
-import { PRODUCTS, formatPrice } from '../data/mock'
+import { useEffect, useState } from 'react'
+import { productsApi } from '../api/products'
+import { appConfig } from '../config/env'
+import { PRODUCTS } from '../data/mock'
+import { formatPrice } from '../domain/currency'
+import { getBestOffer, getSavingsRange } from '../domain/offers'
 import { XIcon, FlashIcon, CheckIcon, ChevronRight } from '../components/Icons'
 import type { Product } from '../types'
 
@@ -8,23 +12,48 @@ interface Props {
   onProduct: (p: Product) => void
 }
 
+const DEMO_BARCODE = '8806092000001'
+
 export default function ScannerScreen({ onBack, onProduct }: Props) {
   const [scanning, setScanning] = useState(true)
   const [flashOn, setFlashOn] = useState(false)
   const [detected, setDetected] = useState(false)
-  const [detectedProduct] = useState(PRODUCTS[0])
+  const [detectedProduct, setDetectedProduct] = useState<Product>(PRODUCTS[0])
 
   useEffect(() => {
     if (!scanning) return
+    let cancelled = false
+
     const timer = setTimeout(() => {
-      setScanning(false)
-      setDetected(true)
+      const resolveProduct = async () => {
+        let product = PRODUCTS[0]
+
+        if (appConfig.useApi) {
+          try {
+            product = await productsApi.barcode(DEMO_BARCODE)
+          } catch {
+            product = PRODUCTS[0]
+          }
+        }
+
+        if (!cancelled) {
+          setDetectedProduct(product)
+          setScanning(false)
+          setDetected(true)
+        }
+      }
+
+      void resolveProduct()
     }, 2500)
-    return () => clearTimeout(timer)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [scanning])
 
-  const cheapest = detectedProduct.prices[0]
-  const savings = detectedProduct.prices[detectedProduct.prices.length - 1].price - cheapest.price
+  const cheapest = getBestOffer(detectedProduct.prices)
+  const savings = getSavingsRange(detectedProduct.prices)
 
   return (
     <div style={{
@@ -85,13 +114,11 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
 
       {/* Camera feed simulation */}
       <div style={{ flex: 1, position: 'relative', minHeight: 460 }}>
-        {/* Dark overlay with camera-like texture */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'linear-gradient(135deg, #0d1f35 0%, #0A1628 50%, #0d1f35 100%)',
           overflow: 'hidden',
         }}>
-          {/* Simulated blurry background objects */}
           <div style={{
             position: 'absolute', top: '20%', left: '10%',
             width: 120, height: 80, borderRadius: 12,
@@ -113,7 +140,6 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
           transform: 'translate(-50%, -55%)',
           width: 260, height: 140,
         }}>
-          {/* Corner marks */}
           {[
             { pos: { top: 0, left: 0 }, radius: '4px 0 0 0', bt: 3, bl: 3, bb: 0, br: 0 },
             { pos: { top: 0, right: 0 }, radius: '0 4px 0 0', bt: 3, bl: 0, bb: 0, br: 3 },
@@ -135,7 +161,6 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
             }} />
           ))}
 
-          {/* Scanning line */}
           {scanning && (
             <div
               className="scan-line"
@@ -149,7 +174,6 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
             />
           )}
 
-          {/* Detected indicator */}
           {detected && (
             <div style={{
               position: 'absolute', inset: 0,
@@ -168,7 +192,6 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
             </div>
           )}
 
-          {/* Barcode graphic (decorative) */}
           {!detected && (
             <div style={{
               position: 'absolute', bottom: -32,
@@ -183,7 +206,6 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
           )}
         </div>
 
-        {/* Status text */}
         <div style={{
           position: 'absolute',
           bottom: 60, left: 0, right: 0,
@@ -214,8 +236,7 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
         </div>
       </div>
 
-      {/* Bottom Sheet when detected */}
-      {detected && (
+      {detected && cheapest && (
         <div className="slide-up" style={{
           background: '#fff',
           borderRadius: '20px 20px 0 0',
