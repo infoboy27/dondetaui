@@ -21,6 +21,17 @@ export interface StorePrice {
   available: boolean
   updated: string
   distance?: string
+
+  // Optional production-facing fields. The current Figma Make prototype does
+  // not require them yet, but API-backed offers can populate them without
+  // forcing another UI-domain type migration.
+  retailerId?: string
+  storeId?: string
+  externalSku?: string
+  url?: string
+  shippingCost?: number
+  totalPrice?: number
+  lastSeenAt?: string
 }
 
 export interface Product {
@@ -40,4 +51,9 @@ export interface Product {
   priceHistory: { date: string; price: number }[]
   favorite?: boolean
   alerted?: boolean
+
+  // Product identity fields used by future exact-match and barcode flows.
+  slug?: string
+  upc?: string
+  ean?: string
 }
