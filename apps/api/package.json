@@ -9,6 +9,7 @@
     "start:dev": "tsx watch src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "pnpm typecheck && pnpm build",
+    "test:discovery": "tsx src/ingestion/plaza-lama.discovery.smoke.ts",
     "ingest:plaza-lama": "tsx src/ingestion/plaza-lama.cli.ts"
   },
   "dependencies": {
