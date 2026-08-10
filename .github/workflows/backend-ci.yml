@@ -33,6 +33,8 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Typecheck and build
         run: pnpm check
+      - name: Catalog discovery smoke test
+        run: pnpm test:discovery
 
   integration-api:
     runs-on: ubuntu-latest
