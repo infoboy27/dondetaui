@@ -28,7 +28,7 @@ export class ProductsRepository {
 
     if (query?.trim()) {
       params.push(`%${query.trim()}%`)
-      where = `where p.name ilike $1 or p.brand ilike $1 or p.model ilike $1 or c.name ilike $1`
+      where = `where p.name ilike $1 or p.brand ilike $1 or pv.model ilike $1 or c.name ilike $1`
     }
 
     const result = await this.pool.query<ProductRow>(
@@ -147,14 +147,14 @@ export class ProductsRepository {
   async history(productId: string): Promise<Array<{ date: string; price: number }>> {
     const result = await this.pool.query<{ date: string; price: string }>(
       `select
-        observed_at::date::text as date,
-        min(price + shipping_price)::text as price
+        po.observed_at::date::text as date,
+        min(po.price + po.shipping_price)::text as price
       from price_observations po
       join offers o on o.id = po.offer_id
       join product_variants pv on pv.id = o.product_variant_id
       where pv.product_id = $1
-      group by observed_at::date
-      order by observed_at::date asc`,
+      group by po.observed_at::date
+      order by po.observed_at::date asc`,
       [productId],
     )
 
