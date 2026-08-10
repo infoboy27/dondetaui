@@ -25,7 +25,7 @@ If a refactor changes the visual result unintentionally, treat it as a regressio
 
 ## Brand rules
 
-Primary brand tokens are documented in `docs/DESIGN_SYSTEM.md` and mirrored in `src/index.css`.
+Primary brand tokens are documented in `docs/DESIGN_SYSTEM.md` and mirrored in `src/index.css` and `src/design/tokens.ts`.
 
 Core colors:
 
@@ -63,25 +63,30 @@ Do not replace this stack inside the prototype merely for preference. The produc
 - `src/App.tsx` — prototype navigation/root composition
 - `src/index.css` — global styles and current Tailwind theme tokens
 - `src/components/` — reusable prototype components
+- `src/components/ui/` — production-oriented UI primitives
 - `src/screens/` — Figma Make screens
-- `src/data/mock.ts` — mock product/store/price data
-- `src/types.ts` — prototype domain types
-- `src/design/tokens.ts` — typed mirror of the approved visual tokens for future reusable components
+- `src/data/mock.ts` — deterministic mock product/store/price data
+- `src/domain/offers.ts` — centralized offer ranking / purchase-total helpers
+- `src/types.ts` — UI/domain contracts prepared for later API integration
+- `src/design/tokens.ts` — typed mirror of the approved visual tokens
 - `docs/DESIGN_SYSTEM.md` — approved visual rules
 - `docs/ARCHITECTURE.md` — target production architecture and migration boundaries
+- `.github/workflows/ci.yml` — typecheck/build validation
 
 ## Refactoring rules
 
 1. **Do not redesign while refactoring.**
 2. Prefer extracting repeated UI into reusable components over copying markup.
 3. Prefer semantic domain names: `Product`, `ProductVariant`, `Retailer`, `Store`, `Offer`, `PriceObservation`, `PriceAlert`.
-4. Do not assume `product.prices[0]` is always the cheapest offer in production code. Sort or use a backend-provided ranking.
+4. Do not assume `product.prices[0]` is always the cheapest offer in production code. Use `src/domain/offers.ts` or backend-provided ranking.
 5. Do not assume listed price equals total purchase cost. Production ranking may include shipping/delivery and availability.
 6. UI components should receive normalized data rather than know store-specific scraping details.
 7. Store logos/colors must eventually come from retailer data, not hardcoded UI conditionals.
 8. Keep mock data deterministic when used in visual tests. Avoid random values in screenshots or regression fixtures.
 9. Add loading, empty, unavailable, error and stale-price states when connecting real APIs.
 10. Preserve touch targets and keyboard/focus accessibility.
+11. New shared UI must use typed design tokens when a token already exists.
+12. Keep scraper/merchant integration code outside the UI repository boundary until the production backend workspace is introduced.
 
 ## Navigation
 
@@ -97,7 +102,7 @@ Production web should use real routes/deep links such as:
 - `/alerts`
 - `/profile`
 
-Do not introduce a router into the prototype unless the task explicitly requires it.
+Do not introduce a router into the prototype unless the task explicitly requires it or the migration phase reaches production routing.
 
 ## Data boundary
 
@@ -108,6 +113,8 @@ Target flow:
 `Retailer source -> ingestion worker -> normalization -> product matching -> database -> API -> DóndeTa UI`
 
 The frontend should consume stable API contracts through an API client layer.
+
+Structured offer data should prefer numeric fields such as `shippingCost` and `totalPrice`; text labels such as `shipping: "RD$500"` remain only as a prototype compatibility layer.
 
 ## Visual regression policy
 
@@ -122,6 +129,23 @@ against the Figma Make reference at representative mobile and desktop widths.
 
 Recommended production validation: Playwright screenshots with stable fixtures.
 
+## Required checks
+
+Before publishing code changes whenever the execution environment allows it:
+
+```bash
+pnpm typecheck
+pnpm build
+```
+
+or run both with:
+
+```bash
+pnpm check
+```
+
+CI must remain green before merging future functional/refactor PRs.
+
 ## Code quality
 
 - Keep TypeScript strict.
@@ -130,7 +154,7 @@ Recommended production validation: Playwright screenshots with stable fixtures.
 - Prefer design tokens over new literal colors/radii/shadows.
 - Use double quotes for strings containing apostrophes or escape apostrophes correctly.
 - Ensure JSX tags and braces are balanced.
-- Run the build before publishing code changes whenever the execution environment allows it.
+- Preserve Figma Make compatibility while this repository remains the active visual prototype.
 
 ## Change strategy
 
