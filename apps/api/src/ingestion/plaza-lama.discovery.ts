@@ -1,3 +1,5 @@
+import type { Page } from 'playwright'
+
 const PLAZA_LAMA_ORIGIN = 'https://plazalama.com.do'
 const DEFAULT_SEEDS = [`${PLAZA_LAMA_ORIGIN}/oldHome`, `${PLAZA_LAMA_ORIGIN}/ca/electrodomesticos/4`]
 
@@ -93,23 +95,20 @@ async function delay(ms: number) {
   await new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'DondeTaPriceIndexer/0.2 (+https://dondeta.app)',
-    },
-    signal: AbortSignal.timeout(20_000),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Plaza Lama discovery request failed (${response.status}) for ${url}`)
+// Plaza Lama's catalog is a Next.js app that renders client-side — a plain fetch()
+// only gets the pre-hydration shell (no product links at all). Render it with a real
+// browser page instead and read the DOM after it settles.
+async function renderHtml(page: Page, url: string): Promise<string> {
+  const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+  if (response && !response.ok()) {
+    throw new Error(`Plaza Lama discovery request failed (${response.status()}) for ${url}`)
   }
-
-  return response.text()
+  return page.content()
 }
 
 export class PlazaLamaCatalogDiscovery {
+  constructor(private readonly page: Page) {}
+
   async discover(options: PlazaLamaDiscoveryOptions = {}): Promise<PlazaLamaDiscoveryResult> {
     const maxCategoryPages = Math.max(1, options.maxCategoryPages ?? 150)
     const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
@@ -125,7 +124,7 @@ export class PlazaLamaCatalogDiscovery {
       visited.add(url)
 
       try {
-        const html = await fetchHtml(url)
+        const html = await renderHtml(this.page, url)
         for (const link of extractLinks(html, url)) {
           if (isLikelyProductUrl(link)) {
             productUrls.add(link)

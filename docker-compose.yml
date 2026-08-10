@@ -93,8 +93,11 @@ services:
     profiles: ["ingestion"]
     build:
       context: ./apps/api
+      dockerfile: Dockerfile.ingestion
     restart: unless-stopped
     working_dir: /app
+    # Playwright's bundled Chromium needs real deps (mem, /dev/shm) beyond node:22-alpine.
+    shm_size: "1gb"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:-change-me-in-dev}@postgres:5432/${POSTGRES_DB:-dondeta}
       INGESTION_INTERVAL_SECONDS: ${INGESTION_INTERVAL_SECONDS:-21600}

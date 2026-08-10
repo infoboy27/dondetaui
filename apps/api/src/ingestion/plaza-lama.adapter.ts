@@ -1,3 +1,4 @@
+import type { Page } from 'playwright'
 import type { NormalizedRetailerItem } from './ingestion.types'
 
 const KNOWN_BRANDS = [
@@ -50,6 +51,39 @@ function firstMatch(html: string, patterns: RegExp[]): string | undefined {
   return undefined
 }
 
+interface PlazaLamaProductJsonLd {
+  raw: string
+  data: {
+    name?: string
+    sku?: string
+    image?: string | string[]
+    brand?: { name?: string } | string
+    offers?: {
+      priceSpecification?: { price?: number }
+      price?: number | string
+      availability?: string
+    }
+  }
+}
+
+// Product pages carry a standard schema.org JSON-LD block with the canonical data —
+// far more reliable than regex-scanning the whole rendered page, which also contains
+// JSON-LD/data blobs for unrelated cards (related products, category listings) that
+// can false-match generic keys like "model" or "brand".
+function extractProductJsonLd(html: string): PlazaLamaProductJsonLd | null {
+  const scripts = html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)
+  for (const match of scripts) {
+    const raw = match[1]
+    try {
+      const data = JSON.parse(raw)
+      if (data && data['@type'] === 'Product') return { raw, data }
+    } catch {
+      continue
+    }
+  }
+  return null
+}
+
 function extractName(html: string): string {
   const value = firstMatch(html, [
     /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
@@ -90,8 +124,12 @@ function extractEan(url: string, html: string): string | undefined {
 }
 
 function extractBrand(name: string, html: string): string {
-  const explicit = firstMatch(html, [/["']brand["']\s*:\s*["']([^"']+)["']/i])
-  if (explicit && explicit.length <= 40) return explicit
+  const explicit = firstMatch(html, [
+    // schema.org JSON-LD nests brand as an object: "brand":{"@type":"Brand","name":"X"}
+    /["']brand["']\s*:\s*\{[^}]*["']name["']\s*:\s*["']([^"']+)["']/i,
+    /["']brand["']\s*:\s*["']([^"']+)["']/i,
+  ])
+  if (explicit && explicit.length <= 40) return explicit.trim()
 
   const known = KNOWN_BRANDS.find(brand => new RegExp(`\\b${brand.replace('+', '\\+')}\\b`, 'i').test(name))
   return known ?? 'Desconocida'
@@ -144,27 +182,36 @@ function extractAvailability(html: string): boolean {
 }
 
 export class PlazaLamaAdapter {
-  async fetchProduct(url: string): Promise<NormalizedRetailerItem> {
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'text/html,application/xhtml+xml',
-        'User-Agent': 'DondeTaPriceIndexer/0.2 (+https://dondeta.app)',
-      },
-      signal: AbortSignal.timeout(15_000),
-    })
+  constructor(private readonly page: Page) {}
 
-    if (!response.ok) {
-      throw new Error(`Plaza Lama request failed (${response.status}) for ${url}`)
+  async fetchProduct(url: string): Promise<NormalizedRetailerItem> {
+    // Plaza Lama's product data (JSON-LD, og:* meta, price) is injected client-side by
+    // Next.js — a plain fetch() only sees the pre-hydration shell. Render with a real
+    // browser page and read the DOM after it settles, same as catalog discovery.
+    const response = await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+    if (response && !response.ok()) {
+      throw new Error(`Plaza Lama request failed (${response.status()}) for ${url}`)
     }
 
-    const html = await response.text()
-    const name = extractName(html)
-    const price = extractPrice(html)
-    const ean = extractEan(url, html)
-    const brand = extractBrand(name, html)
-    const model = extractModel(name, html, ean)
-    const available = extractAvailability(html)
+    const html = await this.page.content()
+    const productLd = extractProductJsonLd(html)
+    // Scope the regex fallbacks to this product's own JSON-LD text (small, unambiguous)
+    // instead of the whole page, so they can't cross-match a different product's card.
+    const scopedHtml = productLd?.raw ?? html
+
+    const name = productLd?.data.name ? decodeHtml(productLd.data.name) : extractName(html)
+    const price = productLd?.data.offers?.priceSpecification?.price
+      ?? (productLd?.data.offers?.price ? Number(productLd.data.offers.price) : undefined)
+      ?? extractPrice(html)
+    const ean = extractEan(url, scopedHtml) ?? (productLd?.data.sku && /^\d{8,14}$/.test(productLd.data.sku) ? productLd.data.sku : undefined)
+    const brandName = typeof productLd?.data.brand === 'object' ? productLd.data.brand?.name : productLd?.data.brand
+    const brand = brandName?.trim() || extractBrand(name, scopedHtml)
+    const model = extractModel(name, scopedHtml, ean)
+    const available = productLd?.data.offers?.availability
+      ? /InStock/i.test(productLd.data.offers.availability)
+      : extractAvailability(html)
     const category = extractCategory(html)
+    const jsonLdImage = Array.isArray(productLd?.data.image) ? productLd.data.image[0] : productLd?.data.image
 
     return {
       retailer: {
@@ -182,7 +229,7 @@ export class PlazaLamaAdapter {
       ean,
       categoryName: category.name,
       categorySlug: category.slug,
-      imageUrl: extractImage(html),
+      imageUrl: jsonLdImage ?? extractImage(html),
       price,
       shippingPrice: 0,
       available,
