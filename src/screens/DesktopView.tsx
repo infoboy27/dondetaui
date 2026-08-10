@@ -286,6 +286,16 @@ export default function DesktopView({ onMobile }: Props) {
     setSelectedCategory(prev => (prev === categoryId ? null : categoryId))
   }
 
+  const availableCategories = useMemo(() => {
+    const byId = new Map<string, { id: string; label: string }>()
+    for (const p of products) {
+      if (!byId.has(p.categoryId)) {
+        byId.set(p.categoryId, { id: p.categoryId, label: p.category })
+      }
+    }
+    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label))
+  }, [products])
+
   const toggleAlert = (productId: string) => {
     setAlertedIds(prev => {
       const next = new Set(prev)
@@ -642,7 +652,7 @@ export default function DesktopView({ onMobile }: Props) {
               }}>
                 Tipo de artículo
               </div>
-              {CATEGORIES.map(cat => (
+              {availableCategories.map(cat => (
                 <label key={cat.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 0', minHeight: 44, cursor: 'pointer',
@@ -671,7 +681,7 @@ export default function DesktopView({ onMobile }: Props) {
                     fontSize: 13, fontFamily: "'DM Sans', sans-serif",
                     color: '#0F1D2D',
                   }}>
-                    {cat.emoji} {cat.label}
+                    {cat.label}
                   </span>
                 </label>
               ))}
