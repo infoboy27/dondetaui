@@ -1,4 +1,4 @@
-import type { Product, StorePrice } from '../types'
+import type { Product } from '../types'
 
 export const STORES: Record<string, { color: string; abbr: string }> = {
   'Plaza Lama': { color: '#C0392B', abbr: 'PL' },
@@ -10,17 +10,32 @@ export const STORES: Record<string, { color: string; abbr: string }> = {
   'Almacenes Trigo': { color: '#D35400', abbr: 'AT' },
 }
 
+function seededUnit(seed: number): number {
+  const value = Math.sin(seed) * 10000
+  return value - Math.floor(value)
+}
+
 function makePriceHistory(basePrice: number, days = 90): { date: string; price: number }[] {
   const history: { date: string; price: number }[] = []
-  let p = basePrice * 1.15
+  let price = basePrice * 1.15
   const now = new Date()
+  now.setHours(0, 0, 0, 0)
+
   for (let i = days; i >= 0; i--) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    p = p + (Math.random() - 0.52) * (basePrice * 0.02)
-    p = Math.max(basePrice * 0.92, Math.min(basePrice * 1.2, p))
-    history.push({ date: d.toISOString().split('T')[0], price: Math.round(p / 5) * 5 })
+    const date = new Date(now)
+    date.setDate(date.getDate() - i)
+
+    const sequenceIndex = days - i
+    const jitter = seededUnit(basePrice + sequenceIndex * 131 + days * 17) - 0.52
+    price = price + jitter * (basePrice * 0.02)
+    price = Math.max(basePrice * 0.92, Math.min(basePrice * 1.2, price))
+
+    history.push({
+      date: date.toISOString().split('T')[0],
+      price: Math.round(price / 5) * 5,
+    })
   }
+
   history[history.length - 1].price = basePrice
   return history
 }
