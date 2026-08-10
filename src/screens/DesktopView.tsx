@@ -282,6 +282,10 @@ export default function DesktopView({ onMobile }: Props) {
     )
   }
 
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategory(prev => (prev === categoryId ? null : categoryId))
+  }
+
   const toggleAlert = (productId: string) => {
     setAlertedIds(prev => {
       const next = new Set(prev)
@@ -623,6 +627,51 @@ export default function DesktopView({ onMobile }: Props) {
                     color: '#0F1D2D',
                   }}>
                     {store}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            {/* Category */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#5d7ea0',
+                fontFamily: "'DM Sans', sans-serif",
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+                marginBottom: 10,
+              }}>
+                Tipo de artículo
+              </div>
+              {CATEGORIES.map(cat => (
+                <label key={cat.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 0', minHeight: 44, cursor: 'pointer',
+                  borderBottom: '1px solid #F2F4F7',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCategory === cat.id}
+                    onChange={() => toggleCategory(cat.id)}
+                    style={{
+                      position: 'absolute', width: 1, height: 1, padding: 0,
+                      margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0,
+                    }}
+                  />
+                  <div aria-hidden="true" style={{
+                    width: 18, height: 18, borderRadius: 5,
+                    border: `2px solid ${selectedCategory === cat.id ? '#00B894' : '#D8E6F0'}`,
+                    background: selectedCategory === cat.id ? '#00B894' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'all 0.12s',
+                  }}>
+                    {selectedCategory === cat.id && <CheckIcon size={10} color="#fff" />}
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+                    color: '#0F1D2D',
+                  }}>
+                    {cat.emoji} {cat.label}
                   </span>
                 </label>
               ))}
