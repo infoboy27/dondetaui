@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { formatPrice } from '../data/mock'
+import { formatPrice, CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon } from '../components/Icons'
-import { getBestOffer, getOfferTotal } from '../domain/offers'
+import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
+type DesktopScreen = 'results' | 'categories' | 'stores' | 'deals' | 'alerts'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price-asc', label: 'Precio ↑' },
@@ -17,10 +18,22 @@ interface Props {
   onMobile: () => void
 }
 
-const NAV_LINKS = ['Categorías', 'Tiendas', 'Ofertas', 'Alertas']
+const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
+  { key: 'categories', label: 'Categorías' },
+  { key: 'stores', label: 'Tiendas' },
+  { key: 'deals', label: 'Ofertas' },
+  { key: 'alerts', label: 'Alertas' },
+]
+const STORE_COLORS: Record<string, string> = {
+  'Plaza Lama': '#C0392B', Sirena: '#2980B9', Corripio: '#27AE60', Jumbo: '#E67E22', PriceSmart: '#8E44AD',
+}
 const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
-function DesktopProductRow({ product, rank }: { product: Product; rank: number }) {
+function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
+  product: Product
+  isAlerted: boolean
+  onToggleAlert: () => void
+}) {
   const cheapest = product.prices[0]
   const savings = product.prices[product.prices.length - 1].price - cheapest.price
   const [expanded, setExpanded] = useState(false)
@@ -87,16 +100,17 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button style={{
+          <button onClick={onToggleAlert} style={{
             display: 'flex', alignItems: 'center', gap: 6,
             border: '1.5px solid #00B894', borderRadius: 10,
-            background: '#E6F7F3', color: '#00B894',
+            background: isAlerted ? '#00B894' : '#E6F7F3',
+            color: isAlerted ? '#fff' : '#00B894',
             padding: '10px 16px', cursor: 'pointer',
             fontSize: 13, fontWeight: 600,
             fontFamily: "'Poppins', sans-serif",
           }}>
-            <BellIcon size={14} color="#00B894" />
-            Alerta
+            <BellIcon size={14} color={isAlerted ? '#fff' : '#00B894'} />
+            {isAlerted ? 'Alerta activa' : 'Alerta'}
           </button>
           <button style={{
             display: 'flex', alignItems: 'center', gap: 6,
@@ -257,12 +271,34 @@ export default function DesktopView({ onMobile }: Props) {
   const [minPrice, setMinPrice] = useState(0)
   const [maxPrice, setMaxPrice] = useState(100000)
   const [sortBy, setSortBy] = useState<SortKey>('price-asc')
+  const [screen, setScreen] = useState<DesktopScreen>('results')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [alertedIds, setAlertedIds] = useState<Set<string>>(new Set())
   const { products, loading, error } = useCatalogProducts(query)
 
   const toggleStore = (s: string) => {
     setSelectedStores(prev =>
       prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
     )
+  }
+
+  const toggleAlert = (productId: string) => {
+    setAlertedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(productId)) next.delete(productId)
+      else next.add(productId)
+      return next
+    })
+  }
+
+  const goToCategory = (categoryId: string) => {
+    setSelectedCategory(categoryId)
+    setScreen('results')
+  }
+
+  const goToStore = (store: string) => {
+    setSelectedStores([store])
+    setScreen('results')
   }
 
   const visibleProducts = useMemo(() => {
@@ -272,7 +308,10 @@ export default function DesktopView({ onMobile }: Props) {
         p.prices.some(price => selectedStores.includes(price.store))
       const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
       const inPriceRange = total >= minPrice && total <= maxPrice
-      return inStoreFilter && inPriceRange
+      const inCategory = !selectedCategory || p.categoryId === selectedCategory
+      const isDeal = screen !== 'deals' || p.discount > 0
+      const isAlerted = screen !== 'alerts' || alertedIds.has(p.id)
+      return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted
     })
 
     if (sortBy === 'relevance') return filtered
@@ -283,7 +322,26 @@ export default function DesktopView({ onMobile }: Props) {
       return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
     })
     return sorted
-  }, [products, selectedStores, minPrice, maxPrice, sortBy])
+  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, screen, alertedIds])
+
+  const bestDeal = useMemo(() => {
+    if (!visibleProducts.length) return null
+    let best = visibleProducts[0]
+    let bestTotal = getOfferTotal(getBestOffer(best.prices) ?? best.prices[0])
+    for (const p of visibleProducts.slice(1)) {
+      const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
+      if (total < bestTotal) {
+        best = p
+        bestTotal = total
+      }
+    }
+    const offer = getBestOffer(best.prices) ?? best.prices[0]
+    return { product: best, offer, savings: getSavingsRange(best.prices) }
+  }, [visibleProducts])
+
+  const screenTitle = screen === 'deals' ? 'Ofertas destacadas'
+    : screen === 'alerts' ? 'Mis alertas'
+    : `Resultados para "${query || 'Samsung'}"`
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100vh' }}>
@@ -359,26 +417,29 @@ export default function DesktopView({ onMobile }: Props) {
 
           {/* Nav links */}
           <nav style={{ display: 'flex', gap: 4 }}>
-            {NAV_LINKS.map(link => (
-              <button key={link} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '8px 12px', minHeight: 44, borderRadius: 8,
-                fontSize: 13, fontWeight: 500,
-                fontFamily: "'DM Sans', sans-serif",
-                color: '#5d7ea0',
-                transition: 'background 0.12s, color 0.12s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = '#E6F7F3'
-                e.currentTarget.style.color = '#00B894'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'none'
-                e.currentTarget.style.color = '#5d7ea0'
-              }}>
-                {link}
-              </button>
-            ))}
+            {NAV_LINKS.map(link => {
+              const active = screen === link.key
+              return (
+                <button key={link.key} onClick={() => setScreen(link.key)} style={{
+                  background: active ? '#E6F7F3' : 'none', border: 'none', cursor: 'pointer',
+                  padding: '8px 12px', minHeight: 44, borderRadius: 8,
+                  fontSize: 13, fontWeight: 500,
+                  fontFamily: "'DM Sans', sans-serif",
+                  color: active ? '#00B894' : '#5d7ea0',
+                  transition: 'background 0.12s, color 0.12s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#E6F7F3'
+                  e.currentTarget.style.color = '#00B894'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = active ? '#E6F7F3' : 'none'
+                  e.currentTarget.style.color = active ? '#00B894' : '#5d7ea0'
+                }}>
+                  {link.label}
+                </button>
+              )
+            })}
           </nav>
 
           {/* Right actions */}
@@ -426,7 +487,83 @@ export default function DesktopView({ onMobile }: Props) {
       </header>
 
       {/* Main content */}
-      <div style={{ maxWidth: 1360, margin: '0 auto', padding: '28px 40px', display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
+      <div style={{
+        maxWidth: 1360, margin: '0 auto', padding: '28px 40px', display: 'grid',
+        gridTemplateColumns: screen === 'categories' || screen === 'stores' ? '1fr' : '240px 1fr', gap: 24,
+      }}>
+        {screen === 'categories' && (
+          <section>
+            <h1 style={{
+              fontSize: 22, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+              color: '#0F1D2D', margin: '0 0 20px', letterSpacing: '-0.03em',
+            }}>
+              Categorías
+            </h1>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              {CATEGORIES.map(cat => (
+                <button key={cat.id} onClick={() => goToCategory(cat.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: cat.color, border: `1.5px solid ${cat.border}`,
+                  borderRadius: 14, padding: '20px', cursor: 'pointer',
+                  textAlign: 'left', minHeight: 44,
+                }}>
+                  <span style={{ fontSize: 28 }}>{cat.emoji}</span>
+                  <span style={{
+                    fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                    color: '#0F1D2D',
+                  }}>
+                    {cat.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {screen === 'stores' && (
+          <section>
+            <h1 style={{
+              fontSize: 22, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+              color: '#0F1D2D', margin: '0 0 20px', letterSpacing: '-0.03em',
+            }}>
+              Tiendas
+            </h1>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              {STORE_FILTERS.map(store => (
+                <button key={store} onClick={() => goToStore(store)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: '#fff', border: '1px solid #E8EDF2',
+                  borderRadius: 14, padding: '20px', cursor: 'pointer',
+                  textAlign: 'left', minHeight: 44,
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 10,
+                    background: STORE_COLORS[store] + '18',
+                    border: `1.5px solid ${STORE_COLORS[store]}40`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <span style={{
+                      fontSize: 13, fontWeight: 800, fontFamily: "'Poppins', sans-serif",
+                      color: STORE_COLORS[store],
+                    }}>
+                      {store.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                    color: '#0F1D2D',
+                  }}>
+                    {store}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {(screen === 'results' || screen === 'deals' || screen === 'alerts') && (
+        <>
         {/* Sidebar */}
         <aside>
           <div style={{
@@ -573,7 +710,7 @@ export default function DesktopView({ onMobile }: Props) {
                 fontFamily: "'Poppins', sans-serif",
                 color: '#0F1D2D', margin: 0, letterSpacing: '-0.03em',
               }}>
-                Resultados para "{query || 'Samsung'}"
+                {screenTitle}
               </h1>
               <p style={{
                 fontSize: 13, color: '#5d7ea0',
@@ -601,23 +738,26 @@ export default function DesktopView({ onMobile }: Props) {
           </div>
 
           {/* Best deal callout */}
-          <div style={{
-            background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
-            borderRadius: 14,
-            padding: '14px 20px',
-            display: 'flex', alignItems: 'center', gap: 16,
-            marginBottom: 20,
-          }}>
-            <TrendingDownIcon size={24} color="#fff" />
-            <div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans', sans-serif" }}>
-                Mejor oferta encontrada
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
-                Samsung 18kg — Plaza Lama · RD$24,495 · Ahorras RD$3,000 vs Corripio
+          {bestDeal && screen !== 'alerts' && (
+            <div style={{
+              background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
+              borderRadius: 14,
+              padding: '14px 20px',
+              display: 'flex', alignItems: 'center', gap: 16,
+              marginBottom: 20,
+            }}>
+              <TrendingDownIcon size={24} color="#fff" />
+              <div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Mejor oferta encontrada
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
+                  {bestDeal.product.name} — {bestDeal.offer.store} · {formatPrice(bestDeal.offer.price)}
+                  {bestDeal.savings > 0 && ` · Ahorras ${formatPrice(bestDeal.savings)}`}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Data source / error notice */}
           {error && (
@@ -645,14 +785,23 @@ export default function DesktopView({ onMobile }: Props) {
               textAlign: 'center', color: '#5d7ea0',
               fontFamily: "'DM Sans', sans-serif", fontSize: 14,
             }}>
-              No hay productos que coincidan con los filtros seleccionados.
+              {screen === 'alerts'
+                ? 'No tienes alertas activas. Haz clic en "Alerta" en cualquier producto para agregarlo aquí.'
+                : 'No hay productos que coincidan con los filtros seleccionados.'}
             </div>
           ) : (
-            visibleProducts.map((p, i) => (
-              <DesktopProductRow key={p.id} product={p} rank={i + 1} />
+            visibleProducts.map(p => (
+              <DesktopProductRow
+                key={p.id}
+                product={p}
+                isAlerted={alertedIds.has(p.id)}
+                onToggleAlert={() => toggleAlert(p.id)}
+              />
             ))
           )}
         </main>
+        </>
+        )}
       </div>
     </div>
   )
