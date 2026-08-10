@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, CSSProperties } from 'react'
-import { colors, radii, shadows, typography } from '../../design/tokens'
+import { colors, fonts, radii, shadows } from '../../design/tokens'
 
 type Variant = 'primary' | 'secondary' | 'ghost'
 type Size = 'sm' | 'md' | 'lg'
@@ -13,7 +13,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variantStyles: Record<Variant, CSSProperties> = {
   primary: {
     background: colors.primary,
-    color: colors.white,
+    color: colors.card,
     border: 'none',
     boxShadow: shadows.sm,
   },
@@ -54,7 +54,7 @@ export default function Button({
         ...sizeStyles[size],
         width: fullWidth ? '100%' : undefined,
         borderRadius: radii.md,
-        fontFamily: typography.display,
+        fontFamily: fonts.display,
         fontWeight: 700,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.55 : 1,
