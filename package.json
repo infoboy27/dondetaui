@@ -1,13 +1,21 @@
 {
-  "name": "figma-make-app",
+  "name": "dondeta-ui",
+  "description": "DóndeTa price-comparison UI for the Dominican Republic.",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "packageManager": "pnpm@10.34.3",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10.34.3"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run typecheck && pnpm run build"
   },
   "dependencies": {
     "react": "^19.0.0",
