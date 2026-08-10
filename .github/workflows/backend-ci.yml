@@ -33,3 +33,69 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Typecheck and build
         run: pnpm check
+
+  integration-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: dondeta
+          POSTGRES_USER: dondeta
+          POSTGRES_PASSWORD: dondeta
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dondeta -d dondeta"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://dondeta:dondeta@localhost:5432/dondeta
+      PORT: 3001
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/api/package.json
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Build API
+        run: pnpm build
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply migrations and seed
+        run: |
+          for file in migrations/*.sql; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$file"
+          done
+      - name: Start API
+        run: |
+          pnpm start > /tmp/dondeta-api.log 2>&1 &
+          echo $! > /tmp/dondeta-api.pid
+      - name: Wait for API
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3001/api/health >/tmp/health.json; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/dondeta-api.log
+          exit 1
+      - name: Smoke test API contract
+        run: |
+          curl -fsS http://localhost:3001/api/health | jq -e '.status == "ok" and .database == "ok"'
+          curl -fsS http://localhost:3001/api/products | jq -e 'length >= 2'
+          curl -fsS 'http://localhost:3001/api/search?q=Samsung' | jq -e 'length >= 2'
+          curl -fsS http://localhost:3001/api/products/20000000-0000-0000-0000-000000000001/offers | jq -e 'length >= 2'
+          curl -fsS http://localhost:3001/api/products/20000000-0000-0000-0000-000000000001/history | jq -e 'length >= 1'
+          curl -fsS http://localhost:3001/api/products/barcode/8806092000001 | jq -e '.model == "WA18T6360BV"'
