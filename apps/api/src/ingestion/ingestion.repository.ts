@@ -1,10 +1,39 @@
 import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
 
+// DóndeTa is an appliance price-comparison app. Discovery is already scoped to each
+// retailer's appliance department by URL, but sites nest non-appliance subcategories
+// in there too (e.g. Plaza Lama files "Accesorios Tecnológicos" — gaming keyboards,
+// cables — under /ca/electrodomesticos). This is the last line of defense: skip
+// anything whose derived category doesn't look like an actual appliance, regardless
+// of which retailer or URL it came from.
+const APPLIANCE_CATEGORY_KEYWORDS = [
+  'electrodomest', 'linea blanca', 'línea blanca',
+  'nevera', 'refriger', 'congelad', 'freezer',
+  'estufa', 'horno', 'microond', 'cocina', 'cocc',
+  'lavador', 'lavaplat', 'secador', 'lavad',
+  'aire acondicion', 'climatiz', 'abanico', 'ventilad',
+  'licuad', 'batidor', 'cafeter', 'tostad', 'plancha',
+  'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
+  'dispensador', 'freidora', 'air fryer',
+]
+
+function isApplianceCategory(categoryName: string): boolean {
+  const normalized = categoryName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+  return APPLIANCE_CATEGORY_KEYWORDS.some(keyword => normalized.includes(keyword))
+}
+
 export class IngestionRepository {
   constructor(private readonly pool: Pool) {}
 
   async ingest(item: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
+    if (!isApplianceCategory(item.categoryName)) {
+      throw new Error(`Skipped: category "${item.categoryName}" is not an appliance category`)
+    }
+
     const client = await this.pool.connect()
 
     try {
