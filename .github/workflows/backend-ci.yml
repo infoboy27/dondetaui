@@ -1,0 +1,35 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  validate-api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/api/package.json
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Typecheck and build
+        run: pnpm check
