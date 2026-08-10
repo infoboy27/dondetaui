@@ -1,10 +1,17 @@
 import { useState } from 'react'
-import { formatPrice } from '../data/mock'
+import PriceHistoryChart from '../components/PriceHistoryChart'
+import ProductOfferSummary from '../components/ProductOfferSummary'
 import {
-  ChevronLeft, HeartIcon, ShareIcon, StarIcon,
-  TruckIcon, ClockIcon, CheckIcon, BellIcon, MapPinIcon,
+  BellIcon,
+  CheckIcon,
+  ChevronLeft,
+  HeartIcon,
+  ShareIcon,
+  StarIcon,
   TrendingDownIcon,
 } from '../components/Icons'
+import { formatPrice } from '../data/mock'
+import { getBestOffer } from '../domain/offers'
 import type { Product } from '../types'
 
 interface Props {
@@ -12,83 +19,7 @@ interface Props {
   onBack: () => void
 }
 
-function PriceHistoryChart({ history, period }: { history: { date: string; price: number }[]; period: string }) {
-  const days = period === '7D' ? 7 : period === '30D' ? 30 : period === '90D' ? 90 : period === '6M' ? 180 : 365
-  const data = history.slice(-Math.min(days, history.length))
-
-  const prices = data.map(d => d.price)
-  const min = Math.min(...prices)
-  const max = Math.max(...prices)
-  const range = max - min || 1
-  const current = prices[prices.length - 1]
-  const lowest = min
-  const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
-
-  const W = 320
-  const H = 100
-  const PAD = 8
-
-  const pts = data.map((d, i) => ({
-    x: PAD + (i / (data.length - 1)) * (W - PAD * 2),
-    y: PAD + ((max - d.price) / range) * (H - PAD * 2),
-  }))
-
-  const linePath = pts
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(' ')
-
-  const areaPath = `${linePath} L ${pts[pts.length - 1].x.toFixed(1)} ${H} L ${pts[0].x.toFixed(1)} ${H} Z`
-
-  const lowestPt = pts[prices.indexOf(min)]
-  const lowestDate = data[prices.indexOf(min)]?.date
-
-  return (
-    <div>
-      <svg width="100%" viewBox={`0 0 ${W} ${H + 4}`} style={{ overflow: 'visible', display: 'block' }}>
-        <defs>
-          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00B894" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#00B894" stopOpacity="0.01" />
-          </linearGradient>
-        </defs>
-        <path d={areaPath} fill="url(#chartGrad)" />
-        <path d={linePath} fill="none" stroke="#00B894" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {lowestPt && (
-          <>
-            <circle cx={lowestPt.x} cy={lowestPt.y} r="4" fill="#FF9F1C" stroke="#fff" strokeWidth="2" />
-          </>
-        )}
-        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="4" fill="#00B894" stroke="#fff" strokeWidth="2" />
-      </svg>
-
-      <div style={{ display: 'flex', gap: 0, marginTop: 12 }}>
-        {[
-          { label: 'Actual', value: current, color: '#00B894' },
-          { label: 'Mínimo', value: lowest, color: '#FF9F1C' },
-          { label: 'Promedio', value: avg, color: '#9AAABB' },
-          { label: 'Máximo', value: max, color: '#0F1D2D' },
-        ].map((stat, i) => (
-          <div key={i} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: i < 3 ? '1px solid #F2F4F7' : 'none' }}>
-            <div style={{
-              fontSize: 11, color: '#9AAABB',
-              fontFamily: "'DM Sans', sans-serif",
-              marginBottom: 3,
-            }}>
-              {stat.label}
-            </div>
-            <div style={{
-              fontSize: 13, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: stat.color, letterSpacing: '-0.02em',
-            }}>
-              {formatPrice(stat.value)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+const PERIODS = ['7D', '30D', '90D', '6M', '1A']
 
 export default function ProductDetailScreen({ product, onBack }: Props) {
   const [fav, setFav] = useState(product.favorite ?? false)
@@ -97,14 +28,15 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
   const [alertPrice, setAlertPrice] = useState('')
   const [alertCreated, setAlertCreated] = useState(false)
 
-  const cheapest = product.prices[0]
-  const savings = product.prices[product.prices.length - 1].price - cheapest.price
-  const periods = ['7D', '30D', '90D', '6M', '1A']
-
-  const priceMin = Math.min(...product.priceHistory.map(h => h.price))
-  const isBestPrice = cheapest.price <= priceMin * 1.05
+  const bestOffer = getBestOffer(product.prices)
+  const priceMin = product.priceHistory.length
+    ? Math.min(...product.priceHistory.map(point => point.price))
+    : undefined
+  const isBestPrice = Boolean(bestOffer && priceMin !== undefined && bestOffer.price <= priceMin * 1.05)
 
   const createAlert = () => {
+    if (!bestOffer) return
+
     setAlertCreated(true)
     setTimeout(() => {
       setShowAlertSheet(false)
@@ -123,7 +55,9 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <button
+          type="button"
           onClick={onBack}
+          aria-label="Volver"
           style={{
             width: 36, height: 36, borderRadius: 10,
             background: '#F2F4F7', border: 'none', cursor: 'pointer',
@@ -141,7 +75,10 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
           {product.subtitle}
         </span>
         <button
-          onClick={() => setFav(!fav)}
+          type="button"
+          onClick={() => setFav(value => !value)}
+          aria-label={fav ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+          aria-pressed={fav}
           style={{
             width: 36, height: 36, borderRadius: 10,
             background: fav ? '#FFF3E0' : '#F2F4F7',
@@ -151,22 +88,27 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         >
           <HeartIcon size={18} filled={fav} />
         </button>
-        <button style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: '#F2F4F7', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
+        <button
+          type="button"
+          aria-label="Compartir producto"
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: '#F2F4F7', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
           <ShareIcon size={18} color="#0F1D2D" />
         </button>
       </div>
 
       {/* Product Image */}
-      <div style={{
-        background: '#fff', borderBottom: '1px solid #E8EDF2',
-      }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #E8EDF2' }}>
         <div style={{ height: 240, background: '#F8FAFC', overflow: 'hidden' }}>
-          <img src={product.image} alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={product.image}
+            alt={product.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         </div>
         <div style={{ padding: '16px 20px 20px' }}>
           <div style={{
@@ -224,137 +166,7 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
 
       {/* Price Summary */}
       <div style={{ margin: '12px 16px 0' }}>
-        <div style={{
-          background: '#fff', borderRadius: 16,
-          border: '1px solid #E8EDF2',
-          boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
-          overflow: 'hidden',
-        }}>
-          <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid #F2F4F7' }}>
-            <div style={{
-              fontSize: 13, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: '#0F1D2D',
-            }}>
-              Resumen de precios
-            </div>
-            <div style={{
-              fontSize: 11, color: '#9AAABB',
-              fontFamily: "'DM Sans', sans-serif",
-              marginTop: 2,
-            }}>
-              {product.prices.length} tiendas comparadas
-            </div>
-          </div>
-
-          {product.prices.map((sp, i) => (
-            <div
-              key={sp.store}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px',
-                background: i === 0 ? '#E6F7F3' : '#fff',
-                borderBottom: i < product.prices.length - 1 ? '1px solid #F2F4F7' : 'none',
-                borderLeft: i === 0 ? '3px solid #00B894' : '3px solid transparent',
-              }}
-            >
-              <div style={{
-                width: 30, height: 30, borderRadius: 8,
-                background: sp.color + '18',
-                border: `1.5px solid ${sp.color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 800,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: sp.color,
-                }}>
-                  {sp.abbr}
-                </span>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{
-                    fontSize: 13, fontWeight: 600,
-                    fontFamily: "'DM Sans', sans-serif",
-                    color: '#0F1D2D',
-                  }}>
-                    {sp.store}
-                  </span>
-                  {i === 0 && (
-                    <span style={{
-                      fontSize: 9, fontWeight: 700, color: '#fff',
-                      fontFamily: "'Poppins', sans-serif",
-                      background: '#00B894', padding: '2px 6px',
-                      borderRadius: 999,
-                    }}>
-                      MÁS BARATO
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <TruckIcon size={10} color="#9AAABB" />
-                    <span style={{ fontSize: 10, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
-                      {sp.shipping}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: 9, color: '#D8E6F0' }}>·</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <MapPinIcon size={10} color="#9AAABB" />
-                    <span style={{ fontSize: 10, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
-                      {sp.distance}
-                    </span>
-                  </div>
-                  {!sp.available && (
-                    <span style={{
-                      fontSize: 9, color: '#FF3B3B',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}>
-                      Sin stock
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontSize: 15, fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: i === 0 ? '#00B894' : '#0F1D2D',
-                  letterSpacing: '-0.02em',
-                }}>
-                  {formatPrice(sp.price)}
-                </div>
-                {i === 0 && (
-                  <div style={{
-                    fontSize: 10, color: '#FF9F1C', fontWeight: 600,
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                    Ahorras {formatPrice(savings)}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Store time note */}
-          <div style={{
-            padding: '10px 16px',
-            background: '#F8FAFC',
-            borderTop: '1px solid #F2F4F7',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ClockIcon size={12} color="#9AAABB" />
-              <span style={{
-                fontSize: 11, color: '#9AAABB',
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                Actualizado hace 20 min · Disponibilidad puede variar
-              </span>
-            </div>
-          </div>
-        </div>
+        <ProductOfferSummary offers={product.prices} />
       </div>
 
       {/* Price History */}
@@ -374,20 +186,22 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
               Historial de precios
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
-              {periods.map(p => (
+              {PERIODS.map(value => (
                 <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
+                  type="button"
+                  key={value}
+                  onClick={() => setPeriod(value)}
+                  aria-pressed={period === value}
                   style={{
                     padding: '4px 8px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     fontSize: 11, fontWeight: 600,
                     fontFamily: "'DM Sans', sans-serif",
-                    background: period === p ? '#00B894' : 'transparent',
-                    color: period === p ? '#fff' : '#9AAABB',
+                    background: period === value ? '#00B894' : 'transparent',
+                    color: period === value ? '#fff' : '#9AAABB',
                     transition: 'all 0.15s',
                   }}
                 >
-                  {p}
+                  {value}
                 </button>
               ))}
             </div>
@@ -409,6 +223,8 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         zIndex: 50,
       }}>
         <button
+          type="button"
+          disabled={!bestOffer}
           onClick={() => setShowAlertSheet(true)}
           style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -417,31 +233,35 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
             background: '#E6F7F3', color: '#00B894',
             fontSize: 13, fontWeight: 700,
             fontFamily: "'Poppins', sans-serif",
-            cursor: 'pointer',
+            cursor: bestOffer ? 'pointer' : 'not-allowed',
+            opacity: bestOffer ? 1 : 0.55,
           }}
         >
           <BellIcon size={16} color="#00B894" />
           Crear alerta
         </button>
         <button
+          type="button"
+          disabled={!bestOffer}
           style={{
             flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 8, padding: '13px 0',
             border: 'none', borderRadius: 12,
-            background: '#00B894', color: '#fff',
+            background: bestOffer ? '#00B894' : '#E8EDF2',
+            color: bestOffer ? '#fff' : '#9AAABB',
             fontSize: 14, fontWeight: 700,
             fontFamily: "'Poppins', sans-serif",
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,184,148,0.3)',
+            cursor: bestOffer ? 'pointer' : 'not-allowed',
+            boxShadow: bestOffer ? '0 4px 12px rgba(0,184,148,0.3)' : 'none',
           }}
         >
-          <CheckIcon size={16} color="#fff" />
-          Ver oferta en {cheapest.store}
+          <CheckIcon size={16} color={bestOffer ? '#fff' : '#9AAABB'} />
+          {bestOffer ? `Ver oferta en ${bestOffer.store}` : 'Oferta no disponible'}
         </button>
       </div>
 
       {/* Alert Bottom Sheet */}
-      {showAlertSheet && (
+      {showAlertSheet && bestOffer && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
           display: 'flex', alignItems: 'flex-end',
@@ -517,19 +337,19 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
                     fontFamily: "'DM Sans', sans-serif",
                     fontWeight: 500,
                   }}>
-                    Precio actual (Plaza Lama)
+                    Precio actual ({bestOffer.store})
                   </span>
                   <span style={{
                     fontSize: 16, fontWeight: 700,
                     fontFamily: "'Poppins', sans-serif",
                     color: '#00B894',
                   }}>
-                    {formatPrice(cheapest.price)}
+                    {formatPrice(bestOffer.price)}
                   </span>
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{
+                  <label htmlFor="alert-target-price" style={{
                     fontSize: 12, fontWeight: 600, color: '#9AAABB',
                     fontFamily: "'DM Sans', sans-serif",
                     textTransform: 'uppercase', letterSpacing: '0.05em',
@@ -551,9 +371,11 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
                       RD$
                     </span>
                     <input
+                      id="alert-target-price"
                       value={alertPrice}
-                      onChange={e => setAlertPrice(e.target.value)}
+                      onChange={event => setAlertPrice(event.target.value)}
                       placeholder="22,000"
+                      min="1"
                       type="number"
                       style={{
                         flex: 1, background: 'none', border: 'none', outline: 'none',
@@ -567,6 +389,7 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
 
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
+                    type="button"
                     onClick={() => setShowAlertSheet(false)}
                     style={{
                       flex: 1, padding: '14px 0',
@@ -580,6 +403,7 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
                     Cancelar
                   </button>
                   <button
+                    type="button"
                     onClick={createAlert}
                     style={{
                       flex: 2, padding: '14px 0',
