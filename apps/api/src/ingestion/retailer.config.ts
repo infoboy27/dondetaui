@@ -30,7 +30,8 @@ export const RETAILER_CONFIGS: Record<RetailerKey, RetailerConfig> = {
     origin: 'https://www.sirena.do', websiteUrl: 'https://www.sirena.do',
     seedUrls: ['https://www.sirena.do/supermercado', 'https://www.sirena.do/belleza'],
     crawlPrefixes: ['/supermercado', '/belleza', '/hogar', '/tecnologia', '/electrodomesticos'],
-    productPatterns: [/\/(?:product|producto|p)\//i],
+    // VTEX storefront: product URLs are slug-<sku>/p (suffix), not a /p/ path segment.
+    productPatterns: [/\/p$/i],
     excludedPrefixes: ['/login', '/account', '/cart', '/checkout', '/search', '/ayuda'],
     defaultCategory: { name: 'Supermercado', slug: 'supermercado' },
   },
@@ -46,7 +47,14 @@ export const RETAILER_CONFIGS: Record<RetailerKey, RetailerConfig> = {
   pricesmart: {
     key: 'pricesmart', name: 'PriceSmart', slug: 'pricesmart', abbr: 'PS', primaryColor: '#00529B',
     origin: 'https://www.pricesmart.com', websiteUrl: 'https://www.pricesmart.com/es-do',
-    seedUrls: ['https://www.pricesmart.com/es-do'],
+    // The bare homepage is a category picker with 0 product links — seed the real
+    // category index + a few known sections so discovery has something to crawl into.
+    seedUrls: [
+      'https://www.pricesmart.com/es-do/categorias',
+      'https://www.pricesmart.com/es-do/linea-blanca',
+      'https://www.pricesmart.com/es-do/lo-nuevo',
+      'https://www.pricesmart.com/es-do/members-selection',
+    ],
     crawlPrefixes: ['/es-do'],
     productPatterns: [/\/(?:product|producto|p)\//i],
     excludedPrefixes: ['/es-do/account', '/es-do/cart', '/es-do/checkout', '/es-do/membership'],
