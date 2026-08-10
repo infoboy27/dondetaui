@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { PRODUCTS, CATEGORIES, formatPrice } from '../data/mock'
+import { formatPrice } from '../data/mock'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal } from '../domain/offers'
+import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
@@ -256,6 +257,7 @@ export default function DesktopView({ onMobile }: Props) {
   const [minPrice, setMinPrice] = useState(0)
   const [maxPrice, setMaxPrice] = useState(100000)
   const [sortBy, setSortBy] = useState<SortKey>('price-asc')
+  const { products, loading, error } = useCatalogProducts(query)
 
   const toggleStore = (s: string) => {
     setSelectedStores(prev =>
@@ -264,7 +266,7 @@ export default function DesktopView({ onMobile }: Props) {
   }
 
   const visibleProducts = useMemo(() => {
-    const filtered = PRODUCTS.filter(p => {
+    const filtered = products.filter(p => {
       const inStoreFilter =
         selectedStores.length === 0 ||
         p.prices.some(price => selectedStores.includes(price.store))
@@ -281,7 +283,7 @@ export default function DesktopView({ onMobile }: Props) {
       return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
     })
     return sorted
-  }, [selectedStores, minPrice, maxPrice, sortBy])
+  }, [products, selectedStores, minPrice, maxPrice, sortBy])
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100vh' }}>
@@ -617,8 +619,27 @@ export default function DesktopView({ onMobile }: Props) {
             </div>
           </div>
 
+          {/* Data source / error notice */}
+          {error && (
+            <div style={{
+              background: '#FFF3E0', border: '1px solid #FF9F1C', borderRadius: 10,
+              padding: '10px 16px', marginBottom: 16,
+              color: '#0F1D2D', fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            }}>
+              No se pudo conectar con el catálogo en vivo — mostrando datos de referencia.
+            </div>
+          )}
+
           {/* Product rows */}
-          {visibleProducts.length === 0 ? (
+          {loading ? (
+            <div style={{
+              background: '#fff', borderRadius: 14, padding: '40px 20px',
+              textAlign: 'center', color: '#5d7ea0',
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+            }}>
+              Cargando productos…
+            </div>
+          ) : visibleProducts.length === 0 ? (
             <div style={{
               background: '#fff', borderRadius: 14, padding: '40px 20px',
               textAlign: 'center', color: '#5d7ea0',
