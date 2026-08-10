@@ -1,0 +1,52 @@
+name: MVP CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'deploy/**'
+      - 'Dockerfile.web'
+      - 'docker-compose.yml'
+      - '.github/workflows/mvp-ci.yml'
+  push:
+    branches: [main, 'agent/**']
+    paths:
+      - 'apps/mobile/**'
+      - 'deploy/**'
+      - 'Dockerfile.web'
+      - 'docker-compose.yml'
+      - '.github/workflows/mvp-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+      - name: Install mobile dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Typecheck mobile MVP
+        run: pnpm check
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docker Compose
+        env:
+          POSTGRES_PASSWORD: ci-password
+        run: docker compose config >/tmp/dondeta-compose.yml
+      - name: Build web image
+        run: docker build -f Dockerfile.web -t dondeta-web:ci .
