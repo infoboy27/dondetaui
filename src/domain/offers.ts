@@ -13,8 +13,20 @@ function parseShippingCost(label: string): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+export function getShippingCost(offer: StorePrice): number {
+  if (typeof offer.shippingCost === 'number' && Number.isFinite(offer.shippingCost)) {
+    return offer.shippingCost
+  }
+
+  return parseShippingCost(offer.shipping)
+}
+
 export function getOfferTotal(offer: StorePrice): number {
-  return offer.price + parseShippingCost(offer.shipping)
+  if (typeof offer.totalPrice === 'number' && Number.isFinite(offer.totalPrice)) {
+    return offer.totalPrice
+  }
+
+  return offer.price + getShippingCost(offer)
 }
 
 export function rankOffers(offers: StorePrice[]): StorePrice[] {
