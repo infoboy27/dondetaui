@@ -96,7 +96,7 @@ export default function App() {
           display: 'flex', flexDirection: 'column', gap: 8, zIndex: 200,
         }}>
           <button
-            onClick={() => { setIsDesktop(false); setIsMobileView(false) }}
+            onClick={() => setIsMobileView(false)}
             style={{
               background: '#fff', border: '1px solid #E8EDF2',
               borderRadius: 10, padding: '8px 14px', cursor: 'pointer',
