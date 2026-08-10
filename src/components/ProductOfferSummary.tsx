@@ -1,4 +1,4 @@
-import { formatPrice } from '../data/mock'
+import { formatPrice } from '../domain/currency'
 import { rankOffers } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
