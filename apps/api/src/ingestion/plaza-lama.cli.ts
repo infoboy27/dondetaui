@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { chromium } from 'playwright'
 import { IngestionRepository } from './ingestion.repository'
 import { PlazaLamaAdapter } from './plaza-lama.adapter'
 import { PlazaLamaCatalogDiscovery } from './plaza-lama.discovery'
@@ -31,11 +32,9 @@ async function delay(ms: number) {
 }
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 })
-const adapter = new PlazaLamaAdapter()
-const discovery = new PlazaLamaCatalogDiscovery()
 const repository = new IngestionRepository(pool)
 
-async function resolveUrls(): Promise<string[]> {
+async function resolveUrls(discovery: PlazaLamaCatalogDiscovery): Promise<string[]> {
   const explicitUrls = csv(process.env.PLAZA_LAMA_URLS)
   if (explicitUrls.length) {
     console.log(`[plaza-lama] using ${explicitUrls.length} explicitly configured product URLs`)
@@ -63,7 +62,24 @@ async function resolveUrls(): Promise<string[]> {
 }
 
 async function main() {
-  const urls = await resolveUrls()
+  const browser = await chromium.launch()
+  // One page, reused for every navigation (discovery + each product) — this is what
+  // keeps Playwright's memory footprint bounded to a single browser instance for the
+  // whole run, rather than one per request.
+  const page = await browser.newPage({
+    userAgent: 'Mozilla/5.0 (compatible; DondeTaPriceIndexer/0.3; +https://dondeta.app)',
+  })
+  const adapter = new PlazaLamaAdapter(page)
+  const discovery = new PlazaLamaCatalogDiscovery(page)
+
+  let urls: string[]
+  try {
+    urls = await resolveUrls(discovery)
+  } catch (error) {
+    await browser.close()
+    throw error
+  }
+
   const productDelayMs = numberFromEnv('PLAZA_LAMA_PRODUCT_DELAY_MS', 350)
 
   const run = await pool.query<{ id: string }>(
@@ -135,6 +151,8 @@ async function main() {
       [runId, ingested, error instanceof Error ? error.message : String(error)],
     )
     throw error
+  } finally {
+    await browser.close()
   }
 }
 

@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM mcr.microsoft.com/playwright:v1.62.1-jammy AS build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.34.3 --activate
 COPY package.json pnpm-lock.yaml ./
@@ -7,12 +7,11 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN pnpm build
 
-FROM node:22-alpine AS runtime
+FROM mcr.microsoft.com/playwright:v1.62.1-jammy AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@10.34.3 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/dist ./dist
-EXPOSE 3001
-CMD ["node", "dist/main.js"]
+# docker-compose.yml sets the real entrypoint (deploy/ingestion-loop.sh, mounted read-only)
