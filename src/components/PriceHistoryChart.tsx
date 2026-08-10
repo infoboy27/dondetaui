@@ -1,4 +1,4 @@
-import { formatPrice } from '../data/mock'
+import { formatPrice } from '../domain/currency'
 import { colors, fonts } from '../design/tokens'
 
 export interface PricePoint {

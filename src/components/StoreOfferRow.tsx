@@ -1,4 +1,4 @@
-import { formatPrice } from '../data/mock'
+import { formatPrice } from '../domain/currency'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
 import { ClockIcon, TruckIcon } from './Icons'
