@@ -265,7 +265,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
 }
 
 export default function DesktopView({ onMobile }: Props) {
-  const [query, setQuery] = useState('Samsung')
+  const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
   const [minPrice, setMinPrice] = useState(0)
@@ -341,7 +341,8 @@ export default function DesktopView({ onMobile }: Props) {
 
   const screenTitle = screen === 'deals' ? 'Ofertas destacadas'
     : screen === 'alerts' ? 'Mis alertas'
-    : `Resultados para "${query || 'Samsung'}"`
+    : query.trim() ? `Resultados para "${query}"`
+    : 'Todos los productos'
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100vh' }}>
