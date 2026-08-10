@@ -9,8 +9,12 @@
     "start:dev": "tsx watch src/main.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "pnpm typecheck && pnpm build",
-    "test:discovery": "tsx src/ingestion/plaza-lama.discovery.smoke.ts",
-    "ingest:plaza-lama": "tsx src/ingestion/plaza-lama.cli.ts"
+    "test:discovery": "tsx src/ingestion/plaza-lama.discovery.smoke.ts && tsx src/ingestion/retailer.discovery.smoke.ts",
+    "ingest:plaza-lama": "tsx src/ingestion/plaza-lama.cli.ts",
+    "ingest:jumbo": "tsx src/ingestion/retailer.cli.ts jumbo",
+    "ingest:sirena": "tsx src/ingestion/retailer.cli.ts sirena",
+    "ingest:corripio": "tsx src/ingestion/retailer.cli.ts corripio",
+    "ingest:pricesmart": "tsx src/ingestion/retailer.cli.ts pricesmart"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
