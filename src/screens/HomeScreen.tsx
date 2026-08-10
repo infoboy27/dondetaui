@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { PRODUCTS, CATEGORIES, formatPrice } from '../data/mock'
-import { SearchIcon, BellIcon, HeartIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
+import { PRODUCTS, CATEGORIES } from '../data/mock'
+import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
+import ProductCard from '../components/ProductCard'
 import type { Product } from '../types'
 
 interface Props {
@@ -11,126 +11,7 @@ interface Props {
   onNearby?: () => void
 }
 
-function DiscountBadge({ pct }: { pct: number }) {
-  return (
-    <span style={{
-      background: '#FF9F1C',
-      color: '#fff',
-      fontSize: 11,
-      fontWeight: 700,
-      fontFamily: "'Poppins', sans-serif",
-      padding: '2px 7px',
-      borderRadius: 999,
-      letterSpacing: '-0.01em',
-    }}>
-      -{pct}%
-    </span>
-  )
-}
-
-function ProductCard({ product, onProduct }: { product: Product; onProduct: (p: Product) => void }) {
-  const [fav, setFav] = useState(product.favorite ?? false)
-  const cheapest = product.prices[0]
-
-  return (
-    <div
-      onClick={() => onProduct(product)}
-      style={{
-        background: '#fff',
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: '1px solid #E8EDF2',
-        boxShadow: '0 2px 8px rgba(15,29,45,0.05)',
-        cursor: 'pointer',
-        width: 180,
-        flexShrink: 0,
-        transition: 'box-shadow 0.15s ease, transform 0.15s ease',
-      }}
-      onMouseEnter={e => {
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 18px rgba(15,29,45,0.10)'
-        ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={e => {
-        ;(e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(15,29,45,0.05)'
-        ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
-      }}
-    >
-      {/* Image */}
-      <div style={{ position: 'relative', background: '#F8FAFC', height: 140 }}>
-        <img
-          src={product.image}
-          alt={product.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-        <div style={{ position: 'absolute', top: 8, left: 8 }}>
-          <DiscountBadge pct={product.discount} />
-        </div>
-        <button
-          onClick={e => { e.stopPropagation(); setFav(!fav) }}
-          style={{
-            position: 'absolute', top: 8, right: 8,
-            width: 30, height: 30, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.92)',
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-          }}
-        >
-          <HeartIcon size={15} filled={fav} />
-        </button>
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: '10px 12px 12px' }}>
-        <div style={{
-          fontSize: 12, color: '#9AAABB', fontWeight: 500,
-          fontFamily: "'DM Sans', sans-serif", marginBottom: 2,
-        }}>
-          {cheapest.store}
-        </div>
-        <div style={{
-          fontSize: 13, color: '#0F1D2D', fontWeight: 500,
-          fontFamily: "'DM Sans', sans-serif",
-          lineHeight: '1.3',
-          marginBottom: 8,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}>
-          {product.name}
-        </div>
-        <div style={{
-          fontSize: 18, fontWeight: 700,
-          fontFamily: "'Poppins', sans-serif",
-          color: '#0F1D2D', letterSpacing: '-0.03em',
-          lineHeight: 1,
-        }}>
-          {formatPrice(cheapest.price)}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-          <span style={{
-            fontSize: 11, color: '#9AAABB',
-            fontFamily: "'DM Sans', sans-serif",
-            textDecoration: 'line-through',
-          }}>
-            {formatPrice(product.previousPrice)}
-          </span>
-          <span style={{
-            fontSize: 11, color: '#00B894', fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            Ahorras {formatPrice(product.previousPrice - cheapest.price)}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, onNearby }: Props) {
-  const [query, setQuery] = useState('')
-
   return (
     <div style={{
       background: '#F2F4F7',
@@ -177,7 +58,7 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
 
         {/* Search Bar */}
         <div
-          onClick={() => onSearch(query)}
+          onClick={() => onSearch('')}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
             background: '#F2F4F7', borderRadius: 14,
