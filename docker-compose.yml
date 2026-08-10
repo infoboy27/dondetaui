@@ -78,8 +78,18 @@ services:
         VITE_USE_API: "true"
         VITE_API_BASE_URL: /api
     restart: unless-stopped
-    ports:
-      - "${WEB_PORT:-8080}:80"
+    networks:
+      - default
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.dondeta.rule=Host(`dondeta.jfmcss.com`)"
+      - "traefik.http.routers.dondeta.entrypoints=websecure"
+      - "traefik.http.routers.dondeta.tls=true"
+      - "traefik.http.routers.dondeta.tls.certresolver=cloudflare"
+      - "traefik.http.routers.dondeta.middlewares=secure-headers@file"
+      - "traefik.http.services.dondeta.loadbalancer.server.port=80"
     depends_on:
       api:
         condition: service_healthy
@@ -118,3 +128,8 @@ services:
 volumes:
   dondeta_postgres:
   dondeta_redis:
+
+networks:
+  default:
+  proxy:
+    external: true
