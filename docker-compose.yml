@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: dondeta
+      POSTGRES_USER: dondeta
+      POSTGRES_PASSWORD: dondeta
+    ports:
+      - "5432:5432"
+    volumes:
+      - dondeta_postgres:/var/lib/postgresql/data
+      - ./apps/api/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dondeta -d dondeta"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - dondeta_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://dondeta:dondeta@postgres:5432/dondeta
+      DATABASE_POOL_MAX: 10
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  dondeta_postgres:
+  dondeta_redis:
