@@ -1,7 +1,13 @@
 import type { Page } from 'playwright'
 
 const PLAZA_LAMA_ORIGIN = 'https://plazalama.com.do'
-const DEFAULT_SEEDS = [`${PLAZA_LAMA_ORIGIN}/oldHome`, `${PLAZA_LAMA_ORIGIN}/ca/electrodomesticos/4`]
+// DóndeTa only covers electrodomésticos (appliances). Deliberately NOT seeding from
+// /oldHome — its site-wide nav walks the crawler into every department (supermercado,
+// ferretería, hogar, moda...), which is how batteries/toilets/chocolate ended up
+// ingested. Scope enforced again in isCategoryUrl below, in case a category page's
+// own nav links elsewhere too.
+const ELECTRODOMESTICOS_PREFIX = '/ca/electrodomesticos'
+const DEFAULT_SEEDS = [`${PLAZA_LAMA_ORIGIN}${ELECTRODOMESTICOS_PREFIX}/4`]
 
 export interface PlazaLamaDiscoveryOptions {
   seedUrls?: string[]
@@ -50,7 +56,7 @@ export function extractLinks(html: string, baseUrl: string): string[] {
 export function isCategoryUrl(value: string): boolean {
   try {
     const url = new URL(value)
-    return url.origin === PLAZA_LAMA_ORIGIN && url.pathname.startsWith('/ca/')
+    return url.origin === PLAZA_LAMA_ORIGIN && url.pathname.toLowerCase().startsWith(ELECTRODOMESTICOS_PREFIX)
   } catch {
     return false
   }
