@@ -10,6 +10,11 @@ const KNOWN_BRANDS = [
   'Drija',
   'Dimensions',
   'Sensibo',
+  'Whirlpool',
+  'Mabe',
+  'Oster',
+  'Black+Decker',
+  'Hamilton Beach',
 ]
 
 function decodeHtml(value: string): string {
@@ -26,6 +31,15 @@ function decodeHtml(value: string): string {
 
 function stripTags(value: string): string {
   return decodeHtml(value.replace(/<[^>]+>/g, ' '))
+}
+
+function slugify(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'otros'
 }
 
 function firstMatch(html: string, patterns: RegExp[]): string | undefined {
@@ -79,7 +93,7 @@ function extractBrand(name: string, html: string): string {
   const explicit = firstMatch(html, [/["']brand["']\s*:\s*["']([^"']+)["']/i])
   if (explicit && explicit.length <= 40) return explicit
 
-  const known = KNOWN_BRANDS.find(brand => new RegExp(`\\b${brand}\\b`, 'i').test(name))
+  const known = KNOWN_BRANDS.find(brand => new RegExp(`\\b${brand.replace('+', '\\+')}\\b`, 'i').test(name))
   return known ?? 'Desconocida'
 }
 
@@ -94,12 +108,47 @@ function extractModel(name: string, html: string, ean?: string): string {
   return tokens?.at(-1) ?? ean ?? name.slice(0, 80)
 }
 
+function extractCategory(html: string): { name: string; slug: string } {
+  const jsonLdNames = [...html.matchAll(/["']name["']\s*:\s*["']([^"']+)["']/gi)]
+    .map(match => decodeHtml(match[1]))
+    .filter(value => value.length > 1 && value.length < 80)
+
+  const productIndex = jsonLdNames.findIndex(value => /producto|product/i.test(value))
+  if (productIndex > 0) {
+    const candidate = jsonLdNames[productIndex - 1]
+    return { name: candidate, slug: slugify(candidate) }
+  }
+
+  const breadcrumb = firstMatch(html, [
+    /<nav[^>]+(?:breadcrumb|migas)[^>]*>([\s\S]*?)<\/nav>/i,
+    /<ol[^>]+(?:breadcrumb|migas)[^>]*>([\s\S]*?)<\/ol>/i,
+  ])
+
+  if (breadcrumb) {
+    const labels = [...breadcrumb.matchAll(/<a[^>]*>([\s\S]*?)<\/a>/gi)]
+      .map(match => stripTags(match[1]))
+      .filter(label => label && !/inicio|home|plaza lama/i.test(label))
+
+    const candidate = labels.at(-1)
+    if (candidate) return { name: candidate, slug: slugify(candidate) }
+  }
+
+  return { name: 'Otros', slug: 'otros' }
+}
+
+function extractAvailability(html: string): boolean {
+  if (/https?:\/\/schema\.org\/OutOfStock/i.test(html)) return false
+  if (/https?:\/\/schema\.org\/InStock/i.test(html)) return true
+  if (/\bNo disponible\b/i.test(stripTags(html))) return false
+  return true
+}
+
 export class PlazaLamaAdapter {
   async fetchProduct(url: string): Promise<NormalizedRetailerItem> {
     const response = await fetch(url, {
       headers: {
         Accept: 'text/html,application/xhtml+xml',
-        'User-Agent': 'DondeTaPriceIndexer/0.1 (+https://dondeta.app)',
+        'User-Agent': 'DondeTaPriceIndexer/0.2 (+https://dondeta.app)',
       },
       signal: AbortSignal.timeout(15_000),
     })
@@ -114,7 +163,8 @@ export class PlazaLamaAdapter {
     const ean = extractEan(url, html)
     const brand = extractBrand(name, html)
     const model = extractModel(name, html, ean)
-    const available = !/No disponible/i.test(stripTags(html))
+    const available = extractAvailability(html)
+    const category = extractCategory(html)
 
     return {
       retailer: {
@@ -130,8 +180,8 @@ export class PlazaLamaAdapter {
       brand,
       model,
       ean,
-      categoryName: 'Electrodomésticos',
-      categorySlug: 'electrodomesticos',
+      categoryName: category.name,
+      categorySlug: category.slug,
       imageUrl: extractImage(html),
       price,
       shippingPrice: 0,
@@ -146,6 +196,7 @@ export class PlazaLamaAdapter {
         ean,
         price,
         available,
+        category: category.name,
       },
     }
   }
