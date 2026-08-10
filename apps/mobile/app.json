@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "DóndeTa",
+    "slug": "dondeta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "dondeta",
+    "android": {
+      "package": "com.jfmcss.dondeta",
+      "versionCode": 1,
+      "permissions": ["CAMERA"]
+    },
+    "ios": {
+      "bundleIdentifier": "com.jfmcss.dondeta",
+      "supportsTablet": true
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite a DóndeTa usar la cámara para escanear códigos de barras.",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
+    ]
+  }
+}

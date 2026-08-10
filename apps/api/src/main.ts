@@ -3,7 +3,16 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true })
+  const app = await NestFactory.create(AppModule)
+  const origins = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
+
+  app.enableCors({
+    origin: origins.length ? origins : true,
+    credentials: false,
+  })
   app.setGlobalPrefix('api')
 
   const port = Number(process.env.PORT ?? 3001)
