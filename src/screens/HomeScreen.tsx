@@ -1,6 +1,7 @@
-import { PRODUCTS, CATEGORIES } from '../data/mock'
+import { CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
 import ProductCard from '../components/ProductCard'
+import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, onNearby }: Props) {
+  const { products } = useCatalogProducts()
+
   return (
     <div style={{
       background: '#F2F4F7',
@@ -197,7 +200,7 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
           display: 'flex', gap: 14, padding: '4px 20px 8px',
           overflowX: 'auto',
         }}>
-          {PRODUCTS.map(p => (
+          {products.map(p => (
             <ProductCard key={p.id} product={p} onProduct={onProduct} />
           ))}
         </div>
