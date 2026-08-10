@@ -1,4 +1,5 @@
 import type { RetailerConfig } from './retailer.config'
+import { fetchHtmlWithCookies } from './http-client'
 
 export interface DiscoveryOptions {
   maxPages?: number
@@ -62,9 +63,16 @@ export function isLikelyRetailerProductUrl(value: string, config: RetailerConfig
   const path = pathname(value)
   if (!path || path === '/' || path === '/es-do' || path.endsWith('/all-products')) return false
   if (config.productPatterns.some(pattern => pattern.test(path))) return true
+  if (config.productPatterns.length > 0) return false
 
-  // Fallback for storefronts whose product URLs are plain slugs. The product parser is
-  // still the final gate before persistence, so a false positive is safely discarded.
+  // Fallback for storefronts with no configured productPatterns at all, whose product
+  // URLs are plain slugs. The product parser is still the final gate before
+  // persistence, so a false positive is safely discarded. Once a retailer has any
+  // explicit productPatterns, treat them as authoritative rather than also running this
+  // generic heuristic — sitewide nav/category slugs (e.g. Jumbo's deeply nested
+  // /hogar/cocina-sl-5652 or /supermercado/bebe/alimentacion-de-bebe) can coincidentally
+  // look SKU-like or "deep" too, and a retailer with real patterns configured should
+  // rely on those instead of a heuristic tuned for sites that have none.
   const segments = path.split('/').filter(Boolean)
   const last = segments.at(-1) ?? ''
   const looksLikeSku = /(?:^|[-_])[a-z]{0,5}\d{4,}[a-z0-9_-]*$/i.test(last)
@@ -73,15 +81,12 @@ export function isLikelyRetailerProductUrl(value: string, config: RetailerConfig
 }
 
 async function fetchHtml(url: string, config: RetailerConfig): Promise<string> {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': `DondeTaPriceIndexer/0.3 (${config.slug}; +https://dondeta.app)`,
-    },
-    signal: AbortSignal.timeout(20_000),
-  })
-  if (!response.ok) throw new Error(`${config.name} discovery request failed (${response.status}) for ${url}`)
-  return response.text()
+  try {
+    const { html } = await fetchHtmlWithCookies(url, `DondeTaPriceIndexer/0.3 (${config.slug}; +https://dondeta.app)`)
+    return html
+  } catch (error) {
+    throw new Error(`${config.name} discovery request failed for ${url}: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 export class RetailerCatalogDiscovery {

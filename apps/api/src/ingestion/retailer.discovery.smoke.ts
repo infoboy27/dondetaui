@@ -28,9 +28,18 @@ assert(!isCrawlUrl('https://www.sirena.do/supermercado/carnes-pescados-y-marisco
 assert(!isCrawlUrl('https://www.sirena.do/belleza/perfumeria', sirena))
 
 const jumbo = RETAILER_CONFIGS.jumbo
-assert(isCrawlUrl('https://jumbo.com.do/electrodomesticos/refrigeracion', jumbo))
-assert(isLikelyRetailerProductUrl('https://jumbo.com.do/electrodomesticos/nevera-samsung-123456.html', jumbo))
+// Jumbo renamed /electrodomesticos to /electro-hogar; real product URLs are a bare
+// single-segment slug+SKU (no /product/ segment or .html suffix).
+assert(isCrawlUrl('https://jumbo.com.do/electro-hogar?p=2', jumbo))
+assert(isLikelyRetailerProductUrl('https://jumbo.com.do/freidora-de-aire-black-decker-hf5005b-3316834', jumbo))
+assert(isLikelyRetailerProductUrl('https://jumbo.com.do//freidora-de-aire-black-decker-hf5005b-3316834', jumbo))
 assert(!isCrawlUrl('https://jumbo.com.do/supermercado/frutas-y-vegetales', jumbo))
+// Deeply nested nav/filter paths whose last segment coincidentally looks SKU-like too
+// (short numbers, product-line codes) must not be mistaken for real product pages.
+assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/hogar/cocina-sl-5652', jumbo))
+assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/tv-y-tecnologia/televisores/tv-entre-55-a-65', jumbo))
+assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/equipaje/maletas/maletas-hasta-74cm', jumbo))
+assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/supermercado/bebe/alimentacion-de-bebe', jumbo))
 
 const pricesmart = RETAILER_CONFIGS.pricesmart
 assert(isCrawlUrl('https://www.pricesmart.com/es-do/linea-blanca/refrigeradores', pricesmart))

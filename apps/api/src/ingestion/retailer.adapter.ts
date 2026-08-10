@@ -1,5 +1,6 @@
 import type { NormalizedRetailerItem } from './ingestion.types'
 import type { RetailerConfig } from './retailer.config'
+import { fetchHtmlWithCookies } from './http-client'
 
 function decodeHtml(value: string): string {
   return value.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/\s+/g, ' ').trim()
@@ -127,12 +128,7 @@ export class RetailerHtmlAdapter {
   constructor(private readonly config: RetailerConfig) {}
 
   async fetchProduct(url: string): Promise<NormalizedRetailerItem> {
-    const response = await fetch(url, {
-      headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': `DondeTaPriceIndexer/0.3 (${this.config.slug}; +https://dondeta.app)` },
-      signal: AbortSignal.timeout(20_000),
-    })
-    if (!response.ok) throw new Error(`${this.config.name} request failed (${response.status}) for ${url}`)
-    const html = await response.text()
+    const { html } = await fetchHtmlWithCookies(url, `DondeTaPriceIndexer/0.3 (${this.config.slug}; +https://dondeta.app)`)
     const product = extractJsonProduct(html)
     const name = nestedString(product, 'name') ?? first(html, [
       /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,

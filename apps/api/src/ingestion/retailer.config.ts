@@ -24,9 +24,15 @@ export const RETAILER_CONFIGS: Record<RetailerKey, RetailerConfig> = {
   jumbo: {
     key: 'jumbo', name: 'Jumbo', slug: 'jumbo', abbr: 'JU', primaryColor: '#66A61E',
     origin: 'https://jumbo.com.do', websiteUrl: 'https://jumbo.com.do',
-    seedUrls: ['https://jumbo.com.do/electrodomesticos'],
-    crawlPrefixes: ['/electrodomesticos'],
-    productPatterns: [/\.html$/i, /\/(?:product|producto|p)\//i],
+    // Jumbo renamed /electrodomesticos to /electro-hogar (301). Product URLs here are a
+    // bare single-segment slug+SKU with no /product/ segment or .html suffix (e.g.
+    // jumbo.com.do/freidora-de-aire-black-decker-hf5005b-3316834). The category tree also
+    // has deeply nested filter/nav paths whose final segment can coincidentally look
+    // SKU-like too (e.g. /hogar/cocina-sl-5652), so the pattern below anchors on there
+    // being exactly one path segment (no further "/") to tell real products apart.
+    seedUrls: ['https://jumbo.com.do/electro-hogar'],
+    crawlPrefixes: ['/electro-hogar'],
+    productPatterns: [/^\/{1,2}[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-\d{6,}$/i, /\.html$/i, /\/(?:product|producto|p)\//i],
     excludedPrefixes: ['/customer', '/checkout', '/cart', '/wishlist', '/search'],
     defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
   },
