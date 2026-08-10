@@ -44,7 +44,7 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif",
+            fontSize: 11, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif",
             marginBottom: 3, fontWeight: 500,
           }}>
             {product.brand} · {product.model}
@@ -62,13 +62,13 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
             <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D', fontWeight: 600 }}>
               {product.rating}
             </span>
-            <span style={{ fontSize: 12, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+            <span style={{ fontSize: 12, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif" }}>
               ({product.reviews} opiniones)
             </span>
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
+          <div style={{ fontSize: 11, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
             Desde
           </div>
           <div style={{
@@ -112,14 +112,14 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
           <button
             onClick={() => setExpanded(!expanded)}
             style={{
-              width: 40, height: 40, borderRadius: 10,
+              width: 44, height: 44, borderRadius: 10,
               border: '1px solid #E8EDF2', background: '#F2F4F7',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
             }}
           >
             <span style={{ display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-              <ChevronDown size={16} color="#9AAABB" />
+              <ChevronDown size={16} color="#5d7ea0" />
             </span>
           </button>
         </div>
@@ -136,7 +136,7 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
           }}>
             {['Tienda', 'Precio', 'Envío', 'Disponibilidad', ''].map((h, i) => (
               <div key={i} style={{
-                fontSize: 11, fontWeight: 700, color: '#9AAABB',
+                fontSize: 11, fontWeight: 700, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 textTransform: 'uppercase', letterSpacing: '0.04em',
                 textAlign: i > 0 ? 'center' : 'left',
@@ -191,7 +191,7 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+                  <div style={{ fontSize: 11, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif" }}>
                     Actualizado hace {sp.updated}
                   </div>
                 </div>
@@ -210,7 +210,7 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
 
               <div style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  <TruckIcon size={12} color="#9AAABB" />
+                  <TruckIcon size={12} color="#5d7ea0" />
                   <span style={{ fontSize: 12, color: '#0F1D2D', fontFamily: "'DM Sans', sans-serif" }}>
                     {sp.shipping}
                   </span>
@@ -233,7 +233,7 @@ function DesktopProductRow({ product, rank }: { product: Product; rank: number }
                 <button style={{
                   border: 'none', borderRadius: 8,
                   background: sp.available ? '#00B894' : '#E8EDF2',
-                  color: sp.available ? '#fff' : '#9AAABB',
+                  color: sp.available ? '#fff' : '#5d7ea0',
                   padding: '8px 16px', cursor: sp.available ? 'pointer' : 'not-allowed',
                   fontSize: 12, fontWeight: 700,
                   fontFamily: "'Poppins', sans-serif",
@@ -314,7 +314,7 @@ export default function DesktopView({ onMobile }: Props) {
                 DóndeTa
               </div>
               <div style={{
-                fontSize: 9, color: '#9AAABB',
+                fontSize: 9, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 letterSpacing: '0.02em',
               }}>
@@ -332,7 +332,7 @@ export default function DesktopView({ onMobile }: Props) {
             border: `1.5px solid ${focused ? '#00B894' : '#E8EDF2'}`,
             transition: 'all 0.15s',
           }}>
-            <SearchIcon size={17} color={focused ? '#00B894' : '#9AAABB'} />
+            <SearchIcon size={17} color={focused ? '#00B894' : '#5d7ea0'} />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
@@ -360,7 +360,7 @@ export default function DesktopView({ onMobile }: Props) {
             {NAV_LINKS.map(link => (
               <button key={link} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                padding: '8px 12px', borderRadius: 8,
+                padding: '8px 12px', minHeight: 44, borderRadius: 8,
                 fontSize: 13, fontWeight: 500,
                 fontFamily: "'DM Sans', sans-serif",
                 color: '#5d7ea0',
@@ -382,14 +382,14 @@ export default function DesktopView({ onMobile }: Props) {
           {/* Right actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button style={{
-              width: 38, height: 38, borderRadius: 10,
+              width: 44, height: 44, borderRadius: 10,
               background: '#F2F4F7', border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative',
             }}>
               <BellIcon size={18} color="#5d7ea0" />
               <span style={{
-                position: 'absolute', top: 7, right: 7,
+                position: 'absolute', top: 10, right: 10,
                 width: 8, height: 8, borderRadius: '50%',
                 background: '#FF3B3B', border: '1.5px solid #fff',
               }} />
@@ -412,7 +412,7 @@ export default function DesktopView({ onMobile }: Props) {
               onClick={onMobile}
               style={{
                 background: '#E6F7F3', border: '1px solid #00B894',
-                borderRadius: 8, padding: '7px 12px', cursor: 'pointer',
+                borderRadius: 8, padding: '7px 12px', minHeight: 44, cursor: 'pointer',
                 fontSize: 12, color: '#00B894', fontWeight: 600,
                 fontFamily: "'DM Sans', sans-serif",
               }}
@@ -446,7 +446,7 @@ export default function DesktopView({ onMobile }: Props) {
             {/* Stores */}
             <div style={{ marginBottom: 20 }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#9AAABB',
+                fontSize: 11, fontWeight: 700, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 textTransform: 'uppercase', letterSpacing: '0.05em',
                 marginBottom: 10,
@@ -456,18 +456,26 @@ export default function DesktopView({ onMobile }: Props) {
               {STORE_FILTERS.map(store => (
                 <label key={store} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 0', cursor: 'pointer',
+                  padding: '8px 0', minHeight: 44, cursor: 'pointer',
                   borderBottom: '1px solid #F2F4F7',
                 }}>
-                  <div style={{
+                  <input
+                    type="checkbox"
+                    checked={selectedStores.includes(store)}
+                    onChange={() => toggleStore(store)}
+                    style={{
+                      position: 'absolute', width: 1, height: 1, padding: 0,
+                      margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0,
+                    }}
+                  />
+                  <div aria-hidden="true" style={{
                     width: 18, height: 18, borderRadius: 5,
                     border: `2px solid ${selectedStores.includes(store) ? '#00B894' : '#D8E6F0'}`,
                     background: selectedStores.includes(store) ? '#00B894' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, cursor: 'pointer',
+                    flexShrink: 0,
                     transition: 'all 0.12s',
-                  }}
-                  onClick={() => toggleStore(store)}>
+                  }}>
                     {selectedStores.includes(store) && <CheckIcon size={10} color="#fff" />}
                   </div>
                   <span style={{
@@ -483,7 +491,7 @@ export default function DesktopView({ onMobile }: Props) {
             {/* Price Range */}
             <div style={{ marginBottom: 20 }}>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#9AAABB',
+                fontSize: 11, fontWeight: 700, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 textTransform: 'uppercase', letterSpacing: '0.05em',
                 marginBottom: 10,
@@ -495,7 +503,7 @@ export default function DesktopView({ onMobile }: Props) {
                   flex: 1, background: '#F2F4F7', borderRadius: 8,
                   padding: '8px 10px', border: '1px solid #E8EDF2',
                 }}>
-                  <div style={{ fontSize: 9, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
+                  <div style={{ fontSize: 9, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
                     Desde
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
@@ -506,7 +514,7 @@ export default function DesktopView({ onMobile }: Props) {
                   flex: 1, background: '#F2F4F7', borderRadius: 8,
                   padding: '8px 10px', border: '1px solid #E8EDF2',
                 }}>
-                  <div style={{ fontSize: 9, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
+                  <div style={{ fontSize: 9, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
                     Hasta
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
@@ -525,7 +533,7 @@ export default function DesktopView({ onMobile }: Props) {
             {/* Availability */}
             <div>
               <div style={{
-                fontSize: 11, fontWeight: 700, color: '#9AAABB',
+                fontSize: 11, fontWeight: 700, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 textTransform: 'uppercase', letterSpacing: '0.05em',
                 marginBottom: 10,
@@ -566,7 +574,7 @@ export default function DesktopView({ onMobile }: Props) {
                 Resultados para "{query || 'Samsung'}"
               </h1>
               <p style={{
-                fontSize: 13, color: '#9AAABB',
+                fontSize: 13, color: '#5d7ea0',
                 fontFamily: "'DM Sans', sans-serif",
                 margin: '4px 0 0',
               }}>
@@ -576,7 +584,7 @@ export default function DesktopView({ onMobile }: Props) {
             <div style={{ display: 'flex', gap: 8 }}>
               {SORT_OPTIONS.map(({ key, label }) => (
                 <button key={key} onClick={() => setSortBy(key)} style={{
-                  padding: '8px 14px', borderRadius: 10,
+                  padding: '8px 14px', minHeight: 44, borderRadius: 10,
                   border: sortBy === key ? '1.5px solid #00B894' : '1px solid #E8EDF2',
                   background: sortBy === key ? '#E6F7F3' : '#fff',
                   color: sortBy === key ? '#00B894' : '#5d7ea0',
@@ -613,7 +621,7 @@ export default function DesktopView({ onMobile }: Props) {
           {visibleProducts.length === 0 ? (
             <div style={{
               background: '#fff', borderRadius: 14, padding: '40px 20px',
-              textAlign: 'center', color: '#9AAABB',
+              textAlign: 'center', color: '#5d7ea0',
               fontFamily: "'DM Sans', sans-serif", fontSize: 14,
             }}>
               No hay productos que coincidan con los filtros seleccionados.
