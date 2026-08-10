@@ -1,0 +1,10 @@
+{
+  "description": "Compare product prices across multiple stores in the Dominican Republic to find the best deals, save money, and make informed shopping decisions.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

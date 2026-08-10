@@ -1,0 +1,362 @@
+import { useState } from 'react'
+import { PRODUCTS, formatPrice } from '../data/mock'
+import {
+  ChevronLeft, MapPinIcon, TruckIcon, CheckIcon,
+  HeartIcon, StarIcon, ArrowRightIcon,
+} from '../components/Icons'
+
+// PhoneIcon not in set — use a simple inline version
+function Globe({ size = 16, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+    </svg>
+  )
+}
+
+function ExternalLink({ size = 14, color = 'currentColor' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+    </svg>
+  )
+}
+
+const BRANCHES = [
+  { name: 'Plaza Lama Churchill', address: 'Av. Winston Churchill 49, Santo Domingo', distance: '1.2 km', open: true },
+  { name: 'Plaza Lama Megacentro', address: 'Av. Charles de Gaulle, Santo Domingo Este', distance: '4.8 km', open: true },
+  { name: 'Plaza Lama Santiago', address: 'Av. 27 de Febrero, Santiago', distance: '6.1 km', open: false },
+]
+
+interface Props {
+  onBack: () => void
+  onProduct: (p: any) => void
+}
+
+export default function StoreDetailScreen({ onBack, onProduct }: Props) {
+  const [tab, setTab] = useState<'productos' | 'sucursales'>('productos')
+  const storeName = 'Plaza Lama'
+  const storeColor = '#C0392B'
+  const storeAbbr = 'PL'
+
+  const storeProducts = PRODUCTS.filter(p => p.prices[0].store === storeName || p.prices.some(sp => sp.store === storeName))
+
+  return (
+    <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{
+        background: '#fff',
+        borderBottom: '1px solid #E8EDF2',
+      }}>
+        {/* Back bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px 0' }}>
+          <button
+            onClick={onBack}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: '#F2F4F7', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <ChevronLeft size={18} color="#0F1D2D" />
+          </button>
+          <span style={{
+            fontSize: 15, fontWeight: 600,
+            fontFamily: "'Poppins', sans-serif",
+            color: '#0F1D2D',
+          }}>
+            Detalle de tienda
+          </span>
+        </div>
+
+        {/* Store hero */}
+        <div style={{ padding: '20px 20px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+            {/* Store logo */}
+            <div style={{
+              width: 72, height: 72, borderRadius: 18,
+              background: storeColor + '14',
+              border: `2px solid ${storeColor}30`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{
+                fontSize: 28, fontWeight: 900,
+                fontFamily: "'Poppins', sans-serif",
+                color: storeColor,
+              }}>
+                {storeAbbr}
+              </span>
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <h1 style={{
+                fontSize: 22, fontWeight: 700,
+                fontFamily: "'Poppins', sans-serif",
+                color: '#0F1D2D', margin: '0 0 4px',
+                letterSpacing: '-0.03em',
+              }}>
+                {storeName}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <StarIcon size={13} />
+                  <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
+                    4.3
+                  </span>
+                </div>
+                <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+                  · {BRANCHES.length} sucursales
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, color: '#00B894',
+                  fontFamily: "'Poppins', sans-serif",
+                  background: '#E6F7F3', padding: '2px 8px', borderRadius: 999,
+                }}>
+                  ABIERTO
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick info pills */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            {[
+              { icon: <TruckIcon size={13} color="#00B894" />, label: 'Delivery disponible' },
+              { icon: <MapPinIcon size={13} color="#5d7ea0" />, label: '1.2 km · Churchill' },
+              { icon: <Globe size={13} color="#5d7ea0" />, label: 'plazalama.com' },
+            ].map((pill, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: '#F2F4F7', borderRadius: 999,
+                padding: '6px 12px',
+              }}>
+                {pill.icon}
+                <span style={{
+                  fontSize: 12, color: '#5d7ea0',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {pill.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8, paddingBottom: 16 }}>
+            <button style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 0', border: '1.5px solid #E8EDF2', borderRadius: 12,
+              background: '#fff', color: '#0F1D2D', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
+            }}>
+              <MapPinIcon size={15} color="#0F1D2D" />
+              Ver en mapa
+            </button>
+            <button style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '11px 0', border: 'none', borderRadius: 12,
+              background: '#00B894', color: '#fff', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+              boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
+            }}>
+              <ExternalLink size={14} color="#fff" />
+              Ir a la tienda
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderTop: '1px solid #F2F4F7' }}>
+            {(['productos', 'sucursales'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                style={{
+                  flex: 1, padding: '12px 0',
+                  border: 'none', background: 'none', cursor: 'pointer',
+                  borderBottom: tab === t ? '2.5px solid #00B894' : '2.5px solid transparent',
+                  fontSize: 13, fontWeight: tab === t ? 700 : 400,
+                  fontFamily: "'Poppins', sans-serif",
+                  color: tab === t ? '#00B894' : '#9AAABB',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {t === 'productos' ? 'Productos' : 'Sucursales'}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '16px 16px 0' }}>
+        {tab === 'productos' ? (
+          <>
+            {/* Current deals header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              marginBottom: 12,
+            }}>
+              <span style={{
+                fontSize: 15, fontWeight: 700,
+                fontFamily: "'Poppins', sans-serif",
+                color: '#0F1D2D',
+              }}>
+                Ofertas actuales
+              </span>
+              <span style={{
+                fontSize: 11, color: '#9AAABB',
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                {storeProducts.length} productos
+              </span>
+            </div>
+
+            {storeProducts.map(product => {
+              const sp = product.prices.find(p => p.store === storeName) ?? product.prices[0]
+              const isCheapest = product.prices[0].store === storeName
+
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => onProduct(product)}
+                  style={{
+                    background: '#fff', borderRadius: 16,
+                    border: `1px solid ${isCheapest ? '#00B89430' : '#E8EDF2'}`,
+                    marginBottom: 12, overflow: 'hidden',
+                    display: 'flex', gap: 12, padding: '12px 14px',
+                    cursor: 'pointer',
+                    boxShadow: isCheapest ? '0 2px 12px rgba(0,184,148,0.08)' : '0 1px 4px rgba(15,29,45,0.04)',
+                  }}
+                >
+                  <div style={{
+                    width: 60, height: 60, borderRadius: 12,
+                    background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
+                    border: '1px solid #E8EDF2',
+                  }}>
+                    <img src={product.image} alt={product.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 600,
+                      fontFamily: "'DM Sans', sans-serif",
+                      color: '#0F1D2D', marginBottom: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {product.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        fontSize: 17, fontWeight: 700,
+                        fontFamily: "'Poppins', sans-serif",
+                        color: isCheapest ? '#00B894' : '#0F1D2D',
+                        letterSpacing: '-0.03em',
+                      }}>
+                        {formatPrice(sp.price)}
+                      </span>
+                      {isCheapest && (
+                        <span style={{
+                          fontSize: 9, fontWeight: 700, color: '#fff',
+                          fontFamily: "'Poppins', sans-serif",
+                          background: '#00B894', padding: '2px 6px', borderRadius: 999,
+                        }}>
+                          MÁS BARATO
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <span style={{
+                        fontSize: 11, color: '#9AAABB',
+                        fontFamily: "'DM Sans', sans-serif",
+                        textDecoration: 'line-through',
+                      }}>
+                        {formatPrice(product.previousPrice)}
+                      </span>
+                      <span style={{
+                        fontSize: 11, color: '#FF9F1C', fontWeight: 600,
+                        fontFamily: "'DM Sans', sans-serif",
+                        background: '#FFF3E0', padding: '1px 6px', borderRadius: 999,
+                      }}>
+                        -{product.discount}%
+                      </span>
+                    </div>
+                  </div>
+                  <HeartIcon size={16} color="#D8E6F0" />
+                </div>
+              )
+            })}
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <span style={{
+                fontSize: 15, fontWeight: 700,
+                fontFamily: "'Poppins', sans-serif",
+                color: '#0F1D2D',
+              }}>
+                Sucursales · {BRANCHES.length} locales
+              </span>
+            </div>
+            {BRANCHES.map((branch, i) => (
+              <div key={i} style={{
+                background: '#fff', borderRadius: 16,
+                border: '1px solid #E8EDF2',
+                padding: '14px 16px', marginBottom: 12,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                  <div style={{
+                    fontSize: 14, fontWeight: 700,
+                    fontFamily: "'Poppins', sans-serif",
+                    color: '#0F1D2D',
+                  }}>
+                    {branch.name}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    fontFamily: "'DM Sans', sans-serif",
+                    color: branch.open ? '#00B894' : '#FF3B3B',
+                    background: branch.open ? '#E6F7F3' : '#FFF0F0',
+                    padding: '2px 8px', borderRadius: 999,
+                  }}>
+                    {branch.open ? 'Abierto' : 'Cerrado'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                  <MapPinIcon size={13} color="#9AAABB" />
+                  <span style={{
+                    fontSize: 12, color: '#9AAABB',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {branch.address}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{
+                    fontSize: 12, fontWeight: 600, color: '#00B894',
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}>
+                    <MapPinIcon size={12} color="#00B894" />
+                    {branch.distance}
+                  </span>
+                  <button style={{
+                    background: '#F2F4F7', border: 'none', borderRadius: 8,
+                    padding: '7px 14px', cursor: 'pointer',
+                    fontSize: 12, fontWeight: 600, color: '#0F1D2D',
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: 'flex', alignItems: 'center', gap: 5,
+                  }}>
+                    <MapPinIcon size={12} color="#5d7ea0" />
+                    Cómo llegar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
