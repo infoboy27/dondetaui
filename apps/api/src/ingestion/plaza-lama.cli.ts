@@ -62,7 +62,13 @@ async function resolveUrls(discovery: PlazaLamaCatalogDiscovery): Promise<string
 }
 
 async function main() {
-  const browser = await chromium.launch()
+  // In the ingestion-worker container, Chromium is installed via apt (see
+  // Dockerfile.ingestion) instead of Playwright's own bundled download.
+  // Locally (or anywhere that env var isn't set) Playwright uses its own
+  // managed browser as normal.
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
+  })
   // One page, reused for every navigation (discovery + each product) — this is what
   // keeps Playwright's memory footprint bounded to a single browser instance for the
   // whole run, rather than one per request.
