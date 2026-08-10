@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { PRODUCTS, CATEGORIES, formatPrice } from '../data/mock'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon } from '../components/Icons'
+import { getBestOffer, getOfferTotal } from '../domain/offers'
 import type { Product } from '../types'
+
+type SortKey = 'price-asc' | 'price-desc' | 'relevance'
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'price-asc', label: 'Precio ↑' },
+  { key: 'price-desc', label: 'Precio ↓' },
+  { key: 'relevance', label: 'Relevancia' },
+]
 
 interface Props {
   onMobile: () => void
@@ -246,12 +255,33 @@ export default function DesktopView({ onMobile }: Props) {
   const [selectedStores, setSelectedStores] = useState<string[]>([])
   const [minPrice, setMinPrice] = useState(0)
   const [maxPrice, setMaxPrice] = useState(100000)
+  const [sortBy, setSortBy] = useState<SortKey>('price-asc')
 
   const toggleStore = (s: string) => {
     setSelectedStores(prev =>
       prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
     )
   }
+
+  const visibleProducts = useMemo(() => {
+    const filtered = PRODUCTS.filter(p => {
+      const inStoreFilter =
+        selectedStores.length === 0 ||
+        p.prices.some(price => selectedStores.includes(price.store))
+      const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
+      const inPriceRange = total >= minPrice && total <= maxPrice
+      return inStoreFilter && inPriceRange
+    })
+
+    if (sortBy === 'relevance') return filtered
+
+    const sorted = [...filtered].sort((a, b) => {
+      const totalA = getOfferTotal(getBestOffer(a.prices) ?? a.prices[0])
+      const totalB = getOfferTotal(getBestOffer(b.prices) ?? b.prices[0])
+      return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
+    })
+    return sorted
+  }, [selectedStores, minPrice, maxPrice, sortBy])
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100vh' }}>
@@ -540,21 +570,21 @@ export default function DesktopView({ onMobile }: Props) {
                 fontFamily: "'DM Sans', sans-serif",
                 margin: '4px 0 0',
               }}>
-                {PRODUCTS.length} productos comparados en {STORE_FILTERS.length} tiendas
+                {visibleProducts.length} productos comparados en {STORE_FILTERS.length} tiendas
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {['Precio ↑', 'Precio ↓', 'Relevancia'].map((s, i) => (
-                <button key={s} style={{
+              {SORT_OPTIONS.map(({ key, label }) => (
+                <button key={key} onClick={() => setSortBy(key)} style={{
                   padding: '8px 14px', borderRadius: 10,
-                  border: i === 0 ? '1.5px solid #00B894' : '1px solid #E8EDF2',
-                  background: i === 0 ? '#E6F7F3' : '#fff',
-                  color: i === 0 ? '#00B894' : '#5d7ea0',
+                  border: sortBy === key ? '1.5px solid #00B894' : '1px solid #E8EDF2',
+                  background: sortBy === key ? '#E6F7F3' : '#fff',
+                  color: sortBy === key ? '#00B894' : '#5d7ea0',
                   fontSize: 13, fontWeight: 600,
                   fontFamily: "'DM Sans', sans-serif",
                   cursor: 'pointer',
                 }}>
-                  {s}
+                  {label}
                 </button>
               ))}
             </div>
@@ -580,9 +610,19 @@ export default function DesktopView({ onMobile }: Props) {
           </div>
 
           {/* Product rows */}
-          {PRODUCTS.map((p, i) => (
-            <DesktopProductRow key={p.id} product={p} rank={i + 1} />
-          ))}
+          {visibleProducts.length === 0 ? (
+            <div style={{
+              background: '#fff', borderRadius: 14, padding: '40px 20px',
+              textAlign: 'center', color: '#9AAABB',
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+            }}>
+              No hay productos que coincidan con los filtros seleccionados.
+            </div>
+          ) : (
+            visibleProducts.map((p, i) => (
+              <DesktopProductRow key={p.id} product={p} rank={i + 1} />
+            ))
+          )}
         </main>
       </div>
     </div>
