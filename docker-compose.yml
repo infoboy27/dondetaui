@@ -9,7 +9,7 @@ services:
       - "5432:5432"
     volumes:
       - dondeta_postgres:/var/lib/postgresql/data
-      - ./apps/api/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+      - ./apps/api/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dondeta -d dondeta"]
       interval: 5s
