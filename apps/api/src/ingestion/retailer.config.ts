@@ -1,4 +1,7 @@
-export type RetailerKey = 'jumbo' | 'sirena' | 'corripio' | 'pricesmart'
+// PriceSmart is not here — its catalog is Nuxt client-rendered like Plaza Lama's, so it
+// gets its own Playwright-based pipeline (pricesmart.discovery.ts / pricesmart.adapter.ts
+// / pricesmart.cli.ts) instead of this generic fetch()-based one.
+export type RetailerKey = 'jumbo' | 'sirena' | 'corripio'
 
 export interface RetailerConfig {
   key: RetailerKey
@@ -63,16 +66,5 @@ export const RETAILER_CONFIGS: Record<RetailerKey, RetailerConfig> = {
     productPatterns: [/\.html$/i],
     excludedPrefixes: ['/customer', '/checkout', '/cart', '/wishlist', '/search', '/envios-y-devoluciones', '/preguntas-frecuentes', '/politicas'],
     defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
-  },
-  pricesmart: {
-    key: 'pricesmart', name: 'PriceSmart', slug: 'pricesmart', abbr: 'PS', primaryColor: '#00529B',
-    origin: 'https://www.pricesmart.com', websiteUrl: 'https://www.pricesmart.com/es-do',
-    // "línea blanca" = major appliances (fridges/washers/stoves) in DR retail
-    // terminology. Not /es-do (matches the entire site) or /categorias (picker).
-    seedUrls: ['https://www.pricesmart.com/es-do/linea-blanca'],
-    crawlPrefixes: ['/es-do/linea-blanca'],
-    productPatterns: [/\/(?:product|producto|p)\//i],
-    excludedPrefixes: ['/es-do/account', '/es-do/cart', '/es-do/checkout', '/es-do/membership'],
-    defaultCategory: { name: 'Línea Blanca', slug: 'linea-blanca' },
   },
 }

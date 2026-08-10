@@ -19,7 +19,7 @@ while true; do
   run jumbo node dist/ingestion/retailer.cli.js jumbo
   run sirena node dist/ingestion/retailer.cli.js sirena
   run corripio node dist/ingestion/retailer.cli.js corripio
-  run pricesmart node dist/ingestion/retailer.cli.js pricesmart
+  run pricesmart node dist/ingestion/pricesmart.cli.js
 
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"

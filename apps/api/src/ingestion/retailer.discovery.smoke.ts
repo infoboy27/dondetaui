@@ -41,11 +41,4 @@ assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/tv-y-tecnologia/televis
 assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/equipaje/maletas/maletas-hasta-74cm', jumbo))
 assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/supermercado/bebe/alimentacion-de-bebe', jumbo))
 
-const pricesmart = RETAILER_CONFIGS.pricesmart
-assert(isCrawlUrl('https://www.pricesmart.com/es-do/linea-blanca/refrigeradores', pricesmart))
-assert(isLikelyRetailerProductUrl('https://www.pricesmart.com/es-do/linea-blanca/product/televisor-samsung-123456', pricesmart))
-assert(!isLikelyRetailerProductUrl('https://www.pricesmart.com/es-do/membership', pricesmart))
-// The old scope matched the entire site (/es-do) — must be narrowed now.
-assert(!isCrawlUrl('https://www.pricesmart.com/es-do/alimentos-para-todos', pricesmart))
-
 console.log('multi-retailer discovery smoke test passed')
