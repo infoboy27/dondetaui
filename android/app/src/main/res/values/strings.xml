@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DóndeTa</string>
+    <string name="title_activity_main">DóndeTa</string>
+    <string name="package_name">com.jfmcss.dondeta</string>
+    <string name="custom_url_scheme">com.jfmcss.dondeta</string>
+</resources>
