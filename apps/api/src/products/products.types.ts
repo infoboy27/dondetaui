@@ -12,13 +12,6 @@ export interface OfferDto {
   url?: string
 }
 
-export interface PaginatedProductsDto {
-  items: ProductDto[]
-  total: number
-  page: number
-  pageSize: number
-}
-
 export interface ProductDto {
   id: string
   slug: string

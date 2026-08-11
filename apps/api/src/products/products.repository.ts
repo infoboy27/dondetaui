@@ -41,33 +41,6 @@ export class ProductsRepository {
     return Promise.all(result.rows.map(row => this.hydrateProduct(row)))
   }
 
-  async listPaged(query: string | undefined, page: number, pageSize: number): Promise<{ items: ProductDto[]; total: number }> {
-    const { where, params } = this.searchClause(query)
-
-    const countResult = await this.pool.query<{ count: string }>(
-      `select count(*)::text as count
-      from products p
-      join product_variants pv on pv.product_id = p.id and pv.is_primary = true
-      join categories c on c.id = p.category_id
-      ${where}`,
-      params,
-    )
-    const total = Number(countResult.rows[0]?.count ?? 0)
-
-    const limitParam = params.length + 1
-    const offsetParam = params.length + 2
-    const result = await this.pool.query<ProductRow>(
-      `${this.baseSelect()}
-      ${where}
-      order by p.name asc
-      limit $${limitParam} offset $${offsetParam}`,
-      [...params, pageSize, (page - 1) * pageSize],
-    )
-
-    const items = await Promise.all(result.rows.map(row => this.hydrateProduct(row)))
-    return { items, total }
-  }
-
   private searchClause(query?: string): { where: string; params: unknown[] } {
     if (!query?.trim()) return { where: '', params: [] }
     return {
