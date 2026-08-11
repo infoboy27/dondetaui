@@ -1,4 +1,6 @@
-import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon } from '../components/Icons'
+import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon } from '../components/Icons'
+
+const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 import { userInitials } from '../domain/user'
 import type { User } from '../types'
 
@@ -203,6 +205,77 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Community */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <div style={{
+          fontSize: 11, fontWeight: 700, color: '#9AAABB',
+          fontFamily: "'DM Sans', sans-serif",
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+          marginBottom: 8, paddingLeft: 4,
+        }}>
+          Comunidad
+        </div>
+        <button
+          onClick={() => window.open(DISCORD_INVITE_URL, '_blank', 'noopener,noreferrer')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px', background: '#fff', border: '1px solid #E8EDF2',
+            borderRadius: 16, cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: '#5865F214',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <DiscordIcon size={18} />
+          </div>
+          <span style={{
+            flex: 1, fontSize: 14, fontWeight: 500,
+            fontFamily: "'DM Sans', sans-serif",
+            color: '#0F1D2D',
+          }}>
+            Únete a nuestro Discord
+          </span>
+          <ChevronRight size={16} color="#B0C4D8" />
+        </button>
+      </div>
+
+      {/* App availability */}
+      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 10 }}>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+          background: '#fff', border: '1px solid #E8EDF2', borderRadius: 14,
+          padding: '12px 14px',
+        }}>
+          <AndroidIcon size={22} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
+              Android
+            </div>
+            <div style={{ fontSize: 10, color: '#00B894', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+              Disponible
+            </div>
+          </div>
+        </div>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
+          background: '#fff', border: '1px solid #E8EDF2', borderRadius: 14,
+          padding: '12px 14px', opacity: 0.7,
+        }}>
+          <AppleIcon size={20} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
+              iOS
+            </div>
+            <div style={{ fontSize: 10, color: '#9AAABB', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+              Próximamente
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Made in RD */}

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -18,6 +18,8 @@ import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
 type DesktopScreen = 'results' | 'categories' | 'stores' | 'deals' | 'alerts'
+
+const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price-asc', label: 'Precio ↑' },
@@ -1235,6 +1237,60 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
         </>
         )}
       </div>
+
+      {/* Footer: community + platform availability */}
+      <footer style={{
+        borderTop: '1px solid #E8EDF2', background: '#fff', marginTop: 40,
+        padding: '28px 40px',
+      }}>
+        <div style={{
+          maxWidth: 1360, margin: '0 auto',
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 20,
+        }}>
+          <a
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              textDecoration: 'none', border: '1px solid #E8EDF2', borderRadius: 12,
+              padding: '10px 16px',
+            }}
+          >
+            <DiscordIcon size={20} />
+            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
+              Únete a nuestro Discord
+            </span>
+          </a>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              border: '1px solid #E8EDF2', borderRadius: 12, padding: '10px 14px',
+            }}>
+              <AndroidIcon size={18} />
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>Android</div>
+                <div style={{ fontSize: 9, color: '#00B894', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>Disponible</div>
+              </div>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, opacity: 0.7,
+              border: '1px solid #E8EDF2', borderRadius: 12, padding: '10px 14px',
+            }}>
+              <AppleIcon size={16} />
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>iOS</div>
+                <div style={{ fontSize: 9, color: '#9AAABB', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>Próximamente</div>
+              </div>
+            </div>
+          </div>
+
+          <span style={{ fontSize: 12, color: '#B0C4D8', fontFamily: "'DM Sans', sans-serif" }}>
+            Hecho en 🇩🇴 RD con ❤️ · DóndeTa v1.0.0
+          </span>
+        </div>
+      </footer>
     </div>
   )
 }
