@@ -55,9 +55,10 @@ export class IngestionRepository {
            set name = $2,
                brand = $3,
                image_url = coalesce($4, image_url),
+               category_id = $5,
                updated_at = now()
            where id = $1`,
-          [productId, item.name, item.brand, item.imageUrl ?? null],
+          [productId, item.name, item.brand, item.imageUrl ?? null, categoryId],
         )
       } else {
         const product = await client.query<{ id: string }>(
