@@ -9,6 +9,7 @@ import { getPriceDropNotifications } from './domain/notifications'
 import { useCatalogProducts } from './hooks/useCatalogProducts'
 import { useAuth } from './hooks/useAuth'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
+import { useFavorites } from './hooks/useFavorites'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SearchScreen from './screens/SearchScreen'
@@ -130,12 +131,16 @@ function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreate
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
+  // Guest favorites stay local (unchanged from before persistence existed).
+  // Logged-in favorites come from the backend instead — see favoriteIds below.
+  const [localFavoriteIds, setLocalFavoriteIds] = useState<Set<string>>(
     () => new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id)),
   )
   const { products: catalogProducts } = useCatalogProducts()
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const priceAlerts = usePriceAlerts(user)
+  const favorites = useFavorites(user)
+  const favoriteIds = user ? new Set(favorites.favorites.map(f => f.productId)) : localFavoriteIds
   const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
   const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
 
@@ -183,7 +188,12 @@ export default function App() {
   }
 
   const toggleFavorite = (id: string) => {
-    setFavoriteIds(prev => {
+    if (user) {
+      if (favoriteIds.has(id)) void favorites.remove(id)
+      else void favorites.create(id)
+      return
+    }
+    setLocalFavoriteIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)

@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { AlertsModule } from './alerts/alerts.module'
 import { AuthModule } from './auth/auth.module'
 import { DatabaseModule } from './database/database.module'
+import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
 import { ProductsModule } from './products/products.module'
 import { StoresModule } from './stores/stores.module'
@@ -16,6 +17,7 @@ import { StoresModule } from './stores/stores.module'
     ProductsModule,
     StoresModule,
     AlertsModule,
+    FavoritesModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
