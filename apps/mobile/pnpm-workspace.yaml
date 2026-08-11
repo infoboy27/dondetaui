@@ -1,0 +1,10 @@
+packages:
+  - '.'
+
+# pnpm 11's default 24h minimumReleaseAge rejects any lockfile entry
+# published more recently than that, including fast-moving transitive deps
+# like electron-to-chromium that publish almost daily. That protection
+# matters for unpinned/dynamic resolution; it adds nothing for
+# --frozen-lockfile installs (EAS Build's install step), which only ever
+# install the exact versions already recorded in pnpm-lock.yaml.
+minimumReleaseAge: 0
