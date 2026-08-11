@@ -3,6 +3,7 @@ import { rankOffers } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
 import { ClockIcon, MapPinIcon, TruckIcon } from './Icons'
+import StoreLogo from './StoreLogo'
 
 interface ProductOfferSummaryProps {
   offers: StorePrice[]
@@ -46,23 +47,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
             borderLeft: index === 0 ? `3px solid ${colors.primary}` : '3px solid transparent',
           }}
         >
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: radii.sm,
-              background: `${offer.color}18`,
-              border: `1.5px solid ${offer.color}30`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ fontSize: 10, fontWeight: 800, fontFamily: fonts.display, color: offer.color }}>
-              {offer.abbr}
-            </span>
-          </div>
+          <StoreLogo store={offer.store} abbr={offer.abbr} color={offer.color} size={30} borderRadius={radii.sm} />
 
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

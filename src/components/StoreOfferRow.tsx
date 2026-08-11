@@ -2,6 +2,7 @@ import { formatPrice } from '../domain/currency'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
 import { ClockIcon, TruckIcon } from './Icons'
+import StoreLogo from './StoreLogo'
 
 interface StoreOfferRowProps {
   offer: StorePrice
@@ -23,30 +24,7 @@ export default function StoreOfferRow({ offer, isBest, savings }: StoreOfferRowP
         transition: 'background 0.12s',
       }}
     >
-      <div
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: 10,
-          background: `${offer.color}18`,
-          border: `1.5px solid ${offer.color}30`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 800,
-            fontFamily: fonts.display,
-            color: offer.color,
-          }}
-        >
-          {offer.abbr}
-        </span>
-      </div>
+      <StoreLogo store={offer.store} abbr={offer.abbr} color={offer.color} size={34} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

@@ -6,6 +6,7 @@ import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notific
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import ProductImage from '../components/ProductImage'
+import StoreLogo from '../components/StoreLogo'
 import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
@@ -33,6 +34,13 @@ const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
 ]
 const STORE_COLORS: Record<string, string> = {
   'Plaza Lama': '#C0392B', Sirena: '#2980B9', Corripio: '#27AE60', Jumbo: '#E67E22', PriceSmart: '#8E44AD',
+}
+// This screen's own "Tiendas" grid only has plain store name strings
+// (STORE_FILTERS), not a full offer/store object with a real .abbr -- and
+// name.slice(0,2) doesn't match the canonical abbr for every store
+// (PriceSmart -> "PR" that way, but "PS" everywhere else in the app).
+const STORE_ABBRS: Record<string, string> = {
+  'Plaza Lama': 'PL', Sirena: 'SI', Corripio: 'CO', Jumbo: 'JU', PriceSmart: 'PS',
 }
 const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
@@ -207,20 +215,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8,
-                  background: sp.color + '18',
-                  border: `1.5px solid ${sp.color}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{
-                    fontSize: 10, fontWeight: 800,
-                    fontFamily: "'Poppins', sans-serif",
-                    color: sp.color,
-                  }}>
-                    {sp.abbr}
-                  </span>
-                </div>
+                <StoreLogo store={sp.store} abbr={sp.abbr} color={sp.color} size={32} borderRadius={8} />
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{
@@ -616,20 +611,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
                   borderRadius: 14, padding: '20px', cursor: 'pointer',
                   textAlign: 'left', minHeight: 44,
                 }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 10,
-                    background: STORE_COLORS[store] + '18',
-                    border: `1.5px solid ${STORE_COLORS[store]}40`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <span style={{
-                      fontSize: 13, fontWeight: 800, fontFamily: "'Poppins', sans-serif",
-                      color: STORE_COLORS[store],
-                    }}>
-                      {store.slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
+                  <StoreLogo store={store} abbr={STORE_ABBRS[store]} color={STORE_COLORS[store]} size={44} />
                   <span style={{
                     fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
                     color: '#0F1D2D',

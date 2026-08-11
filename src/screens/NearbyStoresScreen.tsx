@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, MapPinIcon, ChevronRight, SearchIcon } from '../components/Icons'
+import StoreLogo from '../components/StoreLogo'
 
 function StarIcon({ size = 13 }: { size?: number }) {
   return (
@@ -228,21 +229,7 @@ export default function NearbyStoresScreen({ onBack, onStore }: Props) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10,
-                  background: store.color + '15',
-                  border: `1.5px solid ${store.color}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <span style={{
-                    fontSize: 13, fontWeight: 900,
-                    fontFamily: "'Poppins', sans-serif",
-                    color: store.color,
-                  }}>
-                    {store.abbr}
-                  </span>
-                </div>
+                <StoreLogo store={store.name} abbr={store.abbr} color={store.color} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 12, fontWeight: 700,
@@ -315,21 +302,7 @@ export default function NearbyStoresScreen({ onBack, onStore }: Props) {
                 display: 'flex', alignItems: 'center', gap: 12,
               }}
             >
-              <div style={{
-                width: 42, height: 42, borderRadius: 12,
-                background: store.color + '15',
-                border: `1.5px solid ${store.color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  fontSize: 14, fontWeight: 900,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: store.color,
-                }}>
-                  {store.abbr}
-                </span>
-              </div>
+              <StoreLogo store={store.name} abbr={store.abbr} color={store.color} size={42} borderRadius={12} />
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
