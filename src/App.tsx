@@ -183,6 +183,11 @@ export default function App() {
         borderRadius: isDesktop ? 44 : 0,
         overflow: 'hidden',
         position: 'relative',
+        // Without this, `position: fixed` descendants (BottomNav, ProductDetailScreen's
+        // CTA bar) anchor to the real browser viewport instead of this phone-frame box —
+        // `contain: layout` makes this element a containing block for them too, so they
+        // stay pinned to the mockup instead of the actual window edge on desktop.
+        contain: isDesktop ? 'layout' : undefined,
         boxShadow: isDesktop ? '0 24px 64px rgba(15,29,45,0.25), 0 0 0 12px #1a2a3a' : 'none',
         display: 'flex',
         flexDirection: 'column',
