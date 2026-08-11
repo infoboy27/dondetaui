@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
 import { fontsToLoad } from '../src/design/fonts'
+import { AppStateProvider } from '../src/state/AppStateContext'
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -21,11 +22,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayout}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="product/[slug]" />
-        </Stack>
+        <AppStateProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="product/[slug]" />
+          </Stack>
+        </AppStateProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )

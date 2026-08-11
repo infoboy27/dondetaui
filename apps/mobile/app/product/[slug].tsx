@@ -10,10 +10,12 @@ import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 import { shadows } from '../../src/design/shadows'
 import ProductImage from '../../src/components/ProductImage'
+import { useAppState } from '../../src/state/AppStateContext'
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const router = useRouter()
+  const { favoriteIds, toggleFavorite } = useAppState()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,6 +76,17 @@ export default function ProductDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.back}>
           <Text style={styles.backText}>‹</Text>
         </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={() => toggleFavorite(product.id)}
+          style={styles.back}
+          accessibilityRole="button"
+          accessibilityLabel={favoriteIds.has(product.id) ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+        >
+          <Text style={[styles.heart, favoriteIds.has(product.id) && styles.heartActive]}>
+            {favoriteIds.has(product.id) ? '♥' : '♡'}
+          </Text>
+        </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.top}>
@@ -113,9 +126,11 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, gap: spacing.md },
-  header: { height: 56, paddingHorizontal: spacing.lg, justifyContent: 'center', backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { height: 56, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border },
   back: { width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 28, lineHeight: 28, color: colors.navy },
+  heart: { fontSize: 18, color: colors.navy400 },
+  heartActive: { color: colors.accent },
   content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
   top: { alignItems: 'center', backgroundColor: colors.card, borderRadius: radii.xxl, padding: spacing.xl, borderWidth: 1, borderColor: colors.border },
   image: { width: 200, height: 200, borderRadius: radii.xl },

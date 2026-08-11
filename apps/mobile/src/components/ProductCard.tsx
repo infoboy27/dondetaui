@@ -6,15 +6,28 @@ import { colors, radii, spacing } from '../design/tokens'
 import { fonts } from '../design/fonts'
 import { shadows } from '../design/shadows'
 import ProductImage from './ProductImage'
+import { useAppState } from '../state/AppStateContext'
 
 export default function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
   const offer = getBestOffer(product.prices)
+  const { favoriteIds, toggleFavorite } = useAppState()
+  const isFavorite = favoriteIds.has(product.id)
 
   return (
     <Pressable onPress={onPress} style={styles.card}>
       <ProductImage uri={product.image} style={styles.image} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.brand}>{product.brand}</Text>
+        <View style={styles.topRow}>
+          <Text style={styles.brand}>{product.brand}</Text>
+          <Pressable
+            onPress={() => toggleFavorite(product.id)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={isFavorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+          >
+            <Text style={[styles.heart, isFavorite && styles.heartActive]}>{isFavorite ? '♥' : '♡'}</Text>
+          </Pressable>
+        </View>
         <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
         <Text style={styles.subtitle}>{product.model || product.subtitle}</Text>
         {offer ? (
@@ -43,6 +56,9 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   image: { width: 92, height: 92, borderRadius: radii.md, backgroundColor: colors.navy50 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heart: { fontSize: 18, color: colors.navy400 },
+  heartActive: { color: colors.accent },
   brand: { color: colors.primary, fontFamily: fonts.display.bold, fontSize: 11 },
   name: { color: colors.navy, fontFamily: fonts.display.bold, fontSize: 15, lineHeight: 20, marginTop: 2 },
   subtitle: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 12, marginTop: 3 },
