@@ -12,7 +12,7 @@ const APPLIANCE_CATEGORY_KEYWORDS = [
   'nevera', 'refriger', 'congelad', 'freezer',
   'estufa', 'horno', 'microond', 'cocina', 'cocc',
   'lavador', 'lavaplat', 'secador', 'lavad',
-  'aire acondicion', 'climatiz', 'abanico', 'ventilad',
+  'acondicionad', 'climatiz', 'abanico', 'ventilad',
   'licuad', 'batidor', 'cafeter', 'tostad', 'plancha',
   'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
   'dispensador', 'freidora', 'air fryer',
