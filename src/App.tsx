@@ -129,14 +129,23 @@ function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreate
   )
 }
 
+const GUEST_FAVORITES_KEY = 'dondeta_guest_favorites'
+
+function readGuestFavorites(): Set<string> {
+  try {
+    const raw = localStorage.getItem(GUEST_FAVORITES_KEY)
+    if (raw) return new Set(JSON.parse(raw))
+  } catch { /* ignore malformed/unavailable storage */ }
+  return new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id))
+}
+
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
-  // Guest favorites stay local (unchanged from before persistence existed).
-  // Logged-in favorites come from the backend instead — see favoriteIds below.
-  const [localFavoriteIds, setLocalFavoriteIds] = useState<Set<string>>(
-    () => new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id)),
-  )
+  // Guest favorites persist in localStorage until the guest logs in, at which
+  // point they're merged into the account's real favorites (see the effect
+  // below) — logged-in favorites come from the backend instead, see favoriteIds.
+  const [localFavoriteIds, setLocalFavoriteIds] = useState<Set<string>>(readGuestFavorites)
   const { products: catalogProducts } = useCatalogProducts()
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const priceAlerts = usePriceAlerts(user)
@@ -156,6 +165,27 @@ export default function App() {
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
+
+  useEffect(() => {
+    if (user) return
+    try {
+      localStorage.setItem(GUEST_FAVORITES_KEY, JSON.stringify([...localFavoriteIds]))
+    } catch { /* storage unavailable (private browsing, quota) — guest favorites just won't persist */ }
+  }, [user, localFavoriteIds])
+
+  // Merge favorites collected while browsing as a guest into the account the
+  // moment login/register succeeds, then clear the local copy so it doesn't
+  // linger and get merged again next time this browser logs into some other account.
+  useEffect(() => {
+    if (!user || localFavoriteIds.size === 0) return
+    const idsToMerge = [...localFavoriteIds]
+    setLocalFavoriteIds(new Set())
+    try {
+      localStorage.removeItem(GUEST_FAVORITES_KEY)
+    } catch { /* ignore */ }
+    for (const id of idsToMerge) void favorites.create(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
 
   useEffect(() => {
     const tab = pathToTab(location.pathname)
