@@ -3,6 +3,7 @@ import { getBestOffer } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
 import type { Product } from '../types'
 import { HeartIcon } from './Icons'
+import ProductImage from './ProductImage'
 
 interface ProductCardProps {
   product: Product
@@ -58,11 +59,7 @@ export default function ProductCard({ product, onProduct, isFavorite, onToggleFa
       }}
     >
       <div style={{ position: 'relative', background: '#F8FAFC', height: 140 }}>
-        <img
-          src={product.image}
-          alt={product.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <ProductImage src={product.image} alt={product.name} />
         <div style={{ position: 'absolute', top: 8, left: 8 }}>
           <DiscountBadge pct={product.discount} />
         </div>

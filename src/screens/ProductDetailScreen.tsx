@@ -10,6 +10,7 @@ import {
   StarIcon,
   TrendingDownIcon,
 } from '../components/Icons'
+import ProductImage from '../components/ProductImage'
 import { formatPrice } from '../data/mock'
 import { getBestOffer } from '../domain/offers'
 import { useProductReviews } from '../hooks/useProductReviews'
@@ -167,11 +168,7 @@ export default function ProductDetailScreen({
       {/* Product Image */}
       <div style={{ background: '#fff', borderBottom: '1px solid #E8EDF2' }}>
         <div style={{ height: 240, background: '#F8FAFC', overflow: 'hidden' }}>
-          <img
-            src={product.image}
-            alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <ProductImage src={product.image} alt={product.name} />
         </div>
         <div style={{ padding: '16px 20px 20px' }}>
           <div style={{

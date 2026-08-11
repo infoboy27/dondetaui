@@ -2,9 +2,10 @@ import { useState, useMemo } from 'react'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
-import { getPriceDropNotifications } from '../domain/notifications'
+import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import ProductImage from '../components/ProductImage'
 import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
@@ -21,6 +22,7 @@ interface Props {
   alertedIds: Set<string>
   onToggleAlert: (id: string) => void
   user: User | null
+  onLogout: () => void
 }
 
 const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
@@ -81,8 +83,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
           background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
           border: '1px solid #E8EDF2',
         }}>
-          <img src={product.image} alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <ProductImage src={product.image} alt={product.name} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -301,7 +302,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
   )
 }
 
-export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user }: Props) {
+export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user, onLogout }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
@@ -357,7 +358,10 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user 
       const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
       const inPriceRange = total >= minPrice && total <= maxPrice
       const inCategory = !selectedCategory || matchesCategory(p, selectedCategory)
-      const isDeal = screen !== 'deals' || p.discount > 0
+      // p.discount is never set for real ingested products (see
+      // getRecentPriceDrop's comment) -- fall back to an actual observed
+      // price drop so "Ofertas" isn't permanently empty for real data.
+      const isDeal = screen !== 'deals' || p.discount > 0 || getRecentPriceDrop(p) !== null
       const isAlerted = screen !== 'alerts' || alertedIds.has(p.id)
       const inAvailability = p.prices.some(price =>
         (!stockOnly || price.available) && (!freeShippingOnly || price.shipping.toLowerCase().includes('gratis')),
@@ -517,9 +521,17 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user 
               )}
             </button>
             <button
-              onClick={onMobile}
-              aria-label={user ? user.name ?? user.email : 'Iniciar sesión'}
-              title={user ? user.name ?? user.email : 'Iniciar sesión'}
+              // Previously always called onMobile, so clicking your own
+              // avatar while logged in silently swapped the whole page into
+              // the mobile mockup with no explanation — confusing, and not
+              // what an avatar icon should do. Desktop has no profile screen
+              // of its own yet, so "not logged in" still routes to the
+              // mobile login flow (the only place sign-in actually lives),
+              // but once logged in the icon does the one thing that makes
+              // sense for itself: sign out.
+              onClick={user ? onLogout : onMobile}
+              aria-label={user ? `Cerrar sesión (${user.name ?? user.email})` : 'Iniciar sesión'}
+              title={user ? `Cerrar sesión (${user.name ?? user.email})` : 'Iniciar sesión'}
               style={{
                 width: 38, height: 38, borderRadius: '50%',
                 border: 'none', cursor: 'pointer', padding: 0,
@@ -638,6 +650,13 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user 
             background: '#fff', borderRadius: 16,
             border: '1px solid #E8EDF2',
             padding: '16px', position: 'sticky', top: 80,
+            // Real catalogs can push "Tipo de artículo" well past a single
+            // viewport's height. Without a bound + its own scroll, a sticky
+            // element taller than the viewport just gets its overflow cut
+            // off permanently once stuck — page scroll can't reach it,
+            // because the element itself never moves once pinned.
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
               <FilterIcon size={16} color="#0F1D2D" />

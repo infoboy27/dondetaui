@@ -5,6 +5,7 @@ import { PRODUCTS } from '../data/mock'
 import { formatPrice } from '../domain/currency'
 import { getBestOffer, getSavingsRange } from '../domain/offers'
 import { XIcon, FlashIcon, CheckIcon, ChevronRight } from '../components/Icons'
+import ProductImage from '../components/ProductImage'
 import type { Product } from '../types'
 
 interface Props {
@@ -265,8 +266,7 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
               background: '#F8FAFC', overflow: 'hidden',
               border: '1px solid #E8EDF2', flexShrink: 0,
             }}>
-              <img src={detectedProduct.image} alt={detectedProduct.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <ProductImage src={detectedProduct.image} alt={detectedProduct.name} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{

@@ -245,6 +245,7 @@ export default function App() {
         alertedIds={alertedIds}
         onToggleAlert={handleToggleDesktopAlert}
         user={user}
+        onLogout={logout}
       />
     )
   }

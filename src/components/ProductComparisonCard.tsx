@@ -4,6 +4,7 @@ import { rankOffers } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
 import type { Product } from '../types'
 import { CheckIcon, ChevronDown, HeartIcon } from './Icons'
+import ProductImage from './ProductImage'
 import StoreOfferRow from './StoreOfferRow'
 
 interface ProductComparisonCardProps {
@@ -47,11 +48,7 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
             border: `1px solid ${colors.border}`,
           }}
         >
-          <img
-            src={product.image}
-            alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <ProductImage src={product.image} alt={product.name} />
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>

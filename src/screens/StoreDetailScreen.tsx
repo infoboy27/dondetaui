@@ -1,6 +1,7 @@
 import { formatPrice } from '../data/mock'
 import { useStoreDetail } from '../hooks/useStoreDetail'
 import { ChevronLeft, HeartIcon } from '../components/Icons'
+import ProductImage from '../components/ProductImage'
 
 // PhoneIcon not in set — use a simple inline version
 function Globe({ size = 16, color = 'currentColor' }) {
@@ -219,8 +220,7 @@ export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Prop
                     background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
                     border: '1px solid #E8EDF2',
                   }}>
-                    <img src={product.image} alt={product.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <ProductImage src={product.image} alt={product.name} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{

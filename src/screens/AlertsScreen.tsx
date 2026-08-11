@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatPrice } from '../data/mock'
 import { BellIcon, HeartIcon, XIcon } from '../components/Icons'
+import ProductImage from '../components/ProductImage'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { PriceAlert, Product } from '../types'
 
@@ -39,8 +40,7 @@ function AlertRow({ alert, onProduct, onRemove }: {
         background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
         border: '1px solid #E8EDF2',
       }}>
-        <img src={alert.product.image} alt={alert.product.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <ProductImage src={alert.product.image} alt={alert.product.name} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
@@ -113,8 +113,7 @@ function FavoriteCard({ product, onProduct, onToggleFavorite }: {
         background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
         border: '1px solid #E8EDF2',
       }}>
-        <img src={product.image} alt={product.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <ProductImage src={product.image} alt={product.name} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{

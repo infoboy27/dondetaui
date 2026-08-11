@@ -1,5 +1,6 @@
 import { formatPrice } from '../data/mock'
 import { ChevronLeft, TrendingDownIcon, CheckIcon, BellIcon } from '../components/Icons'
+import ProductImage from '../components/ProductImage'
 import { getPriceDropNotifications } from '../domain/notifications'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
@@ -80,8 +81,7 @@ export default function NotificationsScreen({ alertedIds, onBack, onProduct }: P
                     background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
                     border: '1px solid #E8EDF2',
                   }}>
-                    <img src={n.product.image} alt={n.product.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <ProductImage src={n.product.image} alt={n.product.name} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
