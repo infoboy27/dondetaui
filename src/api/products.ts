@@ -1,10 +1,5 @@
-import type { Product, StorePrice } from '../types'
+import type { Product } from '../types'
 import { apiFetch } from './http'
-
-export interface ProductHistoryPoint {
-  date: string
-  price: number
-}
 
 export const productsApi = {
   list(): Promise<Product[]> {
@@ -18,14 +13,6 @@ export const productsApi = {
 
   get(productId: string): Promise<Product> {
     return apiFetch<Product>(`/products/${encodeURIComponent(productId)}`)
-  },
-
-  offers(productId: string): Promise<StorePrice[]> {
-    return apiFetch<StorePrice[]>(`/products/${encodeURIComponent(productId)}/offers`)
-  },
-
-  history(productId: string): Promise<ProductHistoryPoint[]> {
-    return apiFetch<ProductHistoryPoint[]>(`/products/${encodeURIComponent(productId)}/history`)
   },
 
   barcode(code: string): Promise<Product> {

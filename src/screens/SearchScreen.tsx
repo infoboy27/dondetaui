@@ -9,9 +9,10 @@ interface Props {
 export default function SearchScreen({ onSearch }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
+  const [recentSearches, setRecentSearches] = useState(RECENT_SEARCHES)
 
   const suggestions = query.length > 0
-    ? [...TRENDING, ...RECENT_SEARCHES].filter(s =>
+    ? [...TRENDING, ...recentSearches].filter(s =>
         s.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 6)
     : []
@@ -108,6 +109,7 @@ export default function SearchScreen({ onSearch }: Props) {
       {!query && (
         <div style={{ padding: '20px 20px 0' }}>
           {/* Recent */}
+          {recentSearches.length > 0 && (
           <div style={{ marginBottom: 28 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <h2 style={{
@@ -117,16 +119,19 @@ export default function SearchScreen({ onSearch }: Props) {
               }}>
                 Búsquedas recientes
               </h2>
-              <button style={{
-                fontSize: 12, color: '#9AAABB',
-                fontFamily: "'DM Sans', sans-serif",
-                background: 'none', border: 'none', cursor: 'pointer',
-              }}>
+              <button
+                onClick={() => setRecentSearches([])}
+                style={{
+                  fontSize: 12, color: '#9AAABB',
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: 'none', border: 'none', cursor: 'pointer',
+                }}
+              >
                 Borrar
               </button>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {RECENT_SEARCHES.map((s, i) => (
+              {recentSearches.map((s, i) => (
                 <button
                   key={i}
                   onClick={() => { setQuery(s); onSearch(s) }}
@@ -151,6 +156,7 @@ export default function SearchScreen({ onSearch }: Props) {
               ))}
             </div>
           </div>
+          )}
 
           {/* Trending */}
           <div style={{ marginBottom: 28 }}>

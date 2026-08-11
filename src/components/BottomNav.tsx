@@ -4,7 +4,7 @@ import { HomeIcon, SearchIcon, CameraIcon, BellIcon, UserIcon } from './Icons'
 interface BottomNavProps {
   active: Tab
   onNavigate: (tab: Tab) => void
-  alertCount?: number
+  alertCount: number
 }
 
 const tabs: { id: Tab; label: string; Icon: React.ComponentType<any> }[] = [
@@ -15,7 +15,7 @@ const tabs: { id: Tab; label: string; Icon: React.ComponentType<any> }[] = [
   { id: 'profile', label: 'Perfil', Icon: UserIcon },
 ]
 
-export default function BottomNav({ active, onNavigate, alertCount = 2 }: BottomNavProps) {
+export default function BottomNav({ active, onNavigate, alertCount }: BottomNavProps) {
   return (
     <nav
       style={{

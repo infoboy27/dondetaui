@@ -97,7 +97,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 500,
           }}>
-            {query || 'Lavadora Samsung'}
+            {query || 'Todos los productos'}
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
+import { getPriceDropNotifications } from '../domain/notifications'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
@@ -16,6 +17,8 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 interface Props {
   onMobile: () => void
+  alertedIds: Set<string>
+  onToggleAlert: (id: string) => void
 }
 
 const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
@@ -296,7 +299,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
   )
 }
 
-export default function DesktopView({ onMobile }: Props) {
+export default function DesktopView({ onMobile, alertedIds, onToggleAlert }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
@@ -307,8 +310,8 @@ export default function DesktopView({ onMobile }: Props) {
   const [sortBy, setSortBy] = useState<SortKey>('price-asc')
   const [screen, setScreen] = useState<DesktopScreen>('results')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [alertedIds, setAlertedIds] = useState<Set<string>>(new Set())
   const { products, loading, error } = useCatalogProducts(query)
+  const hasNotifications = getPriceDropNotifications(products, alertedIds).length > 0
 
   const toggleStore = (s: string) => {
     setSelectedStores(prev =>
@@ -332,15 +335,6 @@ export default function DesktopView({ onMobile }: Props) {
 
   const runSearch = () => {
     setScreen('results')
-  }
-
-  const toggleAlert = (productId: string) => {
-    setAlertedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(productId)) next.delete(productId)
-      else next.add(productId)
-      return next
-    })
   }
 
   const goToCategory = (categoryId: string) => {
@@ -501,18 +495,24 @@ export default function DesktopView({ onMobile }: Props) {
 
           {/* Right actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button style={{
-              width: 44, height: 44, borderRadius: 10,
-              background: '#F2F4F7', border: 'none', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative',
-            }}>
+            <button
+              onClick={() => setScreen('alerts')}
+              aria-label="Alertas"
+              style={{
+                width: 44, height: 44, borderRadius: 10,
+                background: '#F2F4F7', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative',
+              }}
+            >
               <BellIcon size={18} color="#5d7ea0" />
-              <span style={{
-                position: 'absolute', top: 10, right: 10,
-                width: 8, height: 8, borderRadius: '50%',
-                background: '#FF3B3B', border: '1.5px solid #fff',
-              }} />
+              {hasNotifications && (
+                <span style={{
+                  position: 'absolute', top: 10, right: 10,
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: '#FF3B3B', border: '1.5px solid #fff',
+                }} />
+              )}
             </button>
             <div style={{
               width: 38, height: 38, borderRadius: '50%',
@@ -917,7 +917,7 @@ export default function DesktopView({ onMobile }: Props) {
                 key={p.id}
                 product={p}
                 isAlerted={alertedIds.has(p.id)}
-                onToggleAlert={() => toggleAlert(p.id)}
+                onToggleAlert={() => onToggleAlert(p.id)}
               />
             ))
           )}

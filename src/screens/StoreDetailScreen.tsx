@@ -1,9 +1,6 @@
 import { formatPrice } from '../data/mock'
 import { useStoreDetail } from '../hooks/useStoreDetail'
-import {
-  ChevronLeft, TruckIcon,
-  HeartIcon, StarIcon,
-} from '../components/Icons'
+import { ChevronLeft, HeartIcon } from '../components/Icons'
 
 // PhoneIcon not in set — use a simple inline version
 function Globe({ size = 16, color = 'currentColor' }) {
@@ -131,43 +128,30 @@ export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Prop
               }}>
                 {storeName}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <StarIcon size={13} />
-                  <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
-                    4.3
-                  </span>
-                </div>
-                <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
-                  · {store.productCount} productos
-                </span>
-              </div>
+              <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+                {store.productCount} productos
+              </span>
             </div>
           </div>
 
           {/* Quick info pills */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            {[
-              { icon: <TruckIcon size={13} color="#00B894" />, label: 'Delivery disponible' },
-              ...(store.websiteUrl
-                ? [{ icon: <Globe size={13} color="#5d7ea0" />, label: new URL(store.websiteUrl).hostname.replace(/^www\./, '') }]
-                : []),
-            ].map((pill, i) => (
-              <div key={i} style={{
+          {store.websiteUrl && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 background: '#F2F4F7', borderRadius: 999,
                 padding: '6px 12px',
               }}>
-                {pill.icon}
+                <Globe size={13} color="#5d7ea0" />
                 <span style={{
                   fontSize: 12, color: '#5d7ea0',
                   fontFamily: "'DM Sans', sans-serif",
                 }}>
-                  {pill.label}
+                  {new URL(store.websiteUrl).hostname.replace(/^www\./, '')}
                 </span>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* Action buttons */}
           {store.websiteUrl && (

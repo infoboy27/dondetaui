@@ -106,9 +106,18 @@ export default function App() {
     setAlertedIds(prev => new Set(prev).add(id))
   }
 
+  const toggleAlert = (id: string) => {
+    setAlertedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   // Desktop view
   if (isDesktop && !isMobileView) {
-    return <DesktopView onMobile={() => setIsMobileView(true)} />
+    return <DesktopView onMobile={() => setIsMobileView(true)} alertedIds={alertedIds} onToggleAlert={toggleAlert} />
   }
 
   const isScanner = screen === 'scanner'
@@ -261,7 +270,7 @@ export default function App() {
           <BottomNav
             active={activeTab}
             onNavigate={handleTab}
-            alertCount={2}
+            alertCount={alertedIds.size}
           />
         )}
       </div>

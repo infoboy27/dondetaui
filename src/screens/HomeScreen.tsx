@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
 import ProductCard from '../components/ProductCard'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { storesApi } from '../api/stores'
+import { appConfig } from '../config/env'
 import type { Product } from '../types'
 
 interface Props {
@@ -21,6 +24,16 @@ export default function HomeScreen({
   favoriteIds, onToggleFavorite,
 }: Props) {
   const { products } = useCatalogProducts()
+  const [storeCount, setStoreCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!appConfig.useApi) return
+    let cancelled = false
+    storesApi.list()
+      .then(stores => { if (!cancelled) setStoreCount(stores.length) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <div style={{
@@ -275,14 +288,16 @@ export default function HomeScreen({
           }}>
             Tiendas cerca de ti
           </div>
-          <span style={{
-            fontSize: 9, color: '#00B894', fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            background: '#fff', padding: '2px 6px', borderRadius: 999,
-            alignSelf: 'flex-start',
-          }}>
-            5 CERCANAS
-          </span>
+          {storeCount !== null && (
+            <span style={{
+              fontSize: 9, color: '#00B894', fontWeight: 700,
+              fontFamily: "'Poppins', sans-serif",
+              background: '#fff', padding: '2px 6px', borderRadius: 999,
+              alignSelf: 'flex-start',
+            }}>
+              {storeCount} CERCANAS
+            </span>
+          )}
         </button>
       </div>
 

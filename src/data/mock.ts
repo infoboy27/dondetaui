@@ -1,13 +1,14 @@
 import type { Product } from '../types'
 
+// Mirrors the 5 real retailers in the `retailers` table exactly — a fixture entry
+// for a store that doesn't exist in the DB would let useStoreDetail's offline
+// fallback (src/hooks/useStoreDetail.ts) resolve a "store" that isn't real.
 export const STORES: Record<string, { color: string; abbr: string }> = {
   'Plaza Lama': { color: '#C0392B', abbr: 'PL' },
   'Sirena': { color: '#2980B9', abbr: 'SI' },
   'Corripio': { color: '#27AE60', abbr: 'CO' },
   'Jumbo': { color: '#E67E22', abbr: 'JU' },
   'PriceSmart': { color: '#8E44AD', abbr: 'PS' },
-  'La Colonia': { color: '#16A085', abbr: 'LC' },
-  'Almacenes Trigo': { color: '#D35400', abbr: 'AT' },
 }
 
 function seededUnit(seed: number): number {
