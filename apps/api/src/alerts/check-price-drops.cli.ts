@@ -2,6 +2,7 @@ import { Pool } from 'pg'
 import { AlertsRepository } from './alerts.repository'
 import { EmailProvider } from '../notifications/email.provider'
 import { SmsProvider } from '../notifications/sms.provider'
+import { PushProvider } from '../notifications/push.provider'
 import { NotificationsService } from '../notifications/notifications.service'
 
 const databaseUrl = process.env.DATABASE_URL
@@ -9,7 +10,7 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 })
 const alerts = new AlertsRepository(pool)
-const notifications = new NotificationsService(new EmailProvider(), new SmsProvider())
+const notifications = new NotificationsService(new EmailProvider(), new SmsProvider(), new PushProvider())
 
 interface HistoryPoint {
   date: string
@@ -60,7 +61,7 @@ async function main() {
     if (!name) continue
 
     await notifications.notifyPriceDrop(
-      { email: candidate.user_email, phone: candidate.user_phone },
+      { email: candidate.user_email, phone: candidate.user_phone, pushTokens: candidate.push_tokens },
       name,
       latest.price,
     )

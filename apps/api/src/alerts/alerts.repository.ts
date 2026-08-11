@@ -13,6 +13,7 @@ export interface AlertWorkerRow {
   alert_id: string
   user_email: string
   user_phone: string | null
+  push_tokens: string[]
   product_id: string
   target_price: string | number | null
   last_notified_price: string | number | null
@@ -55,11 +56,17 @@ export class AlertsRepository {
         pa.id::text as alert_id,
         u.email as user_email,
         u.phone as user_phone,
+        coalesce(pt.tokens, array[]::text[]) as push_tokens,
         pa.product_id::text as product_id,
         pa.target_price,
         pa.last_notified_price
       from price_alerts pa
-      join users u on u.id = pa.user_id`,
+      join users u on u.id = pa.user_id
+      left join (
+        select user_id, array_agg(token) as tokens
+        from push_tokens
+        group by user_id
+      ) pt on pt.user_id = u.id`,
     )
     return result.rows
   }

@@ -10,7 +10,10 @@
       "package": "com.jfmcss.dondeta",
       "versionCode": 1,
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "ios": {
@@ -32,11 +35,24 @@
           "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas."
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "color": "#00B894"
+        }
+      ],
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
       "expo-font",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1bd90f1b-b70a-4da9-a133-97790c19cd51"
+      }
+    },
+    "owner": "jfmcss"
   }
 }

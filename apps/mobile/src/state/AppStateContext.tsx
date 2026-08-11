@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 import type { User } from '../types'
 
 const GUEST_FAVORITES_KEY = 'dondeta.guestFavorites'
@@ -28,6 +29,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const favorites = useFavorites(user)
   const priceAlerts = usePriceAlerts(user)
+  usePushNotifications(user)
   const [guestFavoriteIds, setGuestFavoriteIds] = useState<Set<string>>(new Set())
   const guestLoaded = useRef(false)
 
