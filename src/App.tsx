@@ -10,6 +10,7 @@ import { useCatalogProducts } from './hooks/useCatalogProducts'
 import { useAuth } from './hooks/useAuth'
 import { usePriceAlerts } from './hooks/usePriceAlerts'
 import { useFavorites } from './hooks/useFavorites'
+import { useSearchHistory } from './hooks/useSearchHistory'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SearchScreen from './screens/SearchScreen'
@@ -141,6 +142,7 @@ export default function App() {
   const priceAlerts = usePriceAlerts(user)
   const favorites = useFavorites(user)
   const favoriteIds = user ? new Set(favorites.favorites.map(f => f.productId)) : localFavoriteIds
+  const searchHistory = useSearchHistory(user)
   const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
   const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
 
@@ -176,6 +178,7 @@ export default function App() {
   }
 
   const handleSearch = (q: string) => {
+    void searchHistory.record(q)
     navigate(`/results?q=${encodeURIComponent(q)}`)
   }
 
@@ -338,7 +341,16 @@ export default function App() {
                 />
               )}
             />
-            <Route path="/search" element={<SearchScreen onSearch={handleSearch} />} />
+            <Route
+              path="/search"
+              element={(
+                <SearchScreen
+                  onSearch={handleSearch}
+                  recentSearches={searchHistory.recent}
+                  onClearRecent={() => void searchHistory.clear()}
+                />
+              )}
+            />
             <Route
               path="/results"
               element={(

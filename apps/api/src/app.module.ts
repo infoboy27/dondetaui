@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
 import { ProductsModule } from './products/products.module'
+import { SearchHistoryModule } from './search-history/search-history.module'
 import { StoresModule } from './stores/stores.module'
 
 @Module({
@@ -18,6 +19,7 @@ import { StoresModule } from './stores/stores.module'
     StoresModule,
     AlertsModule,
     FavoritesModule,
+    SearchHistoryModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

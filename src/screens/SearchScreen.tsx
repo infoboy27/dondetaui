@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { SearchIcon, XIcon, ChevronRight, ClockIcon, TrendingUpIcon, MicIcon } from '../components/Icons'
-import { RECENT_SEARCHES, TRENDING, CATEGORIES } from '../data/mock'
+import { TRENDING, CATEGORIES } from '../data/mock'
 
 interface Props {
   onSearch: (q: string) => void
+  recentSearches: string[]
+  onClearRecent: () => void
 }
 
-export default function SearchScreen({ onSearch }: Props) {
+export default function SearchScreen({ onSearch, recentSearches, onClearRecent }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
-  const [recentSearches, setRecentSearches] = useState(RECENT_SEARCHES)
 
   const suggestions = query.length > 0
     ? [...TRENDING, ...recentSearches].filter(s =>
@@ -120,7 +121,7 @@ export default function SearchScreen({ onSearch }: Props) {
                 Búsquedas recientes
               </h2>
               <button
-                onClick={() => setRecentSearches([])}
+                onClick={onClearRecent}
                 style={{
                   fontSize: 12, color: '#9AAABB',
                   fontFamily: "'DM Sans', sans-serif",

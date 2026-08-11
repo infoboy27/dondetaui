@@ -168,14 +168,6 @@ export const CATEGORIES = [
   { id: 'cocina', label: 'Cocina', emoji: '🍳', color: '#FFF0F0', border: '#EF4444' },
 ]
 
-export const RECENT_SEARCHES = [
-  'Lavadora Samsung',
-  'Nevera 18 pies',
-  'TV Samsung 55',
-  'Aire 12,000 BTU',
-  'Air Fryer Ninja',
-]
-
 export const TRENDING = [
   'Lavadora Samsung 18kg',
   'TV 55" 4K Smart',
