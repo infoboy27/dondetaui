@@ -63,7 +63,14 @@ export const RETAILER_CONFIGS: Record<RetailerKey, RetailerConfig> = {
       'https://www.tiendascorripio.com.do/pequenos-electrodomesticos',
     ],
     crawlPrefixes: ['/refrigeracion', '/coccion', '/lavado', '/climatizacion', '/televisores', '/pequenos-electrodomesticos'],
-    productPatterns: [/\.html$/i],
+    // Real product URLs are a single flat path segment with a SKU-code prefix, e.g.
+    // /an-p18kn-abanico-nedoca-18.html or /btva-argbr1345-base-de-tv-inclinable-32-55.html.
+    // Category/subcategory/filter index pages also end in .html but are nested under one
+    // or more path segments (/refrigeracion/equipos-especializados/bebederos.html) or, in
+    // the rare case they're flat too (/audio.html), never contain a digit — genuine SKUs
+    // always do. Both distinctions are needed: /\.html$/i alone was matching every
+    // category page too, ingesting them as products with garbage names/RD$0 prices.
+    productPatterns: [/^\/[^/?]*\d[^/?]*\.html$/i],
     excludedPrefixes: ['/customer', '/checkout', '/cart', '/wishlist', '/search', '/envios-y-devoluciones', '/preguntas-frecuentes', '/politicas'],
     defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
   },

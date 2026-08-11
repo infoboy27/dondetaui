@@ -19,6 +19,14 @@ assert(!isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/cart', co
 // department must not be crawled, only the appliance-specific sections.
 assert(!isCrawlUrl('https://www.tiendascorripio.com.do/all-products?p=2', corripio))
 assert(!isCrawlUrl('https://www.tiendascorripio.com.do/hogar/decoracion.html', corripio))
+// Category/subcategory/filter index pages also end in .html — nested ones must not be
+// mistaken for products (Bebederos, RD$0, was showing as the homepage's featured deal),
+// and even a flat one without a SKU digit (Audio) must not match either.
+assert(!isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/refrigeracion/equipos-especializados/bebederos.html', corripio))
+assert(!isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/audio/audio-personal.html', corripio))
+assert(!isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/audio.html', corripio))
+assert(isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/an-p18kn-abanico-nedoca-18.html', corripio))
+assert(isLikelyRetailerProductUrl('https://www.tiendascorripio.com.do/btva-argbr1345-base-de-tv-inclinable-32-55.html', corripio))
 
 const sirena = RETAILER_CONFIGS.sirena
 assert(isCrawlUrl('https://www.sirena.do/electrodomesticos/lavado-y-secado', sirena))
