@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { BrowserMultiFormatReader as BrowserMultiFormatReaderType } from '@zxing/browser'
 import { productsApi } from '../api/products'
-import { appConfig } from '../config/env'
-import { PRODUCTS } from '../data/mock'
 import { formatPrice } from '../domain/currency'
 import { getBestOffer, getSavingsRange } from '../domain/offers'
 import { XIcon, FlashIcon, CheckIcon, ChevronRight } from '../components/Icons'
@@ -13,48 +12,141 @@ interface Props {
   onProduct: (p: Product) => void
 }
 
-const DEMO_BARCODE = '8806092000001'
+// Native BarcodeDetector (Chrome/Edge/Android WebView) needs no library and no
+// per-frame canvas decode -- prefer it when present. Safari/iOS and older
+// Chromium builds lack it, so @zxing/browser (loaded lazily, decodes off a
+// <video> element continuously) is the fallback for everyone else.
+interface BarcodeDetectorLike {
+  detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>
+}
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options?: { formats: string[] }) => BarcodeDetectorLike
+  }
+}
+
+type ScanState = 'requesting' | 'scanning' | 'denied' | 'unsupported' | 'detected' | 'not-found'
 
 export default function ScannerScreen({ onBack, onProduct }: Props) {
-  const [scanning, setScanning] = useState(true)
+  const [state, setState] = useState<ScanState>('requesting')
   const [flashOn, setFlashOn] = useState(false)
-  const [detected, setDetected] = useState(false)
-  const [detectedProduct, setDetectedProduct] = useState<Product>(PRODUCTS[0])
+  const [flashSupported, setFlashSupported] = useState(false)
+  const [detectedProduct, setDetectedProduct] = useState<Product | null>(null)
+  const [lastCode, setLastCode] = useState<string | null>(null)
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const zxingReaderRef = useRef<BrowserMultiFormatReaderType | null>(null)
+  const zxingControlsRef = useRef<{ stop: () => void } | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const resolvingRef = useRef(false)
+
+  const lookupCode = async (code: string) => {
+    if (resolvingRef.current) return
+    resolvingRef.current = true
+    setLastCode(code)
+    try {
+      const product = await productsApi.barcode(code)
+      setDetectedProduct(product)
+      setState('detected')
+    } catch {
+      setState('not-found')
+    }
+  }
+
+  const rescan = () => {
+    resolvingRef.current = false
+    setDetectedProduct(null)
+    setLastCode(null)
+    setState('scanning')
+  }
+
+  const toggleFlash = async () => {
+    const track = streamRef.current?.getVideoTracks()[0]
+    if (!track) return
+    const next = !flashOn
+    try {
+      // @ts-expect-error -- torch is a real but not-yet-typed constraint (ImageCapture spec)
+      await track.applyConstraints({ advanced: [{ torch: next }] })
+      setFlashOn(next)
+    } catch {
+      /* torch unsupported on this device/browser -- button stays visually inert */
+    }
+  }
 
   useEffect(() => {
-    if (!scanning) return
     let cancelled = false
 
-    const timer = setTimeout(() => {
-      const resolveProduct = async () => {
-        let product = PRODUCTS[0]
-
-        if (appConfig.useApi) {
-          try {
-            product = await productsApi.barcode(DEMO_BARCODE)
-          } catch {
-            product = PRODUCTS[0]
-          }
-        }
-
-        if (!cancelled) {
-          setDetectedProduct(product)
-          setScanning(false)
-          setDetected(true)
-        }
+    const start = async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        if (!cancelled) setState('unsupported')
+        return
       }
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        })
+      } catch {
+        if (!cancelled) setState('denied')
+        return
+      }
+      if (cancelled) {
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+      streamRef.current = stream
+      const track = stream.getVideoTracks()[0]
+      const caps = track.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined
+      setFlashSupported(Boolean(caps?.torch))
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play().catch(() => {})
+      }
+      setState('scanning')
 
-      void resolveProduct()
-    }, 2500)
+      if (window.BarcodeDetector) {
+        const detector = new window.BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
+        })
+        const tick = async () => {
+          if (cancelled || !videoRef.current || resolvingRef.current) {
+            if (!cancelled) rafRef.current = requestAnimationFrame(tick)
+            return
+          }
+          try {
+            const results = await detector.detect(videoRef.current)
+            if (results[0]?.rawValue) void lookupCode(results[0].rawValue)
+          } catch { /* transient decode failure -- try again next frame */ }
+          if (!cancelled) rafRef.current = requestAnimationFrame(tick)
+        }
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser')
+        if (cancelled || !videoRef.current) return
+        const reader = new BrowserMultiFormatReader()
+        zxingReaderRef.current = reader
+        const controls = await reader.decodeFromVideoElement(videoRef.current, (result) => {
+          const text = result?.getText()
+          if (text) void lookupCode(text)
+        })
+        zxingControlsRef.current = controls
+      }
+    }
+
+    void start()
 
     return () => {
       cancelled = true
-      clearTimeout(timer)
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+      zxingControlsRef.current?.stop()
+      streamRef.current?.getTracks().forEach(track => track.stop())
     }
-  }, [scanning])
+  }, [])
 
-  const cheapest = getBestOffer(detectedProduct.prices)
-  const savings = getSavingsRange(detectedProduct.prices)
+  const cheapest = detectedProduct ? getBestOffer(detectedProduct.prices) : null
+  const savings = detectedProduct ? getSavingsRange(detectedProduct.prices) : 0
+  const detected = state === 'detected' && detectedProduct && cheapest
 
   return (
     <div style={{
@@ -99,120 +191,133 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
             Apunta al código de barras del producto
           </p>
         </div>
-        <button
-          onClick={() => setFlashOn(!flashOn)}
-          style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: flashOn ? '#FFD166' : 'rgba(255,255,255,0.15)',
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <FlashIcon size={18} color={flashOn ? '#0F1D2D' : '#fff'} />
-        </button>
+        {flashSupported && (
+          <button
+            onClick={() => void toggleFlash()}
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: flashOn ? '#FFD166' : 'rgba(255,255,255,0.15)',
+              border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <FlashIcon size={18} color={flashOn ? '#0F1D2D' : '#fff'} />
+          </button>
+        )}
       </div>
 
-      {/* Camera feed simulation */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 460 }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, #0d1f35 0%, #0A1628 50%, #0d1f35 100%)',
-          overflow: 'hidden',
-        }}>
+      {/* Camera feed */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 460, overflow: 'hidden' }}>
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%', objectFit: 'cover',
+            background: 'linear-gradient(135deg, #0d1f35 0%, #0A1628 50%, #0d1f35 100%)',
+            display: state === 'requesting' || state === 'denied' || state === 'unsupported' ? 'none' : 'block',
+          }}
+        />
+
+        {(state === 'denied' || state === 'unsupported' || state === 'requesting') && (
           <div style={{
-            position: 'absolute', top: '20%', left: '10%',
-            width: 120, height: 80, borderRadius: 12,
-            background: 'rgba(255,255,255,0.04)',
-            filter: 'blur(2px)',
-          }} />
-          <div style={{
-            position: 'absolute', bottom: '20%', right: '10%',
-            width: 100, height: 60, borderRadius: 8,
-            background: 'rgba(255,255,255,0.03)',
-            filter: 'blur(2px)',
-          }} />
-        </div>
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 12, padding: '0 32px', textAlign: 'center',
+          }}>
+            {state === 'requesting' && (
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans', sans-serif" }}>
+                Solicitando acceso a la cámara…
+              </span>
+            )}
+            {state === 'denied' && (
+              <>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
+                  No se pudo acceder a la cámara
+                </span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Habilita el permiso de cámara para este sitio en tu navegador e inténtalo de nuevo.
+                </span>
+              </>
+            )}
+            {state === 'unsupported' && (
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans', sans-serif" }}>
+                Este navegador no soporta acceso a la cámara.
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Scan frame */}
-        <div style={{
-          position: 'absolute',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -55%)',
-          width: 260, height: 140,
-        }}>
-          {[
-            { pos: { top: 0, left: 0 }, radius: '4px 0 0 0', bt: 3, bl: 3, bb: 0, br: 0 },
-            { pos: { top: 0, right: 0 }, radius: '0 4px 0 0', bt: 3, bl: 0, bb: 0, br: 3 },
-            { pos: { bottom: 0, left: 0 }, radius: '0 0 0 4px', bt: 0, bl: 3, bb: 3, br: 0 },
-            { pos: { bottom: 0, right: 0 }, radius: '0 0 4px 0', bt: 0, bl: 0, bb: 3, br: 3 },
-          ].map((corner, i) => (
-            <div key={i} style={{
-              position: 'absolute',
-              width: 24, height: 24,
-              ...corner.pos,
-              borderColor: detected ? '#00B894' : '#fff',
-              borderStyle: 'solid',
-              borderTopWidth: corner.bt,
-              borderLeftWidth: corner.bl,
-              borderBottomWidth: corner.bb,
-              borderRightWidth: corner.br,
-              borderRadius: corner.radius,
-              transition: 'border-color 0.3s',
-            }} />
-          ))}
-
-          {scanning && (
-            <div
-              className="scan-line"
-              style={{
+        {(state === 'scanning' || state === 'not-found' || detected) && (
+          <div style={{
+            position: 'absolute',
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -55%)',
+            width: 260, height: 140,
+          }}>
+            {[
+              { pos: { top: 0, left: 0 }, radius: '4px 0 0 0', bt: 3, bl: 3, bb: 0, br: 0 },
+              { pos: { top: 0, right: 0 }, radius: '0 4px 0 0', bt: 3, bl: 0, bb: 0, br: 3 },
+              { pos: { bottom: 0, left: 0 }, radius: '0 0 0 4px', bt: 0, bl: 3, bb: 3, br: 0 },
+              { pos: { bottom: 0, right: 0 }, radius: '0 0 4px 0', bt: 0, bl: 0, bb: 3, br: 3 },
+            ].map((corner, i) => (
+              <div key={i} style={{
                 position: 'absolute',
-                left: 12, right: 12, height: 2,
-                background: 'linear-gradient(90deg, transparent, #00B894, transparent)',
-                borderRadius: 1,
-                boxShadow: '0 0 8px rgba(0,184,148,0.8)',
-              }}
-            />
-          )}
+                width: 24, height: 24,
+                ...corner.pos,
+                borderColor: detected ? '#00B894' : state === 'not-found' ? '#FF9F1C' : '#fff',
+                borderStyle: 'solid',
+                borderTopWidth: corner.bt,
+                borderLeftWidth: corner.bl,
+                borderBottomWidth: corner.bb,
+                borderRightWidth: corner.br,
+                borderRadius: corner.radius,
+                transition: 'border-color 0.3s',
+              }} />
+            ))}
 
-          {detected && (
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'rgba(0,184,148,0.15)',
-              borderRadius: 4,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+            {state === 'scanning' && (
+              <div
+                className="scan-line"
+                style={{
+                  position: 'absolute',
+                  left: 12, right: 12, height: 2,
+                  background: 'linear-gradient(90deg, transparent, #00B894, transparent)',
+                  borderRadius: 1,
+                  boxShadow: '0 0 8px rgba(0,184,148,0.8)',
+                }}
+              />
+            )}
+
+            {detected && (
               <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: '#00B894',
+                position: 'absolute', inset: 0,
+                background: 'rgba(0,184,148,0.15)',
+                borderRadius: 4,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 20px rgba(0,184,148,0.5)',
               }}>
-                <CheckIcon size={22} color="#fff" />
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%',
+                  background: '#00B894',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 0 20px rgba(0,184,148,0.5)',
+                }}>
+                  <CheckIcon size={22} color="#fff" />
+                </div>
               </div>
-            </div>
-          )}
-
-          {!detected && (
-            <div style={{
-              position: 'absolute', bottom: -32,
-              left: '50%', transform: 'translateX(-50%)',
-              display: 'flex', gap: 2, alignItems: 'stretch',
-              height: 24, opacity: 0.25,
-            }}>
-              {[2,1,3,1,2,1,1,2,3,1,2,1,1,3,2,1,2,1,3,2,1].map((w, i) => (
-                <div key={i} style={{ width: w * 2, background: '#fff', borderRadius: 1 }} />
-              ))}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         <div style={{
           position: 'absolute',
           bottom: 60, left: 0, right: 0,
           textAlign: 'center',
         }}>
-          {scanning ? (
+          {state === 'scanning' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <div className="pulse-ring" style={{
                 width: 8, height: 8, borderRadius: '50%',
@@ -226,7 +331,29 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
                 Buscando código de barras…
               </span>
             </div>
-          ) : (
+          )}
+          {state === 'not-found' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <span style={{
+                fontSize: 13, color: '#FF9F1C', fontWeight: 600,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Código {lastCode} no está en nuestro catálogo todavía
+              </span>
+              <button
+                onClick={rescan}
+                style={{
+                  padding: '8px 20px', borderRadius: 999,
+                  border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)',
+                  color: '#fff', fontSize: 13, fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+                }}
+              >
+                Escanear de nuevo
+              </button>
+            </div>
+          )}
+          {detected && (
             <span style={{
               fontSize: 13, color: '#00B894', fontWeight: 600,
               fontFamily: "'DM Sans', sans-serif",
@@ -237,7 +364,7 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
         </div>
       </div>
 
-      {detected && cheapest && (
+      {detected && (
         <div className="slide-up" style={{
           background: '#fff',
           borderRadius: '20px 20px 0 0',
