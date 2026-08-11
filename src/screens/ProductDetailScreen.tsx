@@ -91,6 +91,19 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         <button
           type="button"
           aria-label="Compartir producto"
+          onClick={async () => {
+            // The prototype has no real per-product route yet (see AGENTS.md), so there's
+            // no shareable URL to include -- share the name/price as text instead of a
+            // broken or misleading link.
+            const text = bestOffer
+              ? `${product.name} — desde ${formatPrice(bestOffer.price)} en DóndeTa`
+              : product.name
+            if (navigator.share) {
+              try { await navigator.share({ title: product.name, text }) } catch { /* user cancelled */ }
+            } else if (navigator.clipboard) {
+              await navigator.clipboard.writeText(text)
+            }
+          }}
           style={{
             width: 36, height: 36, borderRadius: 10,
             background: '#F2F4F7', border: 'none', cursor: 'pointer',
@@ -242,20 +255,21 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         </button>
         <button
           type="button"
-          disabled={!bestOffer}
+          onClick={() => { if (bestOffer?.url) window.open(bestOffer.url, '_blank', 'noopener,noreferrer') }}
+          disabled={!bestOffer?.url}
           style={{
             flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 8, padding: '13px 0',
             border: 'none', borderRadius: 12,
-            background: bestOffer ? '#00B894' : '#E8EDF2',
-            color: bestOffer ? '#fff' : '#9AAABB',
+            background: bestOffer?.url ? '#00B894' : '#E8EDF2',
+            color: bestOffer?.url ? '#fff' : '#9AAABB',
             fontSize: 14, fontWeight: 700,
             fontFamily: "'Poppins', sans-serif",
-            cursor: bestOffer ? 'pointer' : 'not-allowed',
-            boxShadow: bestOffer ? '0 4px 12px rgba(0,184,148,0.3)' : 'none',
+            cursor: bestOffer?.url ? 'pointer' : 'not-allowed',
+            boxShadow: bestOffer?.url ? '0 4px 12px rgba(0,184,148,0.3)' : 'none',
           }}
         >
-          <CheckIcon size={16} color={bestOffer ? '#fff' : '#9AAABB'} />
+          <CheckIcon size={16} color={bestOffer?.url ? '#fff' : '#9AAABB'} />
           {bestOffer ? `Ver oferta en ${bestOffer.store}` : 'Oferta no disponible'}
         </button>
       </div>

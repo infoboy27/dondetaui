@@ -39,7 +39,7 @@ const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart'
 // in those departments, so they correctly show no results rather than mismatched ones.
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
   electrodomesticos: ['electrodomest', 'linea blanca', 'nevera', 'refriger', 'congelad', 'freezer', 'lavador', 'lavaplat', 'secador', 'lavad', 'plancha', 'aspirad', 'dispensador'],
-  aires: ['aire acondicion', 'climatiz', 'abanico', 'ventilad'],
+  aires: ['acondicionad', 'climatiz', 'abanico', 'ventilad'],
   cocina: ['estufa', 'horno', 'microond', 'cocina', 'cocc', 'licuad', 'batidor', 'cafeter', 'tostad', 'freidora', 'air fryer'],
   'tv-audio': ['television', 'televisor', 'tv y audio', 'audio'],
 }
@@ -135,16 +135,21 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
             <BellIcon size={14} color={isAlerted ? '#fff' : '#00B894'} />
             {isAlerted ? 'Alerta activa' : 'Alerta'}
           </button>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            border: 'none', borderRadius: 10,
-            background: '#00B894', color: '#fff',
-            padding: '10px 16px', cursor: 'pointer',
-            fontSize: 13, fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
-          }}>
-            <CheckIcon size={14} color="#fff" />
+          <button
+            onClick={() => { if (cheapest.url) window.open(cheapest.url, '_blank', 'noopener,noreferrer') }}
+            disabled={!cheapest.url}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              border: 'none', borderRadius: 10,
+              background: cheapest.url ? '#00B894' : '#E8EDF2',
+              color: cheapest.url ? '#fff' : '#9AAABB',
+              padding: '10px 16px', cursor: cheapest.url ? 'pointer' : 'not-allowed',
+              fontSize: 13, fontWeight: 700,
+              fontFamily: "'Poppins', sans-serif",
+              boxShadow: cheapest.url ? '0 4px 12px rgba(0,184,148,0.25)' : 'none',
+            }}
+          >
+            <CheckIcon size={14} color={cheapest.url ? '#fff' : '#9AAABB'} />
             Ver oferta
           </button>
           <button
@@ -268,14 +273,18 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
               </div>
 
               <div style={{ textAlign: 'center' }}>
-                <button style={{
-                  border: 'none', borderRadius: 8,
-                  background: sp.available ? '#00B894' : '#E8EDF2',
-                  color: sp.available ? '#fff' : '#5d7ea0',
-                  padding: '8px 16px', cursor: sp.available ? 'pointer' : 'not-allowed',
-                  fontSize: 12, fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                }}>
+                <button
+                  onClick={() => { if (sp.url) window.open(sp.url, '_blank', 'noopener,noreferrer') }}
+                  disabled={!sp.available || !sp.url}
+                  style={{
+                    border: 'none', borderRadius: 8,
+                    background: sp.available && sp.url ? '#00B894' : '#E8EDF2',
+                    color: sp.available && sp.url ? '#fff' : '#5d7ea0',
+                    padding: '8px 16px', cursor: sp.available && sp.url ? 'pointer' : 'not-allowed',
+                    fontSize: 12, fontWeight: 700,
+                    fontFamily: "'Poppins', sans-serif",
+                  }}
+                >
                   Ver oferta
                 </button>
               </div>
@@ -291,6 +300,8 @@ export default function DesktopView({ onMobile }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
+  const [stockOnly, setStockOnly] = useState(false)
+  const [freeShippingOnly, setFreeShippingOnly] = useState(false)
   const [minPrice, setMinPrice] = useState(0)
   const [maxPrice, setMaxPrice] = useState(100000)
   const [sortBy, setSortBy] = useState<SortKey>('price-asc')
@@ -352,7 +363,10 @@ export default function DesktopView({ onMobile }: Props) {
       const inCategory = !selectedCategory || matchesCategory(p, selectedCategory)
       const isDeal = screen !== 'deals' || p.discount > 0
       const isAlerted = screen !== 'alerts' || alertedIds.has(p.id)
-      return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted
+      const inAvailability = p.prices.some(price =>
+        (!stockOnly || price.available) && (!freeShippingOnly || price.shipping.toLowerCase().includes('gratis')),
+      )
+      return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted && inAvailability
     })
 
     if (sortBy === 'relevance') return filtered
@@ -363,7 +377,7 @@ export default function DesktopView({ onMobile }: Props) {
       return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
     })
     return sorted
-  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, screen, alertedIds])
+  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, screen, alertedIds, stockOnly, freeShippingOnly])
 
   const bestDeal = useMemo(() => {
     if (!visibleProducts.length) return null
@@ -767,20 +781,36 @@ export default function DesktopView({ onMobile }: Props) {
               }}>
                 Disponibilidad
               </div>
-              {['En stock', 'Con envío gratis', 'Con delivery'].map(opt => (
-                <label key={opt} style={{
+              {([
+                { label: 'En stock', checked: stockOnly, toggle: () => setStockOnly(value => !value) },
+                { label: 'Con envío gratis', checked: freeShippingOnly, toggle: () => setFreeShippingOnly(value => !value) },
+              ] as const).map(({ label, checked, toggle }) => (
+                <label key={label} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 0', cursor: 'pointer',
+                  padding: '8px 0', minHeight: 44, cursor: 'pointer',
                   borderBottom: '1px solid #F2F4F7',
                 }}>
-                  <div style={{
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={toggle}
+                    style={{
+                      position: 'absolute', width: 1, height: 1, padding: 0,
+                      margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0,
+                    }}
+                  />
+                  <div aria-hidden="true" style={{
                     width: 18, height: 18, borderRadius: '50%',
-                    border: '2px solid #D8E6F0',
+                    border: `2px solid ${checked ? '#00B894' : '#D8E6F0'}`,
+                    background: checked ? '#00B894' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'all 0.12s',
                   }}>
+                    {checked && <CheckIcon size={10} color="#fff" />}
                   </div>
                   <span style={{ fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
-                    {opt}
+                    {label}
                   </span>
                 </label>
               ))}

@@ -129,7 +129,7 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
           }}>
             Categorías destacadas
           </h2>
-          <button style={{
+          <button onClick={() => onSearch('')} style={{
             fontSize: 13, color: '#00B894', fontWeight: 600,
             fontFamily: "'DM Sans', sans-serif",
             background: 'none', border: 'none', cursor: 'pointer',
@@ -187,7 +187,7 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
               LIVE
             </span>
           </div>
-          <button style={{
+          <button onClick={() => onSearch('')} style={{
             fontSize: 13, color: '#00B894', fontWeight: 600,
             fontFamily: "'DM Sans', sans-serif",
             background: 'none', border: 'none', cursor: 'pointer',
