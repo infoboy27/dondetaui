@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
+import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import type { User } from '../types'
 
 const GUEST_FAVORITES_KEY = 'dondeta.guestFavorites'
@@ -15,6 +16,10 @@ interface AppState {
   logout: () => Promise<void>
   favoriteIds: Set<string>
   toggleFavorite: (productId: string) => void
+  alertedIds: Set<string>
+  // Returns false when the user isn't logged in (alerts require an account,
+  // no guest concept -- caller should route to Perfil to sign in).
+  toggleAlert: (productId: string) => boolean
 }
 
 const AppStateContext = createContext<AppState | null>(null)
@@ -22,6 +27,7 @@ const AppStateContext = createContext<AppState | null>(null)
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const favorites = useFavorites(user)
+  const priceAlerts = usePriceAlerts(user)
   const [guestFavoriteIds, setGuestFavoriteIds] = useState<Set<string>>(new Set())
   const guestLoaded = useRef(false)
 
@@ -70,6 +76,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
+
+  const toggleAlert = (productId: string): boolean => {
+    if (!user) return false
+    if (alertedIds.has(productId)) void priceAlerts.remove(productId)
+    else void priceAlerts.create(productId)
+    return true
+  }
+
   const value: AppState = {
     user,
     authLoading,
@@ -79,6 +94,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     logout,
     favoriteIds,
     toggleFavorite,
+    alertedIds,
+    toggleAlert,
   }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

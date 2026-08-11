@@ -10,12 +10,13 @@ import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 import { shadows } from '../../src/design/shadows'
 import ProductImage from '../../src/components/ProductImage'
+import ProductReviews from '../../src/components/ProductReviews'
 import { useAppState } from '../../src/state/AppStateContext'
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const router = useRouter()
-  const { favoriteIds, toggleFavorite } = useAppState()
+  const { favoriteIds, toggleFavorite, alertedIds, toggleAlert } = useAppState()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,6 +79,14 @@ export default function ProductDetailScreen() {
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable
+          onPress={() => { if (!toggleAlert(product.id)) router.push('/(tabs)/profile') }}
+          style={styles.back}
+          accessibilityRole="button"
+          accessibilityLabel={alertedIds.has(product.id) ? `Quitar alerta de ${product.name}` : `Crear alerta para ${product.name}`}
+        >
+          <Text style={[styles.bell, alertedIds.has(product.id) && styles.bellActive]}>🔔</Text>
+        </Pressable>
+        <Pressable
           onPress={() => toggleFavorite(product.id)}
           style={styles.back}
           accessibilityRole="button"
@@ -118,6 +127,8 @@ export default function ProductDetailScreen() {
             <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
           </View>
         ))}
+
+        <ProductReviews productId={product.id} />
       </ScrollView>
     </SafeAreaView>
   )
@@ -131,6 +142,8 @@ const styles = StyleSheet.create({
   backText: { fontSize: 28, lineHeight: 28, color: colors.navy },
   heart: { fontSize: 18, color: colors.navy400 },
   heartActive: { color: colors.accent },
+  bell: { fontSize: 16, opacity: 0.35 },
+  bellActive: { opacity: 1 },
   content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
   top: { alignItems: 'center', backgroundColor: colors.card, borderRadius: radii.xxl, padding: spacing.xl, borderWidth: 1, borderColor: colors.border },
   image: { width: 200, height: 200, borderRadius: radii.xl },
