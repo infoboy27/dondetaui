@@ -29,6 +29,29 @@ const STORE_COLORS: Record<string, string> = {
 }
 const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
+// The "Categorías" screen's 6 curated buckets are a fixed, hand-picked taxonomy — real
+// ingested products carry much more granular, retailer-derived categoryIds (abanicos,
+// aires-acondicionados, estufas, neveras, televisores...) that rarely match those 6 ids
+// by exact string equality. Keyword lists (reusing the same appliance vocabulary already
+// vetted for the ingestion safety net in apps/api/src/ingestion/ingestion.repository.ts)
+// let a curated bucket match the real category data instead of returning empty/wrong
+// results. Hogar and Muebles have no keywords: DóndeTa doesn't currently ingest anything
+// in those departments, so they correctly show no results rather than mismatched ones.
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  electrodomesticos: ['electrodomest', 'linea blanca', 'nevera', 'refriger', 'congelad', 'freezer', 'lavador', 'lavaplat', 'secador', 'lavad', 'plancha', 'aspirad', 'dispensador'],
+  aires: ['aire acondicion', 'climatiz', 'abanico', 'ventilad'],
+  cocina: ['estufa', 'horno', 'microond', 'cocina', 'cocc', 'licuad', 'batidor', 'cafeter', 'tostad', 'freidora', 'air fryer'],
+  'tv-audio': ['television', 'televisor', 'tv y audio', 'audio'],
+}
+
+function matchesCategory(product: Product, selectedCategory: string): boolean {
+  if (product.categoryId === selectedCategory) return true
+  const keywords = CATEGORY_KEYWORDS[selectedCategory]
+  if (!keywords?.length) return false
+  const haystack = `${product.categoryId} ${product.category}`.toLowerCase()
+  return keywords.some(keyword => haystack.includes(keyword))
+}
+
 function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
   product: Product
   isAlerted: boolean
@@ -326,7 +349,7 @@ export default function DesktopView({ onMobile }: Props) {
         p.prices.some(price => selectedStores.includes(price.store))
       const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
       const inPriceRange = total >= minPrice && total <= maxPrice
-      const inCategory = !selectedCategory || p.categoryId === selectedCategory
+      const inCategory = !selectedCategory || matchesCategory(p, selectedCategory)
       const isDeal = screen !== 'deals' || p.discount > 0
       const isAlerted = screen !== 'alerts' || alertedIds.has(p.id)
       return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted
