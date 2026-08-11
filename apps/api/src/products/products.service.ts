@@ -13,6 +13,14 @@ export class ProductsService {
     return this.repository.list(query)
   }
 
+  listPaged(page: number, pageSize: number) {
+    return this.repository.listPaged(undefined, page, pageSize)
+  }
+
+  searchPaged(query: string, page: number, pageSize: number) {
+    return this.repository.listPaged(query, page, pageSize)
+  }
+
   async get(productId: string) {
     const product = await this.repository.findById(productId)
     if (!product) throw new NotFoundException('Product not found')

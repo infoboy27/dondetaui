@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
 import ProductCard from '../../src/components/ProductCard'
+import PaginationControls from '../../src/components/PaginationControls'
+import { usePagination } from '../../src/hooks/usePagination'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 
@@ -14,6 +16,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
 
   const load = async () => {
     setLoading(true)
@@ -83,10 +86,18 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Precios destacados</Text>
               <Text style={styles.count}>{products.length}</Text>
             </View>
-            {products.map(product => (
+            {pageItems.map(product => (
               <ProductCard key={product.id} product={product} onPress={() => openProduct(product)} />
             ))}
             {!products.length && <Text style={styles.empty}>No encontramos productos.</Text>}
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </>
         )}
       </ScrollView>

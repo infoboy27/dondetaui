@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
@@ -118,22 +118,35 @@ export default function ProductDetailScreen() {
         <Text style={styles.sectionTitle}>Comparación de tiendas</Text>
         {offers.map((offer, index) => {
           const storeSlug = STORE_SLUGS[offer.abbr]
-          const Row = storeSlug ? Pressable : View
+          const Info = storeSlug ? Pressable : View
           return (
-            <Row
-              key={`${offer.store}-${index}`}
-              style={styles.offerRow}
-              {...(storeSlug ? { onPress: () => router.push(`/store/${storeSlug}`) } : {})}
-            >
-              <View style={[styles.storeBadge, { backgroundColor: offer.color || colors.primary }]}>
-                <Text style={styles.storeBadgeText}>{offer.abbr}</Text>
+            <View key={`${offer.store}-${index}`} style={styles.offerRow}>
+              <Info
+                style={styles.offerInfo}
+                {...(storeSlug ? { onPress: () => router.push(`/store/${storeSlug}`) } : {})}
+              >
+                <View style={[styles.storeBadge, { backgroundColor: offer.color || colors.primary }]}>
+                  <Text style={styles.storeBadgeText}>{offer.abbr}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.offerStore}>{offer.store}</Text>
+                  <Text style={styles.offerMeta}>{offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}</Text>
+                </View>
+              </Info>
+              <View style={styles.offerRight}>
+                <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
+                {!!offer.url && (
+                  <Pressable
+                    onPress={() => Linking.openURL(offer.url!)}
+                    style={styles.offerLink}
+                    accessibilityRole="link"
+                    accessibilityLabel={`Ver oferta en la página de ${offer.store}`}
+                  >
+                    <Text style={styles.offerLinkText}>Ver oferta ↗</Text>
+                  </Pressable>
+                )}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.offerStore}>{offer.store}</Text>
-                <Text style={styles.offerMeta}>{offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}</Text>
-              </View>
-              <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
-            </Row>
+            </View>
           )
         })}
 
@@ -166,11 +179,15 @@ const styles = StyleSheet.create({
   savings: { color: colors.accent, fontFamily: fonts.display.bold, marginTop: spacing.sm },
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy, marginVertical: spacing.md },
   offerRow: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md, ...shadows.sm },
+  offerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  offerRight: { alignItems: 'flex-end', gap: spacing.xs },
   storeBadge: { width: 40, height: 40, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
   storeBadgeText: { color: '#fff', fontFamily: fonts.display.black },
   offerStore: { color: colors.navy, fontFamily: fonts.display.bold },
   offerMeta: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 11 },
   offerPrice: { color: colors.navy, fontSize: 16, fontFamily: fonts.display.black },
+  offerLink: { paddingVertical: 2 },
+  offerLinkText: { color: colors.primary, fontFamily: fonts.body.bold, fontSize: 11 },
   errorText: { color: '#BE123C', fontFamily: fonts.body.bold },
   backLink: { marginTop: spacing.md },
   backLinkText: { color: colors.primary, fontFamily: fonts.body.bold },

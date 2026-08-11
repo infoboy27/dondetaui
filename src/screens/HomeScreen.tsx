@@ -5,6 +5,8 @@ import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
 import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { usePagination } from '../hooks/usePagination'
+import PaginationControls from '../components/PaginationControls'
 import { storesApi } from '../api/stores'
 import { appConfig } from '../config/env'
 import type { Product } from '../types'
@@ -26,6 +28,7 @@ export default function HomeScreen({
   favoriteIds, onToggleFavorite,
 }: Props) {
   const { products } = useCatalogProducts()
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
   const [storeCount, setStoreCount] = useState<number | null>(null)
 
   useEffect(() => {
@@ -233,7 +236,7 @@ export default function HomeScreen({
           display: 'flex', gap: 14, padding: '4px 20px 8px',
           overflowX: 'auto',
         }}>
-          {products.map(p => (
+          {pageItems.map(p => (
             <ProductCard
               key={p.id}
               product={p}
@@ -242,6 +245,16 @@ export default function HomeScreen({
               onToggleFavorite={() => onToggleFavorite(p.id)}
             />
           ))}
+        </div>
+        <div style={{ padding: '0 20px' }}>
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       </div>
 

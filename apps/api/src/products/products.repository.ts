@@ -23,17 +23,61 @@ interface ProductRow {
 export class ProductsRepository {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
 
+  // Unpaginated: returns every matching row, no cap. Used by callers that
+  // need the whole catalog for local lookups (matching favorites/alerts by
+  // id, resolving a slug) rather than rendering a browsable list -- those
+  // must never silently miss an item that happens to fall past a page
+  // boundary.
   async list(query?: string): Promise<ProductDto[]> {
-    const params: unknown[] = []
-    let where = ''
-
-    if (query?.trim()) {
-      params.push(`%${query.trim()}%`)
-      where = `where p.name ilike $1 or p.brand ilike $1 or pv.model ilike $1 or c.name ilike $1`
-    }
+    const { where, params } = this.searchClause(query)
 
     const result = await this.pool.query<ProductRow>(
-      `select
+      `${this.baseSelect()}
+      ${where}
+      order by p.name asc`,
+      params,
+    )
+
+    return Promise.all(result.rows.map(row => this.hydrateProduct(row)))
+  }
+
+  async listPaged(query: string | undefined, page: number, pageSize: number): Promise<{ items: ProductDto[]; total: number }> {
+    const { where, params } = this.searchClause(query)
+
+    const countResult = await this.pool.query<{ count: string }>(
+      `select count(*)::text as count
+      from products p
+      join product_variants pv on pv.product_id = p.id and pv.is_primary = true
+      join categories c on c.id = p.category_id
+      ${where}`,
+      params,
+    )
+    const total = Number(countResult.rows[0]?.count ?? 0)
+
+    const limitParam = params.length + 1
+    const offsetParam = params.length + 2
+    const result = await this.pool.query<ProductRow>(
+      `${this.baseSelect()}
+      ${where}
+      order by p.name asc
+      limit $${limitParam} offset $${offsetParam}`,
+      [...params, pageSize, (page - 1) * pageSize],
+    )
+
+    const items = await Promise.all(result.rows.map(row => this.hydrateProduct(row)))
+    return { items, total }
+  }
+
+  private searchClause(query?: string): { where: string; params: unknown[] } {
+    if (!query?.trim()) return { where: '', params: [] }
+    return {
+      where: `where p.name ilike $1 or p.brand ilike $1 or pv.model ilike $1 or c.name ilike $1`,
+      params: [`%${query.trim()}%`],
+    }
+  }
+
+  private baseSelect(): string {
+    return `select
         p.id::text,
         p.slug,
         p.name,
@@ -54,14 +98,7 @@ export class ProductsRepository {
         select product_id, avg(rating) as average, count(*) as count
         from product_reviews
         group by product_id
-      ) rv on rv.product_id = p.id
-      ${where}
-      order by p.name asc
-      limit 100`,
-      params,
-    )
-
-    return Promise.all(result.rows.map(row => this.hydrateProduct(row)))
+      ) rv on rv.product_id = p.id`
   }
 
   async findById(id: string): Promise<ProductDto | null> {

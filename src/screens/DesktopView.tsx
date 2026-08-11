@@ -7,6 +7,8 @@ import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { usePagination } from '../hooks/usePagination'
+import PaginationControls from '../components/PaginationControls'
 import { useProductReviews } from '../hooks/useProductReviews'
 import { useSearchHistory } from '../hooks/useSearchHistory'
 import AdBanner from '../components/AdBanner'
@@ -561,6 +563,8 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
     const offer = getBestOffer(best.prices) ?? best.prices[0]
     return { product: best, offer, savings: getSavingsRange(best.prices) }
   }, [visibleProducts])
+
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(visibleProducts)
 
   const screenTitle = screen === 'deals' ? 'Ofertas destacadas'
     : screen === 'alerts' ? 'Mis alertas'
@@ -1204,18 +1208,28 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
                 : 'No hay productos que coincidan con los filtros seleccionados.'}
             </div>
           ) : (
-            visibleProducts.map(p => (
-              <DesktopProductRow
-                key={p.id}
-                product={p}
-                isAlerted={alertedIds.has(p.id)}
-                onToggleAlert={() => onToggleAlert(p.id)}
-                isFavorite={favoriteIds.has(p.id)}
-                onToggleFavorite={() => onToggleFavorite(p.id)}
-                isLoggedIn={Boolean(user)}
-                onRequireLogin={onMobile}
+            <>
+              {pageItems.map(p => (
+                <DesktopProductRow
+                  key={p.id}
+                  product={p}
+                  isAlerted={alertedIds.has(p.id)}
+                  onToggleAlert={() => onToggleAlert(p.id)}
+                  isFavorite={favoriteIds.has(p.id)}
+                  onToggleFavorite={() => onToggleFavorite(p.id)}
+                  isLoggedIn={Boolean(user)}
+                  onRequireLogin={onMobile}
+                />
+              ))}
+              <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                total={total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
               />
-            ))
+            </>
           )}
         </main>
         </>

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import ProductComparisonCard from '../components/ProductComparisonCard'
+import PaginationControls from '../components/PaginationControls'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal } from '../domain/offers'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { usePagination } from '../hooks/usePagination'
 import type { Product } from '../types'
 
 interface Props {
@@ -57,6 +59,8 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
       return getOfferTotal(aOffer) - getOfferTotal(bOffer)
     })
   }, [products, query, selectedStores, stockOnly, freeShippingOnly, sortBy])
+
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(displayResults)
 
   const toggleStore = (store: string) => {
     setSelectedStores(current => {
@@ -228,7 +232,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
 
       {/* Results */}
       <div style={{ padding: '16px 16px 0' }}>
-        {displayResults.length > 0 ? displayResults.map(product => (
+        {displayResults.length > 0 ? pageItems.map(product => (
           <ProductComparisonCard
             key={product.id}
             product={product}
@@ -245,6 +249,14 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
             No encontramos productos con esos filtros.
           </div>
         )}
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <div style={{ padding: '0 20px 8px', textAlign: 'center' }}>

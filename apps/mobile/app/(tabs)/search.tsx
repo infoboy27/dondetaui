@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
 import ProductCard from '../../src/components/ProductCard'
+import PaginationControls from '../../src/components/PaginationControls'
+import { usePagination } from '../../src/hooks/usePagination'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 
@@ -15,6 +17,7 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
 
   const search = async (term = query) => {
     const value = term.trim()
@@ -69,10 +72,18 @@ export default function SearchScreen() {
               <Text style={styles.sectionTitle}>Resultados para "{query}"</Text>
               <Text style={styles.count}>{products.length}</Text>
             </View>
-            {products.map(product => (
+            {pageItems.map(product => (
               <ProductCard key={product.id} product={product} onPress={() => openProduct(product)} />
             ))}
             {!products.length && <Text style={styles.empty}>No encontramos productos.</Text>}
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </>
         )}
         {!loading && !searched && <Text style={styles.hint}>Escribe algo para comparar precios.</Text>}
