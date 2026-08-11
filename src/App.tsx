@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
-import type { Screen, Tab } from './types'
+import { useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import type { Tab } from './types'
 import type { Product } from './types'
 import { PRODUCTS } from './data/mock'
+import { appConfig } from './config/env'
+import { productsApi } from './api/products'
 import { getPriceDropNotifications } from './domain/notifications'
 import { useCatalogProducts } from './hooks/useCatalogProducts'
 import { useAuth } from './hooks/useAuth'
@@ -21,24 +24,125 @@ import EquipaHogarScreen from './screens/EquipaHogarScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
 import LoginScreen from './screens/LoginScreen'
 
+function pathToTab(pathname: string): Tab | null {
+  if (pathname === '/') return 'home'
+  if (pathname.startsWith('/search') || pathname.startsWith('/results')) return 'search'
+  if (pathname.startsWith('/scanner')) return 'scanner'
+  if (pathname.startsWith('/alerts')) return 'alerts'
+  if (pathname.startsWith('/profile')) return 'profile'
+  return null
+}
+
+interface ProductRouteProps {
+  catalogProducts: Product[]
+  favoriteIds: Set<string>
+  onToggleFavorite: (id: string) => void
+  onCreateAlert: (productId: string, targetPrice?: number) => Promise<void>
+  isLoggedIn: boolean
+  onRequireLogin: () => void
+}
+
+// `/product/:slug` needs to work both for in-app navigation (product is
+// already loaded — handed over via router `state`) and for a direct hit
+// (shared link, refresh, search-engine crawl) where nothing is loaded yet
+// and the product has to be fetched by its slug.
+function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreateAlert, isLoggedIn, onRequireLogin }: ProductRouteProps) {
+  const { slug = '' } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const stateProduct = (location.state as { product?: Product } | null)?.product ?? null
+  const [product, setProduct] = useState<Product | null>(
+    () => stateProduct ?? catalogProducts.find(p => (p.slug || p.id) === slug) ?? null,
+  )
+  const [loading, setLoading] = useState(!product)
+  const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    if (product) return
+    let cancelled = false
+    setLoading(true)
+    setNotFound(false)
+
+    const fetcher = appConfig.useApi
+      ? productsApi.getBySlug(slug)
+      : Promise.resolve(PRODUCTS.find(p => (p.slug || p.id) === slug) ?? null)
+
+    fetcher
+      .then(found => {
+        if (cancelled) return
+        if (found) setProduct(found)
+        else setNotFound(true)
+      })
+      .catch(() => { if (!cancelled) setNotFound(true) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug])
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+      }}>
+        Cargando producto…
+      </div>
+    )
+  }
+
+  if (notFound || !product) {
+    return (
+      <div style={{
+        minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 12, padding: 24, textAlign: 'center',
+      }}>
+        <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 16, color: '#0F1D2D' }}>
+          Producto no encontrado
+        </span>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            background: '#00B894', color: '#fff', border: 'none', borderRadius: 10,
+            padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            fontFamily: "'Poppins', sans-serif",
+          }}
+        >
+          Volver al inicio
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <ProductDetailScreen
+      product={product}
+      onBack={() => navigate(-1)}
+      isFavorite={favoriteIds.has(product.id)}
+      onToggleFavorite={() => onToggleFavorite(product.id)}
+      onCreateAlert={targetPrice => onCreateAlert(product.id, targetPrice)}
+      isLoggedIn={isLoggedIn}
+      onRequireLogin={onRequireLogin}
+    />
+  )
+}
+
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
-  const [screen, setScreen] = useState<Screen>('home')
-  const [activeTab, setActiveTab] = useState<Tab>('home')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [selectedStoreAbbr, setSelectedStoreAbbr] = useState<string | null>(null)
-  const [history, setHistory] = useState<Screen[]>(['home'])
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
     () => new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id)),
   )
-  const [alertsTab, setAlertsTab] = useState<'alertas' | 'favoritos'>('alertas')
   const { products: catalogProducts } = useCatalogProducts()
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const priceAlerts = usePriceAlerts(user)
   const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
   const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
+
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [activeTab, setActiveTab] = useState<Tab>(() => pathToTab(location.pathname) ?? 'home')
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 1024)
@@ -46,49 +150,36 @@ export default function App() {
     return () => window.removeEventListener('resize', handler)
   }, [])
 
-  const navigate = (s: Screen, product?: Product) => {
-    setHistory(prev => [...prev, s])
-    setScreen(s)
-    if (product) setSelectedProduct(product)
-    if (s === 'home') setActiveTab('home')
-    else if (s === 'search') setActiveTab('search')
-    else if (s === 'scanner') setActiveTab('scanner')
-    else if (s === 'alerts') setActiveTab('alerts')
-    else if (s === 'profile') setActiveTab('profile')
-  }
+  useEffect(() => {
+    const tab = pathToTab(location.pathname)
+    if (tab) setActiveTab(tab)
+  }, [location.pathname])
 
+  // Preserves the deep-link's own history entry: hitting the app fresh
+  // (shared link, new tab) has no in-app "back" to go to, so fall back home
+  // instead of leaving the SPA via the browser's real previous page.
   const goBack = () => {
-    const prev = history[history.length - 2] ?? 'home'
-    setHistory(h => h.slice(0, -1))
-    setScreen(prev)
+    if (location.key === 'default') navigate('/')
+    else navigate(-1)
   }
 
   const handleTab = (tab: Tab) => {
-    setActiveTab(tab)
-    if (tab === 'alerts') setAlertsTab('alertas')
-    const screenMap: Record<Tab, Screen> = {
-      home: 'home',
-      search: 'search',
-      scanner: 'scanner',
-      alerts: 'alerts',
-      profile: 'profile',
+    const pathMap: Record<Tab, string> = {
+      home: '/', search: '/search', scanner: '/scanner', alerts: '/alerts', profile: '/profile',
     }
-    navigate(screenMap[tab])
+    navigate(pathMap[tab])
   }
 
   const handleSearch = (q: string) => {
-    setSearchQuery(q)
-    navigate('results')
+    navigate(`/results?q=${encodeURIComponent(q)}`)
   }
 
   const handleProduct = (p: Product) => {
-    setSelectedProduct(p)
-    navigate('product', p)
+    navigate(`/product/${encodeURIComponent(p.slug || p.id)}`, { state: { product: p } })
   }
 
   const handleCategory = (catId: string) => {
-    setSearchQuery(catId)
-    navigate('results')
+    navigate(`/results?q=${encodeURIComponent(catId)}`)
   }
 
   const toggleFavorite = (id: string) => {
@@ -100,23 +191,15 @@ export default function App() {
     })
   }
 
-  const openFavorites = () => {
-    setAlertsTab('favoritos')
-    navigate('alerts')
-  }
+  const openFavorites = () => navigate('/alerts?tab=favoritos')
+  const openAlerts = () => navigate('/alerts')
 
-  const openAlerts = () => {
-    setAlertsTab('alertas')
-    navigate('alerts')
-  }
-
-  const handleCreateAlert = async (targetPrice?: number) => {
-    if (!selectedProduct) return
+  const handleCreateAlert = async (productId: string, targetPrice?: number) => {
     if (!user) {
-      navigate('login')
+      navigate('/login')
       throw new Error('Inicia sesión para crear una alerta')
     }
-    await priceAlerts.create(selectedProduct.id, targetPrice)
+    await priceAlerts.create(productId, targetPrice)
   }
 
   const handleToggleDesktopAlert = (productId: string) => {
@@ -143,7 +226,7 @@ export default function App() {
     )
   }
 
-  const isScanner = screen === 'scanner'
+  const isScanner = location.pathname === '/scanner'
 
   return (
     <div style={{
@@ -228,94 +311,99 @@ export default function App() {
 
         {/* Screen content */}
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}>
-          {screen === 'home' && (
-            <HomeScreen
-              onSearch={q => { setSearchQuery(q); navigate('search') }}
-              onProduct={handleProduct}
-              onCategory={handleCategory}
-              onEquipa={() => navigate('equipa')}
-              onNearby={() => navigate('nearby')}
-              onNotifications={() => navigate('notifications')}
-              hasNotifications={hasNotifications}
-              favoriteIds={favoriteIds}
-              onToggleFavorite={toggleFavorite}
+          <Routes>
+            <Route
+              path="/"
+              element={(
+                <HomeScreen
+                  onSearch={() => navigate('/search')}
+                  onProduct={handleProduct}
+                  onCategory={handleCategory}
+                  onEquipa={() => navigate('/equipa')}
+                  onNearby={() => navigate('/stores/nearby')}
+                  onNotifications={() => navigate('/notifications')}
+                  hasNotifications={hasNotifications}
+                  favoriteIds={favoriteIds}
+                  onToggleFavorite={toggleFavorite}
+                />
+              )}
             />
-          )}
-          {screen === 'search' && (
-            <SearchScreen onSearch={handleSearch} />
-          )}
-          {screen === 'results' && (
-            <ResultsScreen
-              query={searchQuery}
-              onBack={goBack}
-              onProduct={handleProduct}
-              favoriteIds={favoriteIds}
-              onToggleFavorite={toggleFavorite}
+            <Route path="/search" element={<SearchScreen onSearch={handleSearch} />} />
+            <Route
+              path="/results"
+              element={(
+                <ResultsScreen
+                  query={searchParams.get('q') ?? ''}
+                  onBack={goBack}
+                  onProduct={handleProduct}
+                  favoriteIds={favoriteIds}
+                  onToggleFavorite={toggleFavorite}
+                />
+              )}
             />
-          )}
-          {screen === 'product' && selectedProduct && (
-            <ProductDetailScreen
-              product={selectedProduct}
-              onBack={goBack}
-              isFavorite={favoriteIds.has(selectedProduct.id)}
-              onToggleFavorite={() => toggleFavorite(selectedProduct.id)}
-              onCreateAlert={handleCreateAlert}
-              isLoggedIn={Boolean(user)}
-              onRequireLogin={() => navigate('login')}
+            <Route
+              path="/product/:slug"
+              element={(
+                <ProductRoute
+                  catalogProducts={catalogProducts}
+                  favoriteIds={favoriteIds}
+                  onToggleFavorite={toggleFavorite}
+                  onCreateAlert={handleCreateAlert}
+                  isLoggedIn={Boolean(user)}
+                  onRequireLogin={() => navigate('/login')}
+                />
+              )}
             />
-          )}
-          {screen === 'scanner' && (
-            <ScannerScreen onBack={goBack} onProduct={handleProduct} />
-          )}
-          {screen === 'alerts' && (
-            <AlertsScreen
-              onProduct={handleProduct}
-              favoriteIds={favoriteIds}
-              onToggleFavorite={toggleFavorite}
-              alerts={priceAlerts.alerts}
-              onRemoveAlert={id => void priceAlerts.remove(id)}
-              initialTab={alertsTab}
+            <Route path="/scanner" element={<ScannerScreen onBack={goBack} onProduct={handleProduct} />} />
+            <Route
+              path="/alerts"
+              element={(
+                <AlertsScreen
+                  onProduct={handleProduct}
+                  favoriteIds={favoriteIds}
+                  onToggleFavorite={toggleFavorite}
+                  alerts={priceAlerts.alerts}
+                  onRemoveAlert={id => void priceAlerts.remove(id)}
+                  initialTab={searchParams.get('tab') === 'favoritos' ? 'favoritos' : 'alertas'}
+                />
+              )}
             />
-          )}
-          {screen === 'profile' && (
-            <ProfileScreen
-              user={user}
-              favoriteCount={favoriteIds.size}
-              alertCount={alertedIds.size}
-              onFavorites={openFavorites}
-              onAlerts={openAlerts}
-              onLogin={() => navigate('login')}
-              onLogout={logout}
+            <Route
+              path="/profile"
+              element={(
+                <ProfileScreen
+                  user={user}
+                  favoriteCount={favoriteIds.size}
+                  alertCount={alertedIds.size}
+                  onFavorites={openFavorites}
+                  onAlerts={openAlerts}
+                  onLogin={() => navigate('/login')}
+                  onLogout={logout}
+                />
+              )}
             />
-          )}
-          {screen === 'store' && (
-            <StoreDetailScreen storeAbbr={selectedStoreAbbr} onBack={goBack} onProduct={handleProduct} />
-          )}
-          {screen === 'nearby' && (
-            <NearbyStoresScreen
-              onBack={goBack}
-              onStore={abbr => { setSelectedStoreAbbr(abbr); navigate('store') }}
+            <Route path="/stores/nearby" element={<NearbyStoresScreen onBack={goBack} onStore={abbr => navigate(`/stores/${abbr}`)} />} />
+            <Route path="/stores/:abbr" element={<StoreDetailRoute onBack={goBack} onProduct={handleProduct} />} />
+            <Route path="/equipa" element={<EquipaHogarScreen onBack={goBack} />} />
+            <Route path="/notifications" element={<NotificationsScreen alertedIds={alertedIds} onBack={goBack} onProduct={handleProduct} />} />
+            <Route
+              path="/login"
+              element={(
+                <LoginScreen
+                  onBack={goBack}
+                  onLogin={login}
+                  onRegister={register}
+                  loading={authLoading}
+                  error={authError}
+                />
+              )}
             />
-          )}
-          {screen === 'equipa' && (
-            <EquipaHogarScreen onBack={goBack} />
-          )}
-          {screen === 'notifications' && (
-            <NotificationsScreen alertedIds={alertedIds} onBack={goBack} onProduct={handleProduct} />
-          )}
-          {screen === 'login' && (
-            <LoginScreen
-              onBack={goBack}
-              onLogin={login}
-              onRegister={register}
-              loading={authLoading}
-              error={authError}
-            />
-          )}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
 
         {/* Bottom nav */}
-        {screen !== 'scanner' && (
+        {!isScanner && (
           <BottomNav
             active={activeTab}
             onNavigate={handleTab}
@@ -325,4 +413,9 @@ export default function App() {
       </div>
     </div>
   )
+}
+
+function StoreDetailRoute({ onBack, onProduct }: { onBack: () => void; onProduct: (p: Product) => void }) {
+  const { abbr = null } = useParams()
+  return <StoreDetailScreen storeAbbr={abbr} onBack={onBack} onProduct={onProduct} />
 }
