@@ -1,4 +1,5 @@
 import { appConfig } from '../config/env'
+import { getToken } from '../auth/session'
 
 export class ApiError extends Error {
   status: number
@@ -18,13 +19,26 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     headers.set('Accept', 'application/json')
   }
 
+  const token = getToken()
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
   const response = await fetch(`${appConfig.apiBaseUrl}${normalizedPath}`, {
     ...init,
     headers,
   })
 
   if (!response.ok) {
-    throw new ApiError(`DóndeTa API request failed (${response.status})`, response.status)
+    const message = await response
+      .clone()
+      .json()
+      .then((body: { message?: string | string[] }) =>
+        Array.isArray(body.message) ? body.message[0] : body.message,
+      )
+      .catch(() => undefined)
+
+    throw new ApiError(message ?? `DóndeTa API request failed (${response.status})`, response.status)
   }
 
   if (response.status === 204) {

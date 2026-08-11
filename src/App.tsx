@@ -4,6 +4,7 @@ import type { Product } from './types'
 import { PRODUCTS } from './data/mock'
 import { getPriceDropNotifications } from './domain/notifications'
 import { useCatalogProducts } from './hooks/useCatalogProducts'
+import { useAuth } from './hooks/useAuth'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SearchScreen from './screens/SearchScreen'
@@ -17,6 +18,7 @@ import StoreDetailScreen from './screens/StoreDetailScreen'
 import NearbyStoresScreen from './screens/NearbyStoresScreen'
 import EquipaHogarScreen from './screens/EquipaHogarScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
+import LoginScreen from './screens/LoginScreen'
 
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
@@ -36,6 +38,7 @@ export default function App() {
   )
   const { products: catalogProducts } = useCatalogProducts()
   const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
+  const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 1024)
@@ -99,6 +102,11 @@ export default function App() {
 
   const openFavorites = () => {
     setAlertsTab('favoritos')
+    navigate('alerts')
+  }
+
+  const openAlerts = () => {
+    setAlertsTab('alertas')
     navigate('alerts')
   }
 
@@ -246,7 +254,15 @@ export default function App() {
             />
           )}
           {screen === 'profile' && (
-            <ProfileScreen favoriteCount={favoriteIds.size} onFavorites={openFavorites} />
+            <ProfileScreen
+              user={user}
+              favoriteCount={favoriteIds.size}
+              alertCount={alertedIds.size}
+              onFavorites={openFavorites}
+              onAlerts={openAlerts}
+              onLogin={() => navigate('login')}
+              onLogout={logout}
+            />
           )}
           {screen === 'store' && (
             <StoreDetailScreen storeAbbr={selectedStoreAbbr} onBack={goBack} onProduct={handleProduct} />
@@ -262,6 +278,15 @@ export default function App() {
           )}
           {screen === 'notifications' && (
             <NotificationsScreen alertedIds={alertedIds} onBack={goBack} onProduct={handleProduct} />
+          )}
+          {screen === 'login' && (
+            <LoginScreen
+              onBack={goBack}
+              onLogin={login}
+              onRegister={register}
+              loading={authLoading}
+              error={authError}
+            />
           )}
         </div>
 

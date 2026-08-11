@@ -10,8 +10,15 @@ export type Screen =
   | 'store'
   | 'nearby'
   | 'notifications'
+  | 'login'
 
 export type Tab = 'home' | 'search' | 'scanner' | 'alerts' | 'profile'
+
+export interface User {
+  id: string
+  email: string
+  name: string | null
+}
 
 export interface StorePrice {
   store: string

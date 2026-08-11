@@ -1,11 +1,24 @@
-import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, MapPinIcon, SettingsIcon } from '../components/Icons'
+import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon } from '../components/Icons'
+import type { User } from '../types'
 
 interface Props {
+  user: User | null
   favoriteCount: number
+  alertCount: number
   onFavorites: () => void
+  onAlerts: () => void
+  onLogin: () => void
+  onLogout: () => void
 }
 
-export default function ProfileScreen({ favoriteCount, onFavorites }: Props) {
+function initials(user: User): string {
+  const source = user.name?.trim() || user.email
+  const parts = source.split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return source.slice(0, 2).toUpperCase()
+}
+
+export default function ProfileScreen({ user, favoriteCount, alertCount, onFavorites, onAlerts, onLogin, onLogout }: Props) {
   const MENU_SECTIONS = [
     {
       title: 'Mi cuenta',
@@ -17,8 +30,13 @@ export default function ProfileScreen({ favoriteCount, onFavorites }: Props) {
           accent: false,
           onClick: onFavorites,
         },
-        { icon: BellIcon, label: 'Mis alertas de precio', value: '3 activas', accent: false },
-        { icon: MapPinIcon, label: 'Tiendas preferidas', value: 'Plaza Lama, Sirena', accent: false },
+        {
+          icon: BellIcon,
+          label: 'Mis alertas de precio',
+          value: alertCount === 1 ? '1 activa' : `${alertCount} activas`,
+          accent: false,
+          onClick: onAlerts,
+        },
       ],
     },
     {
@@ -36,12 +54,12 @@ export default function ProfileScreen({ favoriteCount, onFavorites }: Props) {
         { icon: HelpCircleIcon, label: 'Acerca de DóndeTa', value: 'v1.0.0', accent: false },
       ],
     },
-    {
-      title: '',
-      items: [
-        { icon: LogOutIcon, label: 'Cerrar sesión', value: '', accent: true },
-      ],
-    },
+    ...(user
+      ? [{
+          title: '',
+          items: [{ icon: LogOutIcon, label: 'Cerrar sesión', value: '', accent: true, onClick: onLogout }],
+        }]
+      : []),
   ]
 
   return (
@@ -61,89 +79,72 @@ export default function ProfileScreen({ favoriteCount, onFavorites }: Props) {
           Mi perfil
         </h1>
 
-        {/* Avatar + info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
-          }}>
-            <span style={{
-              fontSize: 24, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: '#fff',
-            }}>
-              CA
-            </span>
-          </div>
-          <div style={{ flex: 1 }}>
+        {user ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
-              fontSize: 18, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: '#0F1D2D', marginBottom: 2,
-              letterSpacing: '-0.02em',
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
             }}>
-              Carlos Almonte
-            </div>
-            <div style={{
-              fontSize: 13, color: '#9AAABB',
-              fontFamily: "'DM Sans', sans-serif",
-              marginBottom: 6,
-            }}>
-              carlos.almonte@gmail.com
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <MapPinIcon size={12} color="#9AAABB" />
               <span style={{
-                fontSize: 12, color: '#9AAABB',
-                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 24, fontWeight: 700,
+                fontFamily: "'Poppins', sans-serif",
+                color: '#fff',
               }}>
-                Santo Domingo, RD
+                {initials(user)}
               </span>
             </div>
-          </div>
-          <button style={{
-            background: '#E6F7F3', border: 'none', borderRadius: 10,
-            padding: '8px 14px', cursor: 'pointer',
-            fontSize: 12, fontWeight: 600, color: '#00B894',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            Editar
-          </button>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ background: '#fff', margin: '12px 16px 0', borderRadius: 16, border: '1px solid #E8EDF2' }}>
-        <div style={{ display: 'flex' }}>
-          {[
-            { label: 'Comparaciones', value: '47' },
-            { label: 'Ahorrado', value: 'RD$12,480' },
-            { label: 'Alertas', value: '3' },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              flex: 1, textAlign: 'center', padding: '16px 8px',
-              borderRight: i < 2 ? '1px solid #F2F4F7' : 'none',
-            }}>
+            <div style={{ flex: 1 }}>
               <div style={{
                 fontSize: 18, fontWeight: 700,
                 fontFamily: "'Poppins', sans-serif",
-                color: '#00B894', letterSpacing: '-0.02em',
-                marginBottom: 2,
+                color: '#0F1D2D', marginBottom: 2,
+                letterSpacing: '-0.02em',
               }}>
-                {stat.value}
+                {user.name ?? user.email}
               </div>
               <div style={{
-                fontSize: 11, color: '#9AAABB',
+                fontSize: 13, color: '#9AAABB',
                 fontFamily: "'DM Sans', sans-serif",
               }}>
-                {stat.label}
+                {user.email}
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: '#F2F4F7', border: '1.5px solid #E8EDF2',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <UserIcon size={28} color="#9AAABB" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 14, color: '#5d7ea0',
+                fontFamily: "'DM Sans', sans-serif",
+                marginBottom: 10, lineHeight: 1.4,
+              }}>
+                Inicia sesión para guardar tus favoritos y alertas.
+              </div>
+              <button
+                onClick={onLogin}
+                style={{
+                  background: '#00B894', border: 'none', borderRadius: 10,
+                  padding: '9px 16px', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, color: '#fff',
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              >
+                Iniciar sesión
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Menu sections */}
