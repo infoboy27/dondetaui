@@ -8,6 +8,7 @@ import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notific
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { useProductReviews } from '../hooks/useProductReviews'
+import { useSearchHistory } from '../hooks/useSearchHistory'
 import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
 import StoreLogo from '../components/StoreLogo'
@@ -477,6 +478,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const { products, loading, error } = useCatalogProducts(query)
+  const searchHistory = useSearchHistory(user)
   const hasNotifications = getPriceDropNotifications(products, alertedIds).length > 0
 
   const toggleStore = (s: string) => {
@@ -499,7 +501,10 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
     return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label))
   }, [products])
 
-  const runSearch = () => {
+  const runSearch = (term = query) => {
+    if (term !== query) setQuery(term)
+    if (term.trim()) void searchHistory.record(term)
+    setFocused(false)
     setScreen('results')
   }
 
@@ -603,8 +608,8 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
           </div>
 
           {/* Search */}
+          <div style={{ position: 'relative', flex: 1, maxWidth: 480 }}>
           <div style={{
-            flex: 1, maxWidth: 480,
             display: 'flex', alignItems: 'center', gap: 10,
             background: focused ? '#fff' : '#F2F4F7',
             borderRadius: 12, padding: '0 16px', height: 44,
@@ -625,7 +630,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
                 fontFamily: "'DM Sans', sans-serif",
               }}
             />
-            <button onClick={runSearch} style={{
+            <button onClick={() => runSearch()} style={{
               background: '#00B894', border: 'none', borderRadius: 8,
               color: '#fff', padding: '6px 16px', cursor: 'pointer',
               fontSize: 13, fontWeight: 700,
@@ -633,6 +638,46 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
             }}>
               Buscar
             </button>
+          </div>
+
+          {focused && !query.trim() && searchHistory.recent.length > 0 && (
+            <div style={{
+              position: 'absolute', top: 50, left: 0, right: 0, zIndex: 120,
+              background: '#fff', borderRadius: 12,
+              border: '1px solid #E8EDF2',
+              boxShadow: '0 12px 32px rgba(15,29,45,0.12)',
+              padding: 8,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#9AAABB',
+                fontFamily: "'DM Sans', sans-serif",
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+                padding: '6px 10px',
+              }}>
+                Búsquedas recientes
+              </div>
+              {searchHistory.recent.slice(0, 6).map(term => (
+                <button
+                  key={term}
+                  // mousedown (not click/onClick) fires before the input's
+                  // onBlur, which otherwise closes this dropdown first and
+                  // swallows the click entirely.
+                  onMouseDown={() => runSearch(term)}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '8px 10px', borderRadius: 8,
+                    fontSize: 13, color: '#0F1D2D',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#F2F4F7')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                >
+                  {term}
+                </button>
+              ))}
+            </div>
+          )}
           </div>
 
           {/* Nav links */}
