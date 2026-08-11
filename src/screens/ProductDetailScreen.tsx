@@ -12,6 +12,7 @@ import {
 } from '../components/Icons'
 import { formatPrice } from '../data/mock'
 import { getBestOffer } from '../domain/offers'
+import { useProductReviews } from '../hooks/useProductReviews'
 import type { Product } from '../types'
 
 interface Props {
@@ -35,6 +36,14 @@ export default function ProductDetailScreen({
   const [alertCreated, setAlertCreated] = useState(false)
   const [creatingAlert, setCreatingAlert] = useState(false)
   const [alertError, setAlertError] = useState<string | null>(null)
+  const [showReviewSheet, setShowReviewSheet] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+
+  const reviews = useProductReviews(product.id)
 
   const bestOffer = getBestOffer(product.prices)
   const priceMin = product.priceHistory.length
@@ -59,6 +68,27 @@ export default function ProductDetailScreen({
       setAlertError(error instanceof Error ? error.message : 'No se pudo crear la alerta')
     } finally {
       setCreatingAlert(false)
+    }
+  }
+
+  const submitReview = async () => {
+    if (reviewRating < 1) return
+
+    setSubmittingReview(true)
+    setReviewError(null)
+    try {
+      await reviews.submit(reviewRating, reviewComment.trim() || undefined)
+      setReviewSubmitted(true)
+      setTimeout(() => {
+        setShowReviewSheet(false)
+        setReviewSubmitted(false)
+        setReviewRating(0)
+        setReviewComment('')
+      }, 2000)
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : 'No se pudo enviar la reseña')
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -238,6 +268,79 @@ export default function ProductDetailScreen({
             </div>
           </div>
           <PriceHistoryChart history={product.priceHistory} period={period} />
+        </div>
+      </div>
+
+      {/* Reviews */}
+      <div style={{ margin: '12px 16px 0' }}>
+        <div style={{
+          background: '#fff', borderRadius: 16,
+          border: '1px solid #E8EDF2',
+          boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
+          overflow: 'hidden', padding: '14px 16px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 700,
+              fontFamily: "'Poppins', sans-serif",
+              color: '#0F1D2D',
+            }}>
+              Reseñas {reviews.count > 0 && `(${reviews.count})`}
+            </div>
+            <button
+              type="button"
+              onClick={() => (isLoggedIn ? setShowReviewSheet(true) : onRequireLogin())}
+              style={{
+                fontSize: 12, fontWeight: 600, color: '#00B894',
+                fontFamily: "'DM Sans', sans-serif",
+                background: 'none', border: 'none', cursor: 'pointer',
+              }}
+            >
+              Escribir reseña
+            </button>
+          </div>
+
+          {reviews.reviews.length === 0 ? (
+            <p style={{
+              fontSize: 13, color: '#9AAABB',
+              fontFamily: "'DM Sans', sans-serif",
+              margin: 0,
+            }}>
+              Todavía no hay reseñas. Sé el primero en opinar.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {reviews.reviews.map(review => (
+                <div key={review.id} style={{ paddingBottom: 12, borderBottom: '1px solid #F2F4F7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{
+                      fontSize: 13, fontWeight: 600, color: '#0F1D2D',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}>
+                      {review.userName}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+                      {new Date(review.createdAt).toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 2, marginBottom: review.comment ? 6 : 0 }}>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <StarIcon key={n} size={12} filled={n <= review.rating} />
+                    ))}
+                  </div>
+                  {review.comment && (
+                    <p style={{
+                      fontSize: 13, color: '#5d7ea0',
+                      fontFamily: "'DM Sans', sans-serif",
+                      margin: 0, lineHeight: '1.4',
+                    }}>
+                      {review.comment}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -461,6 +564,176 @@ export default function ProductDetailScreen({
                     }}
                   >
                     {creatingAlert ? 'Creando…' : 'Crear alerta'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Review Bottom Sheet */}
+      {showReviewSheet && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          display: 'flex', alignItems: 'flex-end',
+        }}>
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(15,29,45,0.5)',
+            }}
+            onClick={() => setShowReviewSheet(false)}
+          />
+          <div className="slide-up" style={{
+            position: 'relative', width: '100%', maxWidth: 430,
+            margin: '0 auto',
+            background: '#fff', borderRadius: '20px 20px 0 0',
+            padding: '20px 20px 36px',
+          }}>
+            <div style={{
+              width: 40, height: 4, borderRadius: 2,
+              background: '#E8EDF2', margin: '0 auto 20px',
+            }} />
+
+            {reviewSubmitted ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%',
+                  background: '#E6F7F3', margin: '0 auto 16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <CheckIcon size={28} color="#00B894" />
+                </div>
+                <h3 style={{
+                  fontSize: 18, fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  color: '#0F1D2D', margin: '0 0 8px',
+                }}>
+                  ¡Gracias por tu reseña!
+                </h3>
+                <p style={{
+                  fontSize: 14, color: '#9AAABB',
+                  fontFamily: "'DM Sans', sans-serif",
+                  lineHeight: '1.5',
+                }}>
+                  Tu opinión ayuda a otros a comparar mejor.
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3 style={{
+                  fontSize: 18, fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  color: '#0F1D2D', margin: '0 0 4px',
+                }}>
+                  Escribir reseña
+                </h3>
+                <p style={{
+                  fontSize: 13, color: '#9AAABB',
+                  fontFamily: "'DM Sans', sans-serif",
+                  margin: '0 0 20px',
+                  lineHeight: '1.4',
+                }}>
+                  {product.name}
+                </p>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{
+                    fontSize: 12, fontWeight: 600, color: '#9AAABB',
+                    fontFamily: "'DM Sans', sans-serif",
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    display: 'block', marginBottom: 8,
+                  }}>
+                    Tu calificación
+                  </label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setReviewRating(n)}
+                        aria-label={`${n} estrella${n === 1 ? '' : 's'}`}
+                        aria-pressed={reviewRating === n}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                      >
+                        <StarIcon size={28} filled={n <= reviewRating} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label htmlFor="review-comment" style={{
+                    fontSize: 12, fontWeight: 600, color: '#9AAABB',
+                    fontFamily: "'DM Sans', sans-serif",
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    display: 'block', marginBottom: 8,
+                  }}>
+                    Comentario (opcional)
+                  </label>
+                  <textarea
+                    id="review-comment"
+                    value={reviewComment}
+                    onChange={event => setReviewComment(event.target.value)}
+                    placeholder="¿Qué te pareció este producto?"
+                    rows={3}
+                    maxLength={1000}
+                    style={{
+                      width: '100%', resize: 'none',
+                      background: '#F2F4F7', borderRadius: 12,
+                      padding: '12px 16px',
+                      border: '1.5px solid #E8EDF2',
+                      fontSize: 14, color: '#0F1D2D',
+                      fontFamily: "'DM Sans', sans-serif",
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                {reviewError && (
+                  <div style={{
+                    background: '#FFF0F0', border: '1px solid #FF3B3B30', borderRadius: 10,
+                    padding: '10px 14px', marginBottom: 16,
+                    fontSize: 12, color: '#FF3B3B',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {reviewError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewSheet(false)}
+                    style={{
+                      flex: 1, padding: '14px 0',
+                      border: '1.5px solid #E8EDF2', borderRadius: 12,
+                      background: '#fff', color: '#9AAABB',
+                      fontSize: 14, fontWeight: 600,
+                      fontFamily: "'Poppins', sans-serif",
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={submitReview}
+                    disabled={submittingReview || reviewRating < 1}
+                    style={{
+                      flex: 2, padding: '14px 0',
+                      border: 'none', borderRadius: 12,
+                      background: reviewRating < 1 ? '#E8EDF2' : '#00B894',
+                      color: reviewRating < 1 ? '#9AAABB' : '#fff',
+                      fontSize: 14, fontWeight: 700,
+                      fontFamily: "'Poppins', sans-serif",
+                      cursor: submittingReview || reviewRating < 1 ? 'not-allowed' : 'pointer',
+                      opacity: submittingReview ? 0.7 : 1,
+                      boxShadow: reviewRating < 1 ? 'none' : '0 4px 12px rgba(0,184,148,0.3)',
+                    }}
+                  >
+                    {submittingReview ? 'Enviando…' : 'Enviar reseña'}
                   </button>
                 </div>
               </>

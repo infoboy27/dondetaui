@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
 import { ProductsModule } from './products/products.module'
+import { ReviewsModule } from './reviews/reviews.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
 import { StoresModule } from './stores/stores.module'
 
@@ -20,6 +21,7 @@ import { StoresModule } from './stores/stores.module'
     AlertsModule,
     FavoritesModule,
     SearchHistoryModule,
+    ReviewsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

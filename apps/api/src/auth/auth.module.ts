@@ -24,6 +24,8 @@ const jwtModule = JwtModule.registerAsync({
   // modules (alerts), and Nest resolves its JwtService dependency in THAT
   // module's own injector context — just exporting the guard class isn't
   // enough, the module providing its dependency has to be exported as well.
-  exports: [JwtAuthGuard, jwtModule],
+  // UsersRepository is exported for ReviewsModule, which needs the
+  // submitting user's display name for the review response.
+  exports: [JwtAuthGuard, jwtModule, UsersRepository],
 })
 export class AuthModule {}

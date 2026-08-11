@@ -41,8 +41,8 @@ export class ProductsRepository {
         pv.model,
         coalesce(p.subtitle, '') as subtitle,
         p.image_url,
-        p.rating,
-        p.reviews,
+        coalesce(rv.average, 0) as rating,
+        coalesce(rv.count, 0) as reviews,
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
@@ -50,6 +50,11 @@ export class ProductsRepository {
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
+      left join (
+        select product_id, avg(rating) as average, count(*) as count
+        from product_reviews
+        group by product_id
+      ) rv on rv.product_id = p.id
       ${where}
       order by p.name asc
       limit 100`,
@@ -69,8 +74,8 @@ export class ProductsRepository {
         pv.model,
         coalesce(p.subtitle, '') as subtitle,
         p.image_url,
-        p.rating,
-        p.reviews,
+        coalesce(rv.average, 0) as rating,
+        coalesce(rv.count, 0) as reviews,
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
@@ -78,6 +83,11 @@ export class ProductsRepository {
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
+      left join (
+        select product_id, avg(rating) as average, count(*) as count
+        from product_reviews
+        group by product_id
+      ) rv on rv.product_id = p.id
       where p.id = $1
       limit 1`,
       [id],
@@ -96,8 +106,8 @@ export class ProductsRepository {
         pv.model,
         coalesce(p.subtitle, '') as subtitle,
         p.image_url,
-        p.rating,
-        p.reviews,
+        coalesce(rv.average, 0) as rating,
+        coalesce(rv.count, 0) as reviews,
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
@@ -105,6 +115,11 @@ export class ProductsRepository {
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
+      left join (
+        select product_id, avg(rating) as average, count(*) as count
+        from product_reviews
+        group by product_id
+      ) rv on rv.product_id = p.id
       where p.slug = $1
       limit 1`,
       [slug],
