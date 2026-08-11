@@ -296,6 +296,10 @@ export default function DesktopView({ onMobile }: Props) {
     return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label))
   }, [products])
 
+  const runSearch = () => {
+    setScreen('results')
+  }
+
   const toggleAlert = (productId: string) => {
     setAlertedIds(prev => {
       const next = new Set(prev)
@@ -413,6 +417,7 @@ export default function DesktopView({ onMobile }: Props) {
               onChange={e => setQuery(e.target.value)}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
+              onKeyDown={e => { if (e.key === 'Enter') runSearch() }}
               placeholder="Buscar productos, marcas o tiendas…"
               style={{
                 flex: 1, background: 'none', border: 'none', outline: 'none',
@@ -420,7 +425,7 @@ export default function DesktopView({ onMobile }: Props) {
                 fontFamily: "'DM Sans', sans-serif",
               }}
             />
-            <button style={{
+            <button onClick={runSearch} style={{
               background: '#00B894', border: 'none', borderRadius: 8,
               color: '#fff', padding: '6px 16px', cursor: 'pointer',
               fontSize: 13, fontWeight: 700,
@@ -761,7 +766,11 @@ export default function DesktopView({ onMobile }: Props) {
         </aside>
 
         {/* Results area */}
-        <main>
+        {/* minWidth: 0 overrides the grid item's default min-width: auto, which otherwise
+            refuses to shrink the 1fr column below its content's min-content width (long
+            unbroken product names/prices) and pushes the whole page into horizontal
+            overflow. */}
+        <main style={{ minWidth: 0 }}>
           {/* Results header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
