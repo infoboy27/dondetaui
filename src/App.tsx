@@ -125,7 +125,7 @@ export default function App() {
 
   // Desktop view
   if (isDesktop && !isMobileView) {
-    return <DesktopView onMobile={() => setIsMobileView(true)} alertedIds={alertedIds} onToggleAlert={toggleAlert} />
+    return <DesktopView onMobile={() => setIsMobileView(true)} alertedIds={alertedIds} onToggleAlert={toggleAlert} user={user} />
   }
 
   const isScanner = screen === 'scanner'

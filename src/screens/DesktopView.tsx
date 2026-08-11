@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { formatPrice, CATEGORIES } from '../data/mock'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications } from '../domain/notifications'
+import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
-import type { Product } from '../types'
+import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
 type DesktopScreen = 'results' | 'categories' | 'stores' | 'deals' | 'alerts'
@@ -19,6 +20,7 @@ interface Props {
   onMobile: () => void
   alertedIds: Set<string>
   onToggleAlert: (id: string) => void
+  user: User | null
 }
 
 const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
@@ -299,7 +301,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
   )
 }
 
-export default function DesktopView({ onMobile, alertedIds, onToggleAlert }: Props) {
+export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
@@ -514,20 +516,29 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert }: Pro
                 }} />
               )}
             </button>
-            <div style={{
-              width: 38, height: 38, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #00B894, #00cba0)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}>
-              <span style={{
-                fontSize: 13, fontWeight: 700,
-                fontFamily: "'Poppins', sans-serif",
-                color: '#fff',
-              }}>
-                CA
-              </span>
-            </div>
+            <button
+              onClick={onMobile}
+              aria-label={user ? user.name ?? user.email : 'Iniciar sesión'}
+              title={user ? user.name ?? user.email : 'Iniciar sesión'}
+              style={{
+                width: 38, height: 38, borderRadius: '50%',
+                border: 'none', cursor: 'pointer', padding: 0,
+                background: user ? 'linear-gradient(135deg, #00B894, #00cba0)' : '#F2F4F7',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              {user ? (
+                <span style={{
+                  fontSize: 13, fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  color: '#fff',
+                }}>
+                  {userInitials(user)}
+                </span>
+              ) : (
+                <UserIcon size={18} color="#9AAABB" />
+              )}
+            </button>
             <button
               onClick={onMobile}
               style={{

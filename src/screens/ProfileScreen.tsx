@@ -1,4 +1,5 @@
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon } from '../components/Icons'
+import { userInitials } from '../domain/user'
 import type { User } from '../types'
 
 interface Props {
@@ -9,13 +10,6 @@ interface Props {
   onAlerts: () => void
   onLogin: () => void
   onLogout: () => void
-}
-
-function initials(user: User): string {
-  const source = user.name?.trim() || user.email
-  const parts = source.split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return source.slice(0, 2).toUpperCase()
 }
 
 export default function ProfileScreen({ user, favoriteCount, alertCount, onFavorites, onAlerts, onLogin, onLogout }: Props) {
@@ -93,7 +87,7 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
                 fontFamily: "'Poppins', sans-serif",
                 color: '#fff',
               }}>
-                {initials(user)}
+                {userInitials(user)}
               </span>
             </div>
             <div style={{ flex: 1 }}>
