@@ -85,10 +85,34 @@ function slugify(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'otros'
 }
 
-function inferCategory(url: string, config: RetailerConfig): { name: string; slug: string } {
+// VTEX storefronts (Sirena) server-render a real breadcrumb on the product page itself:
+// numbered `vtex-breadcrumb-1-x-link--N` links for each category level, with the final
+// (non-link) segment being the product name. The last numbered link is the most specific
+// real category -- far better than anything guessable from the URL.
+function extractBreadcrumbCategory(html: string): string | undefined {
+  const matches = [...html.matchAll(/<a[^>]+class="[^"]*vtex-breadcrumb-1-x-link--\d[^"]*"[^>]*>([^<]+)<\/a>/gi)]
+  const last = matches.at(-1)?.[1]
+  return last ? decodeHtml(last) : undefined
+}
+
+// A URL path segment that ends in a long digit run (the SKU) is the product's own slug,
+// not a category -- Jumbo and Sirena's product URLs are flat (no real nested category
+// segment), so the naive "first non-generic segment" below would otherwise pick up the
+// entire product name/slug as its own "category" (e.g. "Daiwa Abanico 16p Pared Wf W16m
+// 1930256"), which then leaked into the frontend's category filter as a fake entry.
+function looksLikeProductSlug(segment: string): boolean {
+  return /-\d{4,}$/.test(segment)
+}
+
+function inferCategory(url: string, html: string, config: RetailerConfig): { name: string; slug: string } {
+  const breadcrumb = extractBreadcrumbCategory(html)
+  if (breadcrumb) return { name: breadcrumb, slug: slugify(breadcrumb) }
+
   const segments = new URL(url).pathname.split('/').filter(Boolean)
   const generic = new Set(['es-do', 'supermercado', 'all-products', 'product', 'producto', 'p'])
-  const candidate = segments.find(segment => !generic.has(segment.toLowerCase()) && !segment.endsWith('.html'))
+  const candidate = segments.find(segment =>
+    !generic.has(segment.toLowerCase()) && !segment.endsWith('.html') && !looksLikeProductSlug(segment),
+  )
   if (!candidate) return config.defaultCategory
   const name = decodeURIComponent(candidate).replace(/[-_]+/g, ' ').replace(/\b\w/g, value => value.toUpperCase())
   return { name, slug: slugify(name) }
@@ -148,7 +172,7 @@ export class RetailerHtmlAdapter {
     const upc = gtin && gtin.length === 12 ? gtin : undefined
     const imageValue = product?.image
     const imageUrl = typeof imageValue === 'string' ? imageValue : Array.isArray(imageValue) && typeof imageValue[0] === 'string' ? imageValue[0] : first(html, [/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i])
-    const category = inferCategory(url, this.config)
+    const category = inferCategory(url, html, this.config)
 
     return {
       retailer: { name: this.config.name, slug: this.config.slug, abbr: this.config.abbr, primaryColor: this.config.primaryColor, websiteUrl: this.config.websiteUrl },
