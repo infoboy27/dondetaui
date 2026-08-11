@@ -1,17 +1,18 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Product } from '../types'
 import { getBestOffer } from '../domain/offers'
 import { formatPrice } from '../domain/currency'
 import { colors, radii, spacing } from '../design/tokens'
 import { fonts } from '../design/fonts'
 import { shadows } from '../design/shadows'
+import ProductImage from './ProductImage'
 
 export default function ProductCard({ product, onPress }: { product: Product; onPress: () => void }) {
   const offer = getBestOffer(product.prices)
 
   return (
     <Pressable onPress={onPress} style={styles.card}>
-      {!!product.image && <Image source={{ uri: product.image }} style={styles.image} />}
+      <ProductImage uri={product.image} style={styles.image} />
       <View style={{ flex: 1 }}>
         <Text style={styles.brand}>{product.brand}</Text>
         <Text style={styles.name} numberOfLines={2}>{product.name}</Text>

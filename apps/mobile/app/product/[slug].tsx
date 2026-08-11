@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
@@ -9,6 +9,7 @@ import { formatPrice } from '../../src/domain/currency'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 import { shadows } from '../../src/design/shadows'
+import ProductImage from '../../src/components/ProductImage'
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -76,7 +77,7 @@ export default function ProductDetailScreen() {
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.top}>
-          {!!product.image && <Image source={{ uri: product.image }} style={styles.image} />}
+          <ProductImage uri={product.image} style={styles.image} />
           <Text style={styles.brand}>{product.brand}</Text>
           <Text style={styles.title}>{product.name}</Text>
           {!!product.model && <Text style={styles.subtitle}>{product.model}</Text>}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
@@ -12,6 +12,7 @@ export default function HomeScreen() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const load = async () => {
@@ -26,6 +27,18 @@ export default function HomeScreen() {
     }
   }
 
+  const refresh = async () => {
+    setRefreshing(true)
+    setError(null)
+    try {
+      setProducts(await productsApi.list())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo cargar el catálogo')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   useEffect(() => {
     void load()
   }, [])
@@ -36,7 +49,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={colors.primary} />}
+      >
         <View style={styles.hero}>
           <Text style={styles.heroEyebrow}>BUSCA · COMPARA · AHORRA</Text>
           <Text style={styles.heroTitle}>Antes de comprar,{'\n'}mira DóndeTa.</Text>

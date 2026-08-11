@@ -16,8 +16,8 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
 
-  const search = async () => {
-    const value = query.trim()
+  const search = async (term = query) => {
+    const value = term.trim()
     if (!value) return
     setLoading(true)
     setError(null)
@@ -56,7 +56,12 @@ export default function SearchScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <Pressable onPress={() => void search()} style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.retry}>Toca para reintentar</Text>
+          </Pressable>
+        )}
         {loading && <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />}
         {!loading && searched && (
           <>
@@ -89,6 +94,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
   count: { backgroundColor: colors.primaryLight, color: colors.primary, fontFamily: fonts.display.extrabold, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radii.full },
   empty: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
-  errorText: { color: '#BE123C', fontFamily: fonts.body.bold, marginBottom: spacing.md },
+  errorBox: { backgroundColor: '#FFF1F2', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.lg },
+  errorText: { color: '#BE123C', fontFamily: fonts.body.bold },
+  retry: { color: '#BE123C', fontFamily: fonts.body.regular, fontSize: 12 },
   hint: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
 })
