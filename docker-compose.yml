@@ -113,6 +113,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3002
+      HOSTNAME: "0.0.0.0"
       API_BASE_URL: http://api:3001/api
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
     depends_on:
