@@ -86,7 +86,7 @@ export const PRODUCTS: Product[] = [
       { store: 'Corripio', abbr: 'CO', color: '#27AE60', price: 35995, shipping: 'Gratis', available: true, updated: '3 horas', distance: '3.5 km' },
     ],
     priceHistory: makePriceHistory(32995),
-    favorite: true,
+    favorite: false,
     alerted: false,
   },
   {

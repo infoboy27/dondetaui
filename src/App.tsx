@@ -136,7 +136,7 @@ function readGuestFavorites(): Set<string> {
     const raw = localStorage.getItem(GUEST_FAVORITES_KEY)
     if (raw) return new Set(JSON.parse(raw))
   } catch { /* ignore malformed/unavailable storage */ }
-  return new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id))
+  return new Set()
 }
 
 export default function App() {
