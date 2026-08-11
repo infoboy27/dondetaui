@@ -6,9 +6,14 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "dondeta",
+    "icon": "./assets/icon.png",
     "android": {
       "package": "com.jfmcss.dondeta",
       "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#00B894"
+      },
       "permissions": [
         "CAMERA",
         "android.permission.CAMERA",
@@ -41,11 +46,19 @@
           "color": "#00B894"
         }
       ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#00B894"
+        }
+      ],
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
-      "expo-font",
-      "expo-splash-screen"
+      "expo-font"
     ],
     "extra": {
       "router": {},
