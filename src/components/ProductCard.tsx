@@ -11,6 +11,7 @@ interface ProductCardProps {
 }
 
 function DiscountBadge({ pct }: { pct: number }) {
+  if (pct <= 0) return null
   return (
     <span
       style={{
@@ -133,7 +134,7 @@ export default function ProductCard({ product, onProduct }: ProductCardProps) {
         >
           {bestOffer ? formatPrice(bestOffer.price) : 'Sin precio'}
         </div>
-        {bestOffer && (
+        {bestOffer && product.previousPrice > bestOffer.price && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
             <span
               style={{

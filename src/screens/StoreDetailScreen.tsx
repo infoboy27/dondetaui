@@ -266,22 +266,24 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
                         </span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <span style={{
-                        fontSize: 11, color: '#9AAABB',
-                        fontFamily: "'DM Sans', sans-serif",
-                        textDecoration: 'line-through',
-                      }}>
-                        {formatPrice(product.previousPrice)}
-                      </span>
-                      <span style={{
-                        fontSize: 11, color: '#FF9F1C', fontWeight: 600,
-                        fontFamily: "'DM Sans', sans-serif",
-                        background: '#FFF3E0', padding: '1px 6px', borderRadius: 999,
-                      }}>
-                        -{product.discount}%
-                      </span>
-                    </div>
+                    {product.discount > 0 && product.previousPrice > sp.price && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                        <span style={{
+                          fontSize: 11, color: '#9AAABB',
+                          fontFamily: "'DM Sans', sans-serif",
+                          textDecoration: 'line-through',
+                        }}>
+                          {formatPrice(product.previousPrice)}
+                        </span>
+                        <span style={{
+                          fontSize: 11, color: '#FF9F1C', fontWeight: 600,
+                          fontFamily: "'DM Sans', sans-serif",
+                          background: '#FFF3E0', padding: '1px 6px', borderRadius: 999,
+                        }}>
+                          -{product.discount}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <HeartIcon size={16} color="#D8E6F0" />
                 </div>
