@@ -4,7 +4,7 @@ import { ChevronLeft, UserIcon } from '../components/Icons'
 interface Props {
   onBack: () => void
   onLogin: (email: string, password: string) => Promise<void>
-  onRegister: (email: string, password: string, name?: string) => Promise<void>
+  onRegister: (email: string, password: string, name?: string, phone?: string) => Promise<void>
   loading: boolean
   error: string | null
 }
@@ -14,13 +14,14 @@ export default function LoginScreen({ onBack, onLogin, onRegister, loading, erro
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
 
   const handleSubmit = async () => {
     try {
       if (tab === 'login') {
         await onLogin(email, password)
       } else {
-        await onRegister(email, password, name.trim() || undefined)
+        await onRegister(email, password, name.trim() || undefined, phone.trim() || undefined)
       }
       onBack()
     } catch {
@@ -131,6 +132,22 @@ export default function LoginScreen({ onBack, onLogin, onRegister, loading, erro
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Carlos Almonte"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        )}
+
+        {tab === 'register' && (
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="login-phone" style={labelStyle}>Teléfono (opcional, para WhatsApp/SMS)</label>
+            <div style={fieldWrapperStyle}>
+              <input
+                id="login-phone"
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="+1 809 555 0100"
                 style={inputStyle}
               />
             </div>

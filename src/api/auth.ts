@@ -7,11 +7,11 @@ export interface AuthResult {
 }
 
 export const authApi = {
-  register(email: string, password: string, name?: string): Promise<AuthResult> {
+  register(email: string, password: string, name?: string, phone?: string): Promise<AuthResult> {
     return apiFetch<AuthResult>('/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, phone }),
     })
   },
 

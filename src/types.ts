@@ -18,6 +18,14 @@ export interface User {
   id: string
   email: string
   name: string | null
+  phone?: string | null
+}
+
+export interface PriceAlert {
+  productId: string
+  targetPrice: number | null
+  createdAt: string
+  product: Product
 }
 
 export interface StorePrice {

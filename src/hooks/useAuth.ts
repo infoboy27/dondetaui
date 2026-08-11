@@ -50,7 +50,7 @@ export function useAuth() {
     }
   }
 
-  const register = async (email: string, password: string, name?: string) => {
+  const register = async (email: string, password: string, name?: string, phone?: string) => {
     if (!appConfig.useApi) {
       const message = 'Crear cuenta requiere conexión con el servidor.'
       setState(current => ({ ...current, error: message }))
@@ -59,7 +59,7 @@ export function useAuth() {
 
     setState(current => ({ ...current, loading: true, error: null }))
     try {
-      const { token, user } = await authApi.register(email, password, name)
+      const { token, user } = await authApi.register(email, password, name, phone)
       setToken(token)
       setState({ user, loading: false, error: null })
     } catch (error) {

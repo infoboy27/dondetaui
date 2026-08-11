@@ -5,6 +5,7 @@ import { PRODUCTS } from './data/mock'
 import { getPriceDropNotifications } from './domain/notifications'
 import { useCatalogProducts } from './hooks/useCatalogProducts'
 import { useAuth } from './hooks/useAuth'
+import { usePriceAlerts } from './hooks/usePriceAlerts'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SearchScreen from './screens/SearchScreen'
@@ -33,12 +34,11 @@ export default function App() {
     () => new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id)),
   )
   const [alertsTab, setAlertsTab] = useState<'alertas' | 'favoritos'>('alertas')
-  const [alertedIds, setAlertedIds] = useState<Set<string>>(
-    () => new Set(PRODUCTS.filter(p => p.alerted).map(p => p.id)),
-  )
   const { products: catalogProducts } = useCatalogProducts()
-  const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
+  const priceAlerts = usePriceAlerts(user)
+  const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
+  const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 1024)
@@ -110,22 +110,37 @@ export default function App() {
     navigate('alerts')
   }
 
-  const addAlert = (id: string) => {
-    setAlertedIds(prev => new Set(prev).add(id))
+  const handleCreateAlert = async (targetPrice?: number) => {
+    if (!selectedProduct) return
+    if (!user) {
+      navigate('login')
+      throw new Error('Inicia sesión para crear una alerta')
+    }
+    await priceAlerts.create(selectedProduct.id, targetPrice)
   }
 
-  const toggleAlert = (id: string) => {
-    setAlertedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const handleToggleDesktopAlert = (productId: string) => {
+    if (!user) {
+      setIsMobileView(true)
+      return
+    }
+    if (alertedIds.has(productId)) {
+      void priceAlerts.remove(productId)
+    } else {
+      void priceAlerts.create(productId)
+    }
   }
 
   // Desktop view
   if (isDesktop && !isMobileView) {
-    return <DesktopView onMobile={() => setIsMobileView(true)} alertedIds={alertedIds} onToggleAlert={toggleAlert} user={user} />
+    return (
+      <DesktopView
+        onMobile={() => setIsMobileView(true)}
+        alertedIds={alertedIds}
+        onToggleAlert={handleToggleDesktopAlert}
+        user={user}
+      />
+    )
   }
 
   const isScanner = screen === 'scanner'
@@ -239,7 +254,9 @@ export default function App() {
               onBack={goBack}
               isFavorite={favoriteIds.has(selectedProduct.id)}
               onToggleFavorite={() => toggleFavorite(selectedProduct.id)}
-              onCreateAlert={() => addAlert(selectedProduct.id)}
+              onCreateAlert={handleCreateAlert}
+              isLoggedIn={Boolean(user)}
+              onRequireLogin={() => navigate('login')}
             />
           )}
           {screen === 'scanner' && (
@@ -250,6 +267,8 @@ export default function App() {
               onProduct={handleProduct}
               favoriteIds={favoriteIds}
               onToggleFavorite={toggleFavorite}
+              alerts={priceAlerts.alerts}
+              onRemoveAlert={id => void priceAlerts.remove(id)}
               initialTab={alertsTab}
             />
           )}

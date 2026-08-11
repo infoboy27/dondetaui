@@ -18,7 +18,7 @@ export class AuthService {
     if (existing) throw new ConflictException('Email already registered')
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS)
-    const row = await this.users.create(dto.email, passwordHash, dto.name ?? null)
+    const row = await this.users.create(dto.email, passwordHash, dto.name ?? null, dto.phone ?? null)
     const user = this.users.toDto(row)
 
     return { token: this.sign(user), user }

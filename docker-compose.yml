@@ -131,6 +131,27 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  alerts-worker:
+    profiles: ["alerts"]
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:-change-me-in-dev}@postgres:5432/${POSTGRES_DB:-dondeta}
+      ALERTS_INTERVAL_SECONDS: ${ALERTS_INTERVAL_SECONDS:-1800}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+    volumes:
+      - ./deploy/alerts-loop.sh:/deploy/alerts-loop.sh:ro
+    entrypoint: ["/bin/sh", "/deploy/alerts-loop.sh"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
 volumes:
   dondeta_postgres:
   dondeta_redis:

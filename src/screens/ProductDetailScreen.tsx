@@ -19,16 +19,22 @@ interface Props {
   onBack: () => void
   isFavorite: boolean
   onToggleFavorite: () => void
-  onCreateAlert: () => void
+  onCreateAlert: (targetPrice?: number) => Promise<void>
+  isLoggedIn: boolean
+  onRequireLogin: () => void
 }
 
 const PERIODS = ['7D', '30D', '90D', '6M', '1A']
 
-export default function ProductDetailScreen({ product, onBack, isFavorite, onToggleFavorite, onCreateAlert }: Props) {
+export default function ProductDetailScreen({
+  product, onBack, isFavorite, onToggleFavorite, onCreateAlert, isLoggedIn, onRequireLogin,
+}: Props) {
   const [period, setPeriod] = useState('30D')
   const [showAlertSheet, setShowAlertSheet] = useState(false)
   const [alertPrice, setAlertPrice] = useState('')
   const [alertCreated, setAlertCreated] = useState(false)
+  const [creatingAlert, setCreatingAlert] = useState(false)
+  const [alertError, setAlertError] = useState<string | null>(null)
 
   const bestOffer = getBestOffer(product.prices)
   const priceMin = product.priceHistory.length
@@ -36,15 +42,24 @@ export default function ProductDetailScreen({ product, onBack, isFavorite, onTog
     : undefined
   const isBestPrice = Boolean(bestOffer && priceMin !== undefined && bestOffer.price <= priceMin * 1.05)
 
-  const createAlert = () => {
+  const createAlert = async () => {
     if (!bestOffer) return
 
-    onCreateAlert()
-    setAlertCreated(true)
-    setTimeout(() => {
-      setShowAlertSheet(false)
-      setAlertCreated(false)
-    }, 2000)
+    const targetPrice = alertPrice.trim() ? Number(alertPrice) : undefined
+    setCreatingAlert(true)
+    setAlertError(null)
+    try {
+      await onCreateAlert(targetPrice)
+      setAlertCreated(true)
+      setTimeout(() => {
+        setShowAlertSheet(false)
+        setAlertCreated(false)
+      }, 2000)
+    } catch (error) {
+      setAlertError(error instanceof Error ? error.message : 'No se pudo crear la alerta')
+    } finally {
+      setCreatingAlert(false)
+    }
   }
 
   return (
@@ -241,7 +256,7 @@ export default function ProductDetailScreen({ product, onBack, isFavorite, onTog
         <button
           type="button"
           disabled={!bestOffer}
-          onClick={() => setShowAlertSheet(true)}
+          onClick={() => (isLoggedIn ? setShowAlertSheet(true) : onRequireLogin())}
           style={{
             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 8, padding: '13px 0',
@@ -404,6 +419,17 @@ export default function ProductDetailScreen({ product, onBack, isFavorite, onTog
                   </div>
                 </div>
 
+                {alertError && (
+                  <div style={{
+                    background: '#FFF0F0', border: '1px solid #FF3B3B30', borderRadius: 10,
+                    padding: '10px 14px', marginBottom: 16,
+                    fontSize: 12, color: '#FF3B3B',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                    {alertError}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     type="button"
@@ -422,17 +448,19 @@ export default function ProductDetailScreen({ product, onBack, isFavorite, onTog
                   <button
                     type="button"
                     onClick={createAlert}
+                    disabled={creatingAlert}
                     style={{
                       flex: 2, padding: '14px 0',
                       border: 'none', borderRadius: 12,
                       background: '#00B894', color: '#fff',
                       fontSize: 14, fontWeight: 700,
                       fontFamily: "'Poppins', sans-serif",
-                      cursor: 'pointer',
+                      cursor: creatingAlert ? 'not-allowed' : 'pointer',
+                      opacity: creatingAlert ? 0.7 : 1,
                       boxShadow: '0 4px 12px rgba(0,184,148,0.3)',
                     }}
                   >
-                    Crear alerta
+                    {creatingAlert ? 'Creando…' : 'Crear alerta'}
                   </button>
                 </div>
               </>

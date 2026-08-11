@@ -1,167 +1,86 @@
 import { useState } from 'react'
-import { PRODUCTS, formatPrice } from '../data/mock'
-import { BellIcon, HeartIcon, TrendingDownIcon, CheckIcon, XIcon } from '../components/Icons'
+import { formatPrice } from '../data/mock'
+import { BellIcon, HeartIcon, XIcon } from '../components/Icons'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
-import type { Product } from '../types'
+import type { PriceAlert, Product } from '../types'
 
 interface Props {
   onProduct: (p: Product) => void
   favoriteIds: Set<string>
   onToggleFavorite: (id: string) => void
+  alerts: PriceAlert[]
+  onRemoveAlert: (productId: string) => void
   initialTab?: 'alertas' | 'favoritos'
 }
 
-const ALERTS = [
-  {
-    product: PRODUCTS[0],
-    oldPrice: 25995,
-    newPrice: 24495,
-    store: 'Plaza Lama',
-    time: 'Hace 2 horas',
-    type: 'drop' as const,
-  },
-  {
-    product: PRODUCTS[2],
-    oldPrice: 31995,
-    newPrice: 28995,
-    store: 'Corripio',
-    time: 'Hace 5 horas',
-    type: 'drop' as const,
-  },
-  {
-    product: PRODUCTS[1],
-    oldPrice: 34995,
-    newPrice: 32995,
-    store: 'Jumbo',
-    time: 'Ayer',
-    type: 'drop' as const,
-  },
-]
-
-function AlertCard({ alert, onProduct }: { alert: typeof ALERTS[0]; onProduct: (p: Product) => void }) {
-  const [dismissed, setDismissed] = useState(false)
-  const savings = alert.oldPrice - alert.newPrice
-  const pct = Math.round((savings / alert.oldPrice) * 100)
-
-  if (dismissed) return null
+function AlertRow({ alert, onProduct, onRemove }: {
+  alert: PriceAlert
+  onProduct: (p: Product) => void
+  onRemove: () => void
+}) {
+  const cheapest = alert.product.prices[0]
 
   return (
-    <div className="fade-in" style={{
-      background: '#fff',
-      borderRadius: 16,
-      border: '1px solid #E8EDF2',
-      boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
-      overflow: 'hidden',
-      marginBottom: 12,
-    }}>
-      {/* Alert type label */}
+    <div
+      onClick={() => onProduct(alert.product)}
+      style={{
+        background: '#fff',
+        borderRadius: 16,
+        border: '1px solid #E8EDF2',
+        boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
+        overflow: 'hidden',
+        marginBottom: 12,
+        display: 'flex', gap: 12, padding: '14px 16px',
+        cursor: 'pointer',
+      }}
+    >
       <div style={{
-        background: '#E6F7F3',
-        padding: '7px 16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: 60, height: 60, borderRadius: 12,
+        background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
+        border: '1px solid #E8EDF2',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <TrendingDownIcon size={13} color="#00B894" />
-          <span style={{
-            fontSize: 11, color: '#00B894', fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            letterSpacing: '0.01em',
-          }}>
-            BAJÓ DE PRECIO · -{pct}%
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            fontSize: 11, color: '#9AAABB',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            {alert.time}
-          </span>
-          <button
-            onClick={() => setDismissed(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
-          >
-            <XIcon size={14} color="#9AAABB" />
-          </button>
-        </div>
+        <img src={alert.product.image} alt={alert.product.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
-
-      {/* Product info */}
-      <div
-        onClick={() => onProduct(alert.product)}
-        style={{
-          display: 'flex', gap: 12, padding: '14px 16px', cursor: 'pointer',
-        }}
-      >
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          width: 60, height: 60, borderRadius: 12,
-          background: '#F8FAFC', flexShrink: 0, overflow: 'hidden',
-          border: '1px solid #E8EDF2',
+          fontSize: 14, fontWeight: 600,
+          fontFamily: "'DM Sans', sans-serif",
+          color: '#0F1D2D', marginBottom: 4,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
-          <img src={alert.product.image} alt={alert.product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {alert.product.name}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {cheapest && (
           <div style={{
-            fontSize: 14, fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            color: '#0F1D2D', marginBottom: 4,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontSize: 17, fontWeight: 700,
+            fontFamily: "'Poppins', sans-serif",
+            color: '#0F1D2D', letterSpacing: '-0.03em',
+            marginBottom: 4,
           }}>
-            {alert.product.name}
+            {formatPrice(cheapest.price)}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-            <span style={{
-              fontSize: 20, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: '#00B894', letterSpacing: '-0.03em',
-            }}>
-              {formatPrice(alert.newPrice)}
-            </span>
-            <span style={{
-              fontSize: 12, color: '#9AAABB',
-              fontFamily: "'DM Sans', sans-serif",
-              textDecoration: 'line-through',
-            }}>
-              {formatPrice(alert.oldPrice)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{
-              fontSize: 11, color: '#9AAABB',
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              {alert.store}
-            </span>
-            <span style={{ fontSize: 9, color: '#D8E6F0' }}>·</span>
-            <span style={{
-              fontSize: 11, color: '#FF9F1C', fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              Ahorras {formatPrice(savings)}
-            </span>
-          </div>
+        )}
+        <div style={{
+          fontSize: 11, color: '#00B894', fontWeight: 600,
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          {alert.targetPrice != null
+            ? `Te avisamos si baja a ${formatPrice(alert.targetPrice)}`
+            : 'Te avisamos ante cualquier bajada'}
         </div>
       </div>
-
-      {/* CTA */}
-      <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => onProduct(alert.product)}
-          style={{
-            flex: 1, padding: '10px 0',
-            border: 'none', borderRadius: 10,
-            background: '#00B894', color: '#fff',
-            fontSize: 13, fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}
-        >
-          <CheckIcon size={14} color="#fff" />
-          Ver oferta
-        </button>
-      </div>
+      <button
+        type="button"
+        aria-label={`Quitar alerta de ${alert.product.name}`}
+        onClick={event => {
+          event.stopPropagation()
+          onRemove()
+        }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, alignSelf: 'flex-start' }}
+      >
+        <XIcon size={18} color="#9AAABB" />
+      </button>
     </div>
   )
 }
@@ -247,7 +166,7 @@ function FavoriteCard({ product, onProduct, onToggleFavorite }: {
   )
 }
 
-export default function AlertsScreen({ onProduct, favoriteIds, onToggleFavorite, initialTab }: Props) {
+export default function AlertsScreen({ onProduct, favoriteIds, onToggleFavorite, alerts, onRemoveAlert, initialTab }: Props) {
   const [tab, setTab] = useState<'alertas' | 'favoritos'>(initialTab ?? 'alertas')
   const { products: catalog } = useCatalogProducts()
 
@@ -297,7 +216,7 @@ export default function AlertsScreen({ onProduct, favoriteIds, onToggleFavorite,
                     color: tab === 'alertas' ? '#fff' : '#9AAABB',
                     padding: '1px 6px', borderRadius: 999,
                   }}>
-                    {ALERTS.length}
+                    {alerts.length}
                   </span>
                 </span>
               ) : (
@@ -313,9 +232,14 @@ export default function AlertsScreen({ onProduct, favoriteIds, onToggleFavorite,
 
       <div style={{ padding: '16px 16px 0' }}>
         {tab === 'alertas' ? (
-          ALERTS.length > 0 ? (
-            ALERTS.map((a, i) => (
-              <AlertCard key={i} alert={a} onProduct={onProduct} />
+          alerts.length > 0 ? (
+            alerts.map(alert => (
+              <AlertRow
+                key={alert.productId}
+                alert={alert}
+                onProduct={onProduct}
+                onRemove={() => onRemoveAlert(alert.productId)}
+              />
             ))
           ) : (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
