@@ -1,0 +1,86 @@
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import type { Product } from '../../src/types'
+import { productsApi } from '../../src/api/products'
+import ProductCard from '../../src/components/ProductCard'
+import { colors, radii, spacing } from '../../src/design/tokens'
+import { fonts } from '../../src/design/fonts'
+
+export default function HomeScreen() {
+  const router = useRouter()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      setProducts(await productsApi.list())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo cargar el catálogo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+  }, [])
+
+  const openProduct = (product: Product) => {
+    router.push(`/product/${encodeURIComponent(product.slug ?? product.id)}`)
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <Text style={styles.heroEyebrow}>BUSCA · COMPARA · AHORRA</Text>
+          <Text style={styles.heroTitle}>Antes de comprar,{'\n'}mira DóndeTa.</Text>
+          <Text style={styles.heroText}>Compara precios de tiendas dominicanas en segundos.</Text>
+        </View>
+
+        {error && (
+          <Pressable onPress={() => void load()} style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.retry}>Toca para reintentar</Text>
+          </Pressable>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Precios destacados</Text>
+              <Text style={styles.count}>{products.length}</Text>
+            </View>
+            {products.map(product => (
+              <ProductCard key={product.id} product={product} onPress={() => openProduct(product)} />
+            ))}
+            {!products.length && <Text style={styles.empty}>No encontramos productos.</Text>}
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl, paddingBottom: spacing.xxxl + spacing.md },
+  hero: { backgroundColor: colors.primary, borderRadius: radii.xxl, padding: spacing.xl, marginBottom: spacing.xl },
+  heroEyebrow: { color: '#BDF5E8', fontFamily: fonts.display.extrabold, fontSize: 11, letterSpacing: 1 },
+  heroTitle: { color: '#fff', fontFamily: fonts.display.extrabold, fontSize: 28, lineHeight: 34, marginTop: spacing.sm },
+  heroText: { color: '#CFEDE5', fontFamily: fonts.body.regular, fontSize: 14, lineHeight: 21, marginTop: spacing.sm },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
+  count: { backgroundColor: colors.primaryLight, color: colors.primary, fontFamily: fonts.display.extrabold, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radii.full },
+  empty: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
+  errorBox: { backgroundColor: '#FFF1F2', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.lg },
+  errorText: { color: '#BE123C', fontFamily: fonts.body.bold },
+  retry: { color: '#BE123C', fontFamily: fonts.body.regular, fontSize: 12 },
+})

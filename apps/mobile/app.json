@@ -9,7 +9,9 @@
     "android": {
       "package": "com.jfmcss.dondeta",
       "versionCode": 1,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.jfmcss.dondeta",
@@ -23,7 +25,12 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
-      ]
+      ],
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-font",
+      "expo-splash-screen"
     ]
   }
 }
