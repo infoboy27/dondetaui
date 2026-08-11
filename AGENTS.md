@@ -144,7 +144,16 @@ or run both with:
 pnpm check
 ```
 
-CI must remain green before merging future functional/refactor PRs.
+CI must remain green before merging future functional/refactor PRs. `pnpm check` now includes `pnpm test` (Vitest) — see `TESTING.md`.
+
+## Testing
+
+- Framework: Vitest + React Testing Library (`TESTING.md` has the full rundown).
+- Run with `pnpm test` (once) or `pnpm test:watch`.
+- When writing new pure logic (especially in `src/domain/`), write a corresponding test.
+- When fixing a bug, write a regression test that reproduces it first.
+- When adding a conditional (if/else, availability checks, etc.), test both branches.
+- Never commit code that makes existing tests fail.
 
 ## Code quality
 
