@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
+import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
+import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { storesApi } from '../api/stores'
 import { appConfig } from '../config/env'
@@ -190,6 +192,11 @@ export default function HomeScreen({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Ad slot */}
+      <div style={{ padding: '20px 20px 0' }}>
+        <AdBanner {...AD_SIZES.mobileBanner} />
       </div>
 
       {/* Ofertas de hoy */}

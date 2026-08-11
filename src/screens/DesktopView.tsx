@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { formatPrice, CATEGORIES } from '../data/mock'
+import { AD_SIZES } from '../data/adSizes'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
 import StoreLogo from '../components/StoreLogo'
 import type { Product, User } from '../types'
@@ -564,7 +566,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
       {/* Main content */}
       <div style={{
         maxWidth: 1360, margin: '0 auto', padding: '28px 40px', display: 'grid',
-        gridTemplateColumns: screen === 'categories' || screen === 'stores' ? '1fr' : '240px 1fr', gap: 24,
+        gridTemplateColumns: screen === 'categories' || screen === 'stores' ? '1fr' : '300px 1fr', gap: 24,
       }}>
         {screen === 'categories' && (
           <section>
@@ -828,6 +830,11 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
               ))}
             </div>
           </div>
+
+          {/* Ad slot */}
+          <div style={{ marginTop: 16 }}>
+            <AdBanner {...AD_SIZES.mediumRectangle} />
+          </div>
         </aside>
 
         {/* Results area */}
@@ -869,6 +876,11 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Ad slot */}
+          <div style={{ marginBottom: 20 }}>
+            <AdBanner {...AD_SIZES.leaderboard} />
           </div>
 
           {/* Best deal callout */}
