@@ -69,7 +69,9 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
   }
 
   return (
-    <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
+    <>
+      <title>{query ? `${query} — Resultados | DóndeTa` : 'Resultados | DóndeTa'}</title>
+      <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{
         background: '#fff',
@@ -253,6 +255,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
           Precios actualizados regularmente · Verifica disponibilidad en tienda
         </span>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

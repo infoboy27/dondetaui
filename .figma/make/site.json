@@ -1,9 +1,9 @@
 {
-  "title": "DóndeTa",
-  "description": "Compara precios en tiendas de República Dominicana y encuentra dónde conviene comprar.",
+  "title": "DóndeTa — Compara precios de electrodomésticos en República Dominicana",
+  "description": "Compara precios de electrodomésticos entre Plaza Lama, Jumbo, Sirena, Corripio y PriceSmart antes de comprar. Alertas de precio, historial y reseñas reales.",
   "language": "es",
   "robots": {
-    "index": false
+    "index": true
   },
   "accessibility": {
     "addBypassLinks": true,

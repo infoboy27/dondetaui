@@ -162,6 +162,16 @@ export default function App() {
     if (tab) setActiveTab(tab)
   }, [location.pathname])
 
+  useEffect(() => {
+    // gtag.js is injected by vite.config.ts's figma-site-configuration plugin
+    // only when .figma/make/site.json sets analytics.googleAnalyticsId — a
+    // no-op until that's configured. Its own initial `gtag('config', ...)`
+    // call only fires once per real page load, so this SPA still needs its
+    // own page_view event per route change or GA would see one pageview for
+    // the entire session.
+    window.gtag?.('event', 'page_view', { page_path: location.pathname })
+  }, [location.pathname])
+
   // Preserves the deep-link's own history entry: hitting the app fresh
   // (shared link, new tab) has no in-app "back" to go to, so fall back home
   // instead of leaving the SPA via the browser's real previous page.

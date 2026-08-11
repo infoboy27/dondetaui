@@ -72,7 +72,9 @@ export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Prop
   const storeAbbrLabel = store.abbr
 
   return (
-    <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
+    <>
+      <title>{`${storeName} | DóndeTa`}</title>
+      <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{
         background: '#fff',
@@ -272,6 +274,7 @@ export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Prop
               )
             })}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

@@ -93,7 +93,9 @@ export default function ProductDetailScreen({
   }
 
   return (
-    <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 100 }}>
+    <>
+      <title>{`${product.name} | DóndeTa`}</title>
+      <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 100 }}>
       {/* Header */}
       <div style={{
         background: '#fff',
@@ -741,6 +743,7 @@ export default function ProductDetailScreen({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
