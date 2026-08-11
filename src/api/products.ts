@@ -15,6 +15,10 @@ export const productsApi = {
     return apiFetch<Product>(`/products/${encodeURIComponent(productId)}`)
   },
 
+  getBySlug(slug: string): Promise<Product> {
+    return apiFetch<Product>(`/products/by-slug/${encodeURIComponent(slug)}`)
+  },
+
   barcode(code: string): Promise<Product> {
     return apiFetch<Product>(`/products/barcode/${encodeURIComponent(code)}`)
   },

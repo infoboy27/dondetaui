@@ -26,6 +26,20 @@ function isApplianceCategory(categoryName: string): boolean {
   return APPLIANCE_CATEGORY_KEYWORDS.some(keyword => normalized.includes(keyword))
 }
 
+// Suffixed with a slice of the product's own id, so this never needs a
+// collision-retry loop against the unique index even if two products
+// slugify to the same text.
+function slugify(text: string, productId: string): string {
+  const base = text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+  return `${base}-${productId.slice(0, 8)}`
+}
+
 export class IngestionRepository {
   constructor(private readonly pool: Pool) {}
 
@@ -77,6 +91,11 @@ export class IngestionRepository {
         )
         variantId = variant.rows[0].id
         createdProduct = true
+
+        await client.query('update products set slug = $2 where id = $1', [
+          productId,
+          slugify(`${item.brand} ${item.name}`, productId),
+        ])
       }
 
       const offerId = await this.upsertOffer(client, retailerId, variantId, item)

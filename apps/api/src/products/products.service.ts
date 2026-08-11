@@ -19,6 +19,12 @@ export class ProductsService {
     return product
   }
 
+  async getBySlug(slug: string) {
+    const product = await this.repository.findBySlug(slug)
+    if (!product) throw new NotFoundException('Product not found')
+    return product
+  }
+
   offers(productId: string) {
     return this.repository.offers(productId)
   }

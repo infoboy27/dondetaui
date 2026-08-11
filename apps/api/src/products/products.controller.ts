@@ -20,6 +20,11 @@ export class ProductsController {
     return this.products.barcode(code)
   }
 
+  @Get('products/by-slug/:slug')
+  getBySlug(@Param('slug') slug: string) {
+    return this.products.getBySlug(slug)
+  }
+
   @Get('products/:id/offers')
   offers(@Param('id') id: string) {
     return this.products.offers(id)

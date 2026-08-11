@@ -5,6 +5,7 @@ import type { OfferDto, ProductDto } from './products.types'
 
 interface ProductRow {
   id: string
+  slug: string
   name: string
   brand: string
   model: string
@@ -34,6 +35,7 @@ export class ProductsRepository {
     const result = await this.pool.query<ProductRow>(
       `select
         p.id::text,
+        p.slug,
         p.name,
         p.brand,
         pv.model,
@@ -61,6 +63,7 @@ export class ProductsRepository {
     const result = await this.pool.query<ProductRow>(
       `select
         p.id::text,
+        p.slug,
         p.name,
         p.brand,
         pv.model,
@@ -78,6 +81,33 @@ export class ProductsRepository {
       where p.id = $1
       limit 1`,
       [id],
+    )
+
+    return result.rows[0] ? this.hydrateProduct(result.rows[0]) : null
+  }
+
+  async findBySlug(slug: string): Promise<ProductDto | null> {
+    const result = await this.pool.query<ProductRow>(
+      `select
+        p.id::text,
+        p.slug,
+        p.name,
+        p.brand,
+        pv.model,
+        coalesce(p.subtitle, '') as subtitle,
+        p.image_url,
+        p.rating,
+        p.reviews,
+        c.name as category,
+        c.slug as category_id,
+        coalesce(p.discount, 0) as discount,
+        coalesce(p.previous_price, 0) as previous_price
+      from products p
+      join product_variants pv on pv.product_id = p.id and pv.is_primary = true
+      join categories c on c.id = p.category_id
+      where p.slug = $1
+      limit 1`,
+      [slug],
     )
 
     return result.rows[0] ? this.hydrateProduct(result.rows[0]) : null
@@ -166,6 +196,7 @@ export class ProductsRepository {
 
     return {
       id: row.id,
+      slug: row.slug,
       name: row.name,
       brand: row.brand,
       model: row.model,

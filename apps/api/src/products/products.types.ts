@@ -14,6 +14,7 @@ export interface OfferDto {
 
 export interface ProductDto {
   id: string
+  slug: string
   name: string
   brand: string
   model: string
