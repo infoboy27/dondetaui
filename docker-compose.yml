@@ -94,11 +94,36 @@ services:
     depends_on:
       api:
         condition: service_healthy
+      web-seo:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
+
+  # Server-renders /product/:slug, /sitemap.xml, /robots.txt for search
+  # engines -- slice 1 of the Next.js migration docs/ARCHITECTURE.md targets.
+  # Not exposed to Traefik directly: the `web` service's nginx proxies just
+  # those paths here (see deploy/nginx.conf), everything else stays on the
+  # existing Vite SPA.
+  web-seo:
+    build:
+      context: ./apps/web-seo
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+      API_BASE_URL: http://api:3001/api
+      GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3002/robots.txt >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   ingestion-worker:
     profiles: ["ingestion"]

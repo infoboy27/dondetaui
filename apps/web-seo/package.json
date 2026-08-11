@@ -1,0 +1,27 @@
+{
+  "name": "@dondeta/web-seo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Server-rendered DóndeTa product pages for search engines — slice 1 of the eventual Next.js migration (see docs/ARCHITECTURE.md)",
+  "scripts": {
+    "dev": "next dev --port 3002",
+    "build": "next build",
+    "start": "next start --port 3002",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm typecheck && pnpm build"
+  },
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

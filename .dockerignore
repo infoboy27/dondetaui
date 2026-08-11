@@ -3,6 +3,8 @@
 node_modules
 apps/mobile/node_modules
 apps/api/node_modules
+apps/web-seo/node_modules
+apps/web-seo/.next
 dist
 apps/api/dist
 .env
