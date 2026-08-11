@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { AlertsModule } from './alerts/alerts.module'
 import { AuthModule } from './auth/auth.module'
 import { DatabaseModule } from './database/database.module'
@@ -7,7 +9,15 @@ import { ProductsModule } from './products/products.module'
 import { StoresModule } from './stores/stores.module'
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ProductsModule, StoresModule, AlertsModule],
+  imports: [
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    DatabaseModule,
+    AuthModule,
+    ProductsModule,
+    StoresModule,
+    AlertsModule,
+  ],
   controllers: [HealthController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

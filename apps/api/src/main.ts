@@ -1,6 +1,7 @@
 import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
+import helmet from 'helmet'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
@@ -10,6 +11,13 @@ async function bootstrap() {
     .map(value => value.trim())
     .filter(Boolean)
 
+  // Fail closed in production: an unset CORS_ORIGINS must not silently
+  // fall back to "allow any origin" on a real deployment.
+  if (process.env.NODE_ENV === 'production' && origins.length === 0) {
+    throw new Error('CORS_ORIGINS is required when NODE_ENV=production')
+  }
+
+  app.use(helmet())
   app.enableCors({
     origin: origins.length ? origins : true,
     credentials: false,
