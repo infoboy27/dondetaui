@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon } from '../components/Icons'
@@ -6,6 +7,7 @@ import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { useProductReviews } from '../hooks/useProductReviews'
 import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
 import StoreLogo from '../components/StoreLogo'
@@ -24,6 +26,8 @@ interface Props {
   onMobile: () => void
   alertedIds: Set<string>
   onToggleAlert: (id: string) => void
+  favoriteIds: Set<string>
+  onToggleFavorite: (id: string) => void
   user: User | null
   onLogout: () => void
 }
@@ -69,14 +73,158 @@ function matchesCategory(product: Product, selectedCategory: string): boolean {
   return keywords.some(keyword => haystack.includes(keyword))
 }
 
-function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
+// Lives in its own component so useProductReviews only mounts (and only
+// fires its fetch) once a row is actually expanded, instead of every
+// product in the list fetching reviews up front.
+function DesktopReviews({ productId, isLoggedIn, onRequireLogin }: {
+  productId: string
+  isLoggedIn: boolean
+  onRequireLogin: () => void
+}) {
+  const reviews = useProductReviews(productId)
+  const [showForm, setShowForm] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = async () => {
+    if (rating < 1) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await reviews.submit(rating, comment.trim() || undefined)
+      setShowForm(false)
+      setRating(0)
+      setComment('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo enviar la reseña')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: '14px 20px', borderTop: '1px solid #F2F4F7' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{
+          fontSize: 12, fontWeight: 700, color: '#5d7ea0',
+          fontFamily: "'DM Sans', sans-serif",
+          textTransform: 'uppercase', letterSpacing: '0.04em',
+        }}>
+          Reseñas {reviews.count > 0 && `(${reviews.count})`}
+        </span>
+        <button
+          onClick={() => (isLoggedIn ? setShowForm(v => !v) : onRequireLogin())}
+          style={{
+            fontSize: 12, fontWeight: 600, color: '#00B894',
+            fontFamily: "'DM Sans', sans-serif",
+            background: 'none', border: 'none', cursor: 'pointer',
+          }}
+        >
+          Escribir reseña
+        </button>
+      </div>
+
+      {showForm && (
+        <div style={{ background: '#F8FAFC', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                onClick={() => setRating(n)}
+                aria-label={`${n} estrella${n === 1 ? '' : 's'}`}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+              >
+                <StarIcon size={18} filled={n <= rating} />
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            placeholder="¿Qué te pareció este producto? (opcional)"
+            rows={2}
+            maxLength={1000}
+            style={{
+              width: '100%', resize: 'none', boxSizing: 'border-box',
+              background: '#fff', border: '1px solid #E8EDF2', borderRadius: 8,
+              padding: '8px 10px', fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+              color: '#0F1D2D', marginBottom: 8,
+            }}
+          />
+          {error && (
+            <div style={{ fontSize: 11, color: '#FF3B3B', marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>{error}</div>
+          )}
+          <button
+            onClick={submit}
+            disabled={submitting || rating < 1}
+            style={{
+              border: 'none', borderRadius: 8, padding: '7px 14px',
+              background: rating < 1 ? '#E8EDF2' : '#00B894',
+              color: rating < 1 ? '#9AAABB' : '#fff',
+              fontSize: 12, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+              cursor: submitting || rating < 1 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {submitting ? 'Enviando…' : 'Enviar'}
+          </button>
+        </div>
+      )}
+
+      {reviews.reviews.length === 0 ? (
+        <p style={{ fontSize: 12, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
+          Todavía no hay reseñas para este producto.
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {reviews.reviews.slice(0, 3).map(review => (
+            <div key={review.id}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#0F1D2D', fontFamily: "'DM Sans', sans-serif" }}>
+                  {review.userName}
+                </span>
+                <span style={{ fontSize: 11, color: '#FFD166' }}>
+                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                </span>
+              </div>
+              {review.comment && (
+                <p style={{ fontSize: 12, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
+                  {review.comment}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onToggleFavorite, isLoggedIn, onRequireLogin }: {
   product: Product
   isAlerted: boolean
   onToggleAlert: () => void
+  isFavorite: boolean
+  onToggleFavorite: () => void
+  isLoggedIn: boolean
+  onRequireLogin: () => void
 }) {
   const cheapest = product.prices[0]
   const savings = product.prices[product.prices.length - 1].price - cheapest.price
   const [expanded, setExpanded] = useState(false)
+  const navigate = useNavigate()
+
+  // Keeps the address bar shareable while browsing: expanding a row points
+  // it at that product's real URL (apps/web-seo server-renders a full page
+  // there for any direct/fresh hit), without changing anything about how
+  // this list itself looks or behaves. replace:true so expand/collapse
+  // clicks don't pile up the back button.
+  const toggleExpanded = () => {
+    const next = !expanded
+    setExpanded(next)
+    if (next) navigate(`/product/${encodeURIComponent(product.slug || product.id)}`, { replace: true })
+  }
 
   return (
     <div style={{
@@ -139,6 +287,20 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={onToggleFavorite}
+            aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+            aria-pressed={isFavorite}
+            style={{
+              width: 44, height: 44, borderRadius: 10,
+              border: '1px solid #E8EDF2',
+              background: isFavorite ? '#FFF3E0' : '#F2F4F7',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <HeartIcon size={16} filled={isFavorite} />
+          </button>
           <button onClick={onToggleAlert} style={{
             display: 'flex', alignItems: 'center', gap: 6,
             border: '1.5px solid #00B894', borderRadius: 10,
@@ -169,7 +331,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
             Ver oferta
           </button>
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={toggleExpanded}
             style={{
               width: 44, height: 44, borderRadius: 10,
               border: '1px solid #E8EDF2', background: '#F2F4F7',
@@ -186,6 +348,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
 
       {/* Store comparison table */}
       {expanded && (
+        <>
         <div style={{ borderTop: '1px solid #F2F4F7' }}>
           {/* Table header */}
           <div style={{
@@ -294,12 +457,14 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert }: {
             </div>
           ))}
         </div>
+        <DesktopReviews productId={product.id} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
+        </>
       )}
     </div>
   )
 }
 
-export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user, onLogout }: Props) {
+export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favoriteIds, onToggleFavorite, user, onLogout }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
@@ -310,6 +475,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
   const [sortBy, setSortBy] = useState<SortKey>('price-asc')
   const [screen, setScreen] = useState<DesktopScreen>('results')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [showAccountMenu, setShowAccountMenu] = useState(false)
   const { products, loading, error } = useCatalogProducts(query)
   const hasNotifications = getPriceDropNotifications(products, alertedIds).length > 0
 
@@ -517,37 +683,94 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
                 }} />
               )}
             </button>
-            <button
-              // Previously always called onMobile, so clicking your own
-              // avatar while logged in silently swapped the whole page into
-              // the mobile mockup with no explanation — confusing, and not
-              // what an avatar icon should do. Desktop has no profile screen
-              // of its own yet, so "not logged in" still routes to the
-              // mobile login flow (the only place sign-in actually lives),
-              // but once logged in the icon does the one thing that makes
-              // sense for itself: sign out.
-              onClick={user ? onLogout : onMobile}
-              aria-label={user ? `Cerrar sesión (${user.name ?? user.email})` : 'Iniciar sesión'}
-              title={user ? `Cerrar sesión (${user.name ?? user.email})` : 'Iniciar sesión'}
-              style={{
-                width: 38, height: 38, borderRadius: '50%',
-                border: 'none', cursor: 'pointer', padding: 0,
-                background: user ? 'linear-gradient(135deg, #00B894, #00cba0)' : '#F2F4F7',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              {user ? (
-                <span style={{
-                  fontSize: 13, fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: '#fff',
-                }}>
-                  {userInitials(user)}
-                </span>
-              ) : (
-                <UserIcon size={18} color="#9AAABB" />
+            <div style={{ position: 'relative' }}>
+              <button
+                // Desktop has no profile screen of its own yet, so "not
+                // logged in" still routes to the mobile login flow (the
+                // only place sign-in actually lives). Logged in, this opens
+                // a small account menu instead of doing anything itself —
+                // it used to sign out immediately on click, which is too
+                // easy to trigger by accident for a one-click action.
+                onClick={() => (user ? setShowAccountMenu(v => !v) : onMobile())}
+                aria-label={user ? `Cuenta de ${user.name ?? user.email}` : 'Iniciar sesión'}
+                title={user ? `Cuenta de ${user.name ?? user.email}` : 'Iniciar sesión'}
+                aria-expanded={user ? showAccountMenu : undefined}
+                style={{
+                  width: 38, height: 38, borderRadius: '50%',
+                  border: 'none', cursor: 'pointer', padding: 0,
+                  background: user ? 'linear-gradient(135deg, #00B894, #00cba0)' : '#F2F4F7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                {user ? (
+                  <span style={{
+                    fontSize: 13, fontWeight: 700,
+                    fontFamily: "'Poppins', sans-serif",
+                    color: '#fff',
+                  }}>
+                    {userInitials(user)}
+                  </span>
+                ) : (
+                  <UserIcon size={18} color="#9AAABB" />
+                )}
+              </button>
+
+              {showAccountMenu && user && (
+                <>
+                  <div
+                    onClick={() => setShowAccountMenu(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 150 }}
+                  />
+                  <div style={{
+                    position: 'absolute', top: 48, right: 0, zIndex: 151,
+                    width: 240, background: '#fff', borderRadius: 14,
+                    border: '1px solid #E8EDF2',
+                    boxShadow: '0 12px 32px rgba(15,29,45,0.14)',
+                    padding: 16,
+                  }}>
+                    <div style={{
+                      fontSize: 14, fontWeight: 700, color: '#0F1D2D',
+                      fontFamily: "'Poppins', sans-serif", marginBottom: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {user.name ?? user.email}
+                    </div>
+                    <div style={{
+                      fontSize: 12, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif",
+                      marginBottom: 14,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {user.email}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                      <div style={{ flex: 1, background: '#F8FAFC', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
+                          {favoriteIds.size}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>Favoritos</div>
+                      </div>
+                      <div style={{ flex: 1, background: '#F8FAFC', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
+                          {alertedIds.size}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>Alertas</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setShowAccountMenu(false); onLogout() }}
+                      style={{
+                        width: '100%', border: '1px solid #E8EDF2', borderRadius: 10,
+                        background: '#F8FAFC', color: '#FF3B3B',
+                        padding: '9px 0', cursor: 'pointer',
+                        fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
+                      }}
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </>
               )}
-            </button>
+            </div>
             <button
               onClick={onMobile}
               style={{
@@ -942,6 +1165,10 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, user,
                 product={p}
                 isAlerted={alertedIds.has(p.id)}
                 onToggleAlert={() => onToggleAlert(p.id)}
+                isFavorite={favoriteIds.has(p.id)}
+                onToggleFavorite={() => onToggleFavorite(p.id)}
+                isLoggedIn={Boolean(user)}
+                onRequireLogin={onMobile}
               />
             ))
           )}

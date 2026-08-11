@@ -244,6 +244,8 @@ export default function App() {
         onMobile={() => setIsMobileView(true)}
         alertedIds={alertedIds}
         onToggleAlert={handleToggleDesktopAlert}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={toggleFavorite}
         user={user}
         onLogout={logout}
       />
