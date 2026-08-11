@@ -24,4 +24,13 @@ export class StoresService {
     const products = await Promise.all(ids.map(id => this.products.findById(id)))
     return products.filter((p): p is NonNullable<typeof p> => p !== null)
   }
+
+  async branches(slug: string) {
+    await this.get(slug)
+    return this.stores.branchesByRetailerSlug(slug)
+  }
+
+  nearby(latitude: number, longitude: number, radiusKm: number) {
+    return this.stores.nearby(latitude, longitude, radiusKm)
+  }
 }

@@ -59,6 +59,15 @@ export default function HomeScreen() {
           <Text style={styles.heroText}>Compara precios de tiendas dominicanas en segundos.</Text>
         </View>
 
+        <Pressable onPress={() => router.push('/nearby-stores')} style={styles.nearbyCard}>
+          <Text style={styles.nearbyIcon}>📍</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.nearbyTitle}>Tiendas cercanas</Text>
+            <Text style={styles.nearbyText}>Encuentra la sucursal más cerca de ti</Text>
+          </View>
+          <Text style={styles.nearbyChevron}>›</Text>
+        </Pressable>
+
         {error && (
           <Pressable onPress={() => void load()} style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
@@ -92,6 +101,11 @@ const styles = StyleSheet.create({
   heroEyebrow: { color: '#BDF5E8', fontFamily: fonts.display.extrabold, fontSize: 11, letterSpacing: 1 },
   heroTitle: { color: '#fff', fontFamily: fonts.display.extrabold, fontSize: 28, lineHeight: 34, marginTop: spacing.sm },
   heroText: { color: '#CFEDE5', fontFamily: fonts.body.regular, fontSize: 14, lineHeight: 21, marginTop: spacing.sm },
+  nearbyCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.card, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, marginBottom: spacing.xl },
+  nearbyIcon: { fontSize: 22 },
+  nearbyTitle: { color: colors.navy, fontFamily: fonts.display.bold, fontSize: 14 },
+  nearbyText: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 12, marginTop: 2 },
+  nearbyChevron: { fontSize: 22, color: colors.navy200 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
   count: { backgroundColor: colors.primaryLight, color: colors.primary, fontFamily: fonts.display.extrabold, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radii.full },

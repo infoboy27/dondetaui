@@ -12,6 +12,7 @@ export default function ScannerScreen() {
   const router = useRouter()
   const [permission, requestPermission] = useCameraPermissions()
   const [locked, setLocked] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
   const [status, setStatus] = useState('Apunta al código EAN/UPC del producto')
 
   const scanned = async ({ data }: BarcodeScanningResult) => {
@@ -53,11 +54,22 @@ export default function ScannerScreen() {
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
+        enableTorch={torchOn}
         onBarcodeScanned={locked ? undefined : scanned}
-        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e'] }}
+        barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'qr'] }}
       />
       <SafeAreaView style={styles.overlay}>
-        <Text style={styles.cameraTitle}>Escanea el código de barras</Text>
+        <View style={styles.topRow}>
+          <Text style={styles.cameraTitle}>Escanea el código de barras</Text>
+          <Pressable
+            onPress={() => setTorchOn(v => !v)}
+            style={[styles.torchButton, torchOn && styles.torchButtonActive]}
+            accessibilityRole="button"
+            accessibilityLabel={torchOn ? 'Apagar flash' : 'Encender flash'}
+          >
+            <Text style={styles.torchIcon}>⚡</Text>
+          </Pressable>
+        </View>
         <View style={{ flex: 1 }} />
         <View style={styles.scanFrame} />
         <View style={{ flex: 1 }} />
@@ -78,7 +90,11 @@ const styles = StyleSheet.create({
   primaryText: { color: '#fff', fontFamily: fonts.body.bold },
   cameraPage: { flex: 1, backgroundColor: '#06121F' },
   overlay: { flex: 1, padding: spacing.xl },
-  cameraTitle: { color: '#fff', fontFamily: fonts.display.bold, fontSize: 16, marginTop: spacing.md },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
+  cameraTitle: { color: '#fff', fontFamily: fonts.display.bold, fontSize: 16, flex: 1 },
+  torchButton: { width: 40, height: 40, borderRadius: radii.full, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  torchButtonActive: { backgroundColor: colors.yellow },
+  torchIcon: { fontSize: 18 },
   scanFrame: { alignSelf: 'center', width: '82%', height: 180, borderRadius: radii.xxl, borderWidth: 3, borderColor: colors.primary },
   scanStatus: { backgroundColor: 'rgba(6,18,31,0.82)', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.xxl },
   scanStatusText: { color: '#fff', fontFamily: fonts.body.bold, textAlign: 'center' },

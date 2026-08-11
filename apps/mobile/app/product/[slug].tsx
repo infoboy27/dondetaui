@@ -12,6 +12,7 @@ import { shadows } from '../../src/design/shadows'
 import ProductImage from '../../src/components/ProductImage'
 import ProductReviews from '../../src/components/ProductReviews'
 import { useAppState } from '../../src/state/AppStateContext'
+import { STORE_SLUGS } from '../../src/data/storeSlugs'
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -115,18 +116,26 @@ export default function ProductDetailScreen() {
         )}
 
         <Text style={styles.sectionTitle}>Comparación de tiendas</Text>
-        {offers.map((offer, index) => (
-          <View key={`${offer.store}-${index}`} style={styles.offerRow}>
-            <View style={[styles.storeBadge, { backgroundColor: offer.color || colors.primary }]}>
-              <Text style={styles.storeBadgeText}>{offer.abbr}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.offerStore}>{offer.store}</Text>
-              <Text style={styles.offerMeta}>{offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}</Text>
-            </View>
-            <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
-          </View>
-        ))}
+        {offers.map((offer, index) => {
+          const storeSlug = STORE_SLUGS[offer.abbr]
+          const Row = storeSlug ? Pressable : View
+          return (
+            <Row
+              key={`${offer.store}-${index}`}
+              style={styles.offerRow}
+              {...(storeSlug ? { onPress: () => router.push(`/store/${storeSlug}`) } : {})}
+            >
+              <View style={[styles.storeBadge, { backgroundColor: offer.color || colors.primary }]}>
+                <Text style={styles.storeBadgeText}>{offer.abbr}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.offerStore}>{offer.store}</Text>
+                <Text style={styles.offerMeta}>{offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}</Text>
+              </View>
+              <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
+            </Row>
+          )
+        })}
 
         <ProductReviews productId={product.id} />
       </ScrollView>

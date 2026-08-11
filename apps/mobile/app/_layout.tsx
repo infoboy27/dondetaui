@@ -27,6 +27,8 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="product/[slug]" />
+            <Stack.Screen name="store/[slug]" />
+            <Stack.Screen name="nearby-stores" />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

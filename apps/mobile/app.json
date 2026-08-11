@@ -26,6 +26,12 @@
           "barcodeScannerEnabled": true
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas."
+        }
+      ],
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
