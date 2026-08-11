@@ -10,9 +10,16 @@ interface Props {
   onCategory: (cat: string) => void
   onEquipa?: () => void
   onNearby?: () => void
+  onNotifications?: () => void
+  hasNotifications?: boolean
+  favoriteIds: Set<string>
+  onToggleFavorite: (id: string) => void
 }
 
-export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, onNearby }: Props) {
+export default function HomeScreen({
+  onSearch, onProduct, onCategory, onEquipa, onNearby, onNotifications, hasNotifications,
+  favoriteIds, onToggleFavorite,
+}: Props) {
   const { products } = useCatalogProducts()
 
   return (
@@ -44,18 +51,24 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
               ¿Dónde 'ta más barato?
             </h1>
           </div>
-          <button style={{
-            width: 42, height: 42, borderRadius: '50%',
-            background: '#E6F7F3', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            position: 'relative',
-          }}>
+          <button
+            onClick={() => onNotifications?.()}
+            aria-label="Notificaciones"
+            style={{
+              width: 42, height: 42, borderRadius: '50%',
+              background: '#E6F7F3', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
             <BellIcon size={20} color="#00B894" />
-            <span style={{
-              position: 'absolute', top: 8, right: 8,
-              width: 8, height: 8, borderRadius: '50%',
-              background: '#FF3B3B', border: '1.5px solid #fff',
-            }} />
+            {hasNotifications && (
+              <span style={{
+                position: 'absolute', top: 8, right: 8,
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#FF3B3B', border: '1.5px solid #fff',
+              }} />
+            )}
           </button>
         </div>
 
@@ -201,7 +214,13 @@ export default function HomeScreen({ onSearch, onProduct, onCategory, onEquipa, 
           overflowX: 'auto',
         }}>
           {products.map(p => (
-            <ProductCard key={p.id} product={p} onProduct={onProduct} />
+            <ProductCard
+              key={p.id}
+              product={p}
+              onProduct={onProduct}
+              isFavorite={favoriteIds.has(p.id)}
+              onToggleFavorite={() => onToggleFavorite(p.id)}
+            />
           ))}
         </div>
       </div>

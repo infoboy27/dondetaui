@@ -9,11 +9,13 @@ interface Props {
   query: string
   onBack: () => void
   onProduct: (p: Product) => void
+  favoriteIds: Set<string>
+  onToggleFavorite: (id: string) => void
 }
 
 const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
-export default function ResultsScreen({ query, onBack, onProduct }: Props) {
+export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, onToggleFavorite }: Props) {
   const [sortBy, setSortBy] = useState<'precio' | 'relevancia'>('precio')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>(STORE_FILTERS)
@@ -225,7 +227,13 @@ export default function ResultsScreen({ query, onBack, onProduct }: Props) {
       {/* Results */}
       <div style={{ padding: '16px 16px 0' }}>
         {displayResults.length > 0 ? displayResults.map(product => (
-          <ProductComparisonCard key={product.id} product={product} onProduct={onProduct} />
+          <ProductComparisonCard
+            key={product.id}
+            product={product}
+            onProduct={onProduct}
+            isFavorite={favoriteIds.has(product.id)}
+            onToggleFavorite={() => onToggleFavorite(product.id)}
+          />
         )) : (
           <div style={{
             background: '#fff', border: '1px solid #E8EDF2', borderRadius: 16,

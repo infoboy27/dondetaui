@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { PRODUCTS, formatPrice } from '../data/mock'
 import { BellIcon, HeartIcon, TrendingDownIcon, CheckIcon, XIcon } from '../components/Icons'
+import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import type { Product } from '../types'
 
 interface Props {
   onProduct: (p: Product) => void
+  favoriteIds: Set<string>
+  onToggleFavorite: (id: string) => void
+  initialTab?: 'alertas' | 'favoritos'
 }
 
 const ALERTS = [
@@ -162,7 +166,11 @@ function AlertCard({ alert, onProduct }: { alert: typeof ALERTS[0]; onProduct: (
   )
 }
 
-function FavoriteCard({ product, onProduct }: { product: Product; onProduct: (p: Product) => void }) {
+function FavoriteCard({ product, onProduct, onToggleFavorite }: {
+  product: Product
+  onProduct: (p: Product) => void
+  onToggleFavorite: () => void
+}) {
   const cheapest = product.prices[0]
   const change = cheapest.price - product.previousPrice
   const pct = Math.round((Math.abs(change) / product.previousPrice) * 100)
@@ -224,15 +232,26 @@ function FavoriteCard({ product, onProduct }: { product: Product; onProduct: (p:
           </span>
         </div>
       </div>
-      <HeartIcon size={18} filled color="#FF9F1C" />
+      <button
+        type="button"
+        aria-label={`Quitar ${product.name} de favoritos`}
+        onClick={event => {
+          event.stopPropagation()
+          onToggleFavorite()
+        }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, alignSelf: 'flex-start' }}
+      >
+        <HeartIcon size={18} filled color="#FF9F1C" />
+      </button>
     </div>
   )
 }
 
-export default function AlertsScreen({ onProduct }: Props) {
-  const [tab, setTab] = useState<'alertas' | 'favoritos'>('alertas')
+export default function AlertsScreen({ onProduct, favoriteIds, onToggleFavorite, initialTab }: Props) {
+  const [tab, setTab] = useState<'alertas' | 'favoritos'>(initialTab ?? 'alertas')
+  const { products: catalog } = useCatalogProducts()
 
-  const favorites = PRODUCTS.filter(p => p.favorite)
+  const favorites = catalog.filter(p => favoriteIds.has(p.id))
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
@@ -326,7 +345,12 @@ export default function AlertsScreen({ onProduct }: Props) {
         ) : (
           favorites.length > 0 ? (
             favorites.map(p => (
-              <FavoriteCard key={p.id} product={p} onProduct={onProduct} />
+              <FavoriteCard
+                key={p.id}
+                product={p}
+                onProduct={onProduct}
+                onToggleFavorite={() => onToggleFavorite(p.id)}
+              />
             ))
           ) : (
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>

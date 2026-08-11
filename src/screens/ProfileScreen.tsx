@@ -1,38 +1,49 @@
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, MapPinIcon, SettingsIcon } from '../components/Icons'
 
-const MENU_SECTIONS = [
-  {
-    title: 'Mi cuenta',
-    items: [
-      { icon: HeartIcon, label: 'Productos guardados', value: '1 favorito', accent: false },
-      { icon: BellIcon, label: 'Mis alertas de precio', value: '3 activas', accent: false },
-      { icon: MapPinIcon, label: 'Tiendas preferidas', value: 'Plaza Lama, Sirena', accent: false },
-    ],
-  },
-  {
-    title: 'Preferencias',
-    items: [
-      { icon: SettingsIcon, label: 'Notificaciones', value: 'Activas', accent: false },
-      { icon: SettingsIcon, label: 'Moneda', value: 'DOP (RD$)', accent: false },
-    ],
-  },
-  {
-    title: 'Soporte',
-    items: [
-      { icon: HelpCircleIcon, label: 'Ayuda y soporte', value: '', accent: false },
-      { icon: ShieldIcon, label: 'Privacidad y seguridad', value: '', accent: false },
-      { icon: HelpCircleIcon, label: 'Acerca de DóndeTa', value: 'v1.0.0', accent: false },
-    ],
-  },
-  {
-    title: '',
-    items: [
-      { icon: LogOutIcon, label: 'Cerrar sesión', value: '', accent: true },
-    ],
-  },
-]
+interface Props {
+  favoriteCount: number
+  onFavorites: () => void
+}
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ favoriteCount, onFavorites }: Props) {
+  const MENU_SECTIONS = [
+    {
+      title: 'Mi cuenta',
+      items: [
+        {
+          icon: HeartIcon,
+          label: 'Productos guardados',
+          value: favoriteCount === 1 ? '1 favorito' : `${favoriteCount} favoritos`,
+          accent: false,
+          onClick: onFavorites,
+        },
+        { icon: BellIcon, label: 'Mis alertas de precio', value: '3 activas', accent: false },
+        { icon: MapPinIcon, label: 'Tiendas preferidas', value: 'Plaza Lama, Sirena', accent: false },
+      ],
+    },
+    {
+      title: 'Preferencias',
+      items: [
+        { icon: SettingsIcon, label: 'Notificaciones', value: 'Activas', accent: false },
+        { icon: SettingsIcon, label: 'Moneda', value: 'DOP (RD$)', accent: false },
+      ],
+    },
+    {
+      title: 'Soporte',
+      items: [
+        { icon: HelpCircleIcon, label: 'Ayuda y soporte', value: '', accent: false },
+        { icon: ShieldIcon, label: 'Privacidad y seguridad', value: '', accent: false },
+        { icon: HelpCircleIcon, label: 'Acerca de DóndeTa', value: 'v1.0.0', accent: false },
+      ],
+    },
+    {
+      title: '',
+      items: [
+        { icon: LogOutIcon, label: 'Cerrar sesión', value: '', accent: true },
+      ],
+    },
+  ]
+
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
       {/* Header */}
@@ -157,6 +168,7 @@ export default function ProfileScreen() {
               {section.items.map((item, ii) => (
                 <button
                   key={ii}
+                  onClick={'onClick' in item ? item.onClick : undefined}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                     padding: '14px 16px', background: 'none', border: 'none',

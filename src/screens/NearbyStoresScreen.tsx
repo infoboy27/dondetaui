@@ -116,7 +116,7 @@ function MapPlaceholder({ activeIdx, onPin }: { activeIdx: number; onPin: (i: nu
 
 interface Props {
   onBack: () => void
-  onStore: () => void
+  onStore: (abbr: string) => void
 }
 
 export default function NearbyStoresScreen({ onBack, onStore }: Props) {
@@ -217,7 +217,7 @@ export default function NearbyStoresScreen({ onBack, onStore }: Props) {
           {STORES_NEARBY.map((store, i) => (
             <div
               key={i}
-              onClick={() => { setActiveStore(i); onStore() }}
+              onClick={() => { setActiveStore(i); onStore(store.abbr) }}
               style={{
                 width: 180, flexShrink: 0,
                 background: '#fff', borderRadius: 16,
@@ -307,7 +307,7 @@ export default function NearbyStoresScreen({ onBack, onStore }: Props) {
           {STORES_NEARBY.map((store, i) => (
             <div
               key={i}
-              onClick={() => { setActiveStore(i); onStore() }}
+              onClick={() => { setActiveStore(i); onStore(store.abbr) }}
               style={{
                 background: '#fff', borderRadius: 16,
                 border: '1px solid #E8EDF2', padding: '14px 16px',

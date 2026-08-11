@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { PRODUCTS, formatPrice } from '../data/mock'
+import { formatPrice } from '../data/mock'
+import { useStoreDetail } from '../hooks/useStoreDetail'
 import {
-  ChevronLeft, MapPinIcon, TruckIcon, CheckIcon,
-  HeartIcon, StarIcon, ArrowRightIcon,
+  ChevronLeft, TruckIcon,
+  HeartIcon, StarIcon,
 } from '../components/Icons'
 
 // PhoneIcon not in set — use a simple inline version
@@ -24,24 +24,55 @@ function ExternalLink({ size = 14, color = 'currentColor' }) {
   )
 }
 
-const BRANCHES = [
-  { name: 'Plaza Lama Churchill', address: 'Av. Winston Churchill 49, Santo Domingo', distance: '1.2 km', open: true },
-  { name: 'Plaza Lama Megacentro', address: 'Av. Charles de Gaulle, Santo Domingo Este', distance: '4.8 km', open: true },
-  { name: 'Plaza Lama Santiago', address: 'Av. 27 de Febrero, Santiago', distance: '6.1 km', open: false },
-]
-
 interface Props {
+  storeAbbr: string | null
   onBack: () => void
   onProduct: (p: any) => void
 }
 
-export default function StoreDetailScreen({ onBack, onProduct }: Props) {
-  const [tab, setTab] = useState<'productos' | 'sucursales'>('productos')
-  const storeName = 'Plaza Lama'
-  const storeColor = '#C0392B'
-  const storeAbbr = 'PL'
+export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Props) {
+  const { store, products: storeProducts, loading } = useStoreDetail(storeAbbr)
 
-  const storeProducts = PRODUCTS.filter(p => p.prices[0].store === storeName || p.prices.some(sp => sp.store === storeName))
+  if (loading) {
+    return (
+      <div style={{
+        background: '#F2F4F7', minHeight: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{ fontSize: 13, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+          Cargando tienda…
+        </span>
+      </div>
+    )
+  }
+
+  if (!store) {
+    return (
+      <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px' }}>
+          <button
+            onClick={onBack}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: '#fff', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <ChevronLeft size={18} color="#0F1D2D" />
+          </button>
+        </div>
+        <div style={{ padding: '0 20px', textAlign: 'center', marginTop: 40 }}>
+          <span style={{ fontSize: 14, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+            No pudimos encontrar esta tienda.
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  const storeName = store.name
+  const storeColor = store.color
+  const storeAbbrLabel = store.abbr
 
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
@@ -87,7 +118,7 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
                 fontFamily: "'Poppins', sans-serif",
                 color: storeColor,
               }}>
-                {storeAbbr}
+                {storeAbbrLabel}
               </span>
             </div>
 
@@ -108,14 +139,7 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
                   </span>
                 </div>
                 <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
-                  · {BRANCHES.length} sucursales
-                </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, color: '#00B894',
-                  fontFamily: "'Poppins', sans-serif",
-                  background: '#E6F7F3', padding: '2px 8px', borderRadius: 999,
-                }}>
-                  ABIERTO
+                  · {store.productCount} productos
                 </span>
               </div>
             </div>
@@ -125,8 +149,9 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {[
               { icon: <TruckIcon size={13} color="#00B894" />, label: 'Delivery disponible' },
-              { icon: <MapPinIcon size={13} color="#5d7ea0" />, label: '1.2 km · Churchill' },
-              { icon: <Globe size={13} color="#5d7ea0" />, label: 'plazalama.com' },
+              ...(store.websiteUrl
+                ? [{ icon: <Globe size={13} color="#5d7ea0" />, label: new URL(store.websiteUrl).hostname.replace(/^www\./, '') }]
+                : []),
             ].map((pill, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
@@ -145,56 +170,29 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8, paddingBottom: 16 }}>
-            <button style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '11px 0', border: '1.5px solid #E8EDF2', borderRadius: 12,
-              background: '#fff', color: '#0F1D2D', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
-            }}>
-              <MapPinIcon size={15} color="#0F1D2D" />
-              Ver en mapa
-            </button>
-            <button style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '11px 0', border: 'none', borderRadius: 12,
-              background: '#00B894', color: '#fff', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
-              boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
-            }}>
-              <ExternalLink size={14} color="#fff" />
-              Ir a la tienda
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderTop: '1px solid #F2F4F7' }}>
-            {(['productos', 'sucursales'] as const).map(t => (
+          {store.websiteUrl && (
+            <div style={{ display: 'flex', gap: 8, paddingBottom: 16 }}>
               <button
-                key={t}
-                onClick={() => setTab(t)}
+                onClick={() => window.open(store.websiteUrl!, '_blank', 'noopener,noreferrer')}
                 style={{
-                  flex: 1, padding: '12px 0',
-                  border: 'none', background: 'none', cursor: 'pointer',
-                  borderBottom: tab === t ? '2.5px solid #00B894' : '2.5px solid transparent',
-                  fontSize: 13, fontWeight: tab === t ? 700 : 400,
-                  fontFamily: "'Poppins', sans-serif",
-                  color: tab === t ? '#00B894' : '#9AAABB',
-                  textTransform: 'capitalize',
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: '11px 0', border: 'none', borderRadius: 12,
+                  background: '#00B894', color: '#fff', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                  boxShadow: '0 4px 12px rgba(0,184,148,0.25)',
                 }}
               >
-                {t === 'productos' ? 'Productos' : 'Sucursales'}
+                <ExternalLink size={14} color="#fff" />
+                Ir a la tienda
               </button>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div style={{ padding: '16px 16px 0' }}>
-        {tab === 'productos' ? (
-          <>
-            {/* Current deals header */}
-            <div style={{
+        {/* Current deals header */}
+        <div style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               marginBottom: 12,
             }}>
@@ -289,75 +287,6 @@ export default function StoreDetailScreen({ onBack, onProduct }: Props) {
                 </div>
               )
             })}
-          </>
-        ) : (
-          <>
-            <div style={{ marginBottom: 12 }}>
-              <span style={{
-                fontSize: 15, fontWeight: 700,
-                fontFamily: "'Poppins', sans-serif",
-                color: '#0F1D2D',
-              }}>
-                Sucursales · {BRANCHES.length} locales
-              </span>
-            </div>
-            {BRANCHES.map((branch, i) => (
-              <div key={i} style={{
-                background: '#fff', borderRadius: 16,
-                border: '1px solid #E8EDF2',
-                padding: '14px 16px', marginBottom: 12,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                  <div style={{
-                    fontSize: 14, fontWeight: 700,
-                    fontFamily: "'Poppins', sans-serif",
-                    color: '#0F1D2D',
-                  }}>
-                    {branch.name}
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 600,
-                    fontFamily: "'DM Sans', sans-serif",
-                    color: branch.open ? '#00B894' : '#FF3B3B',
-                    background: branch.open ? '#E6F7F3' : '#FFF0F0',
-                    padding: '2px 8px', borderRadius: 999,
-                  }}>
-                    {branch.open ? 'Abierto' : 'Cerrado'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                  <MapPinIcon size={13} color="#9AAABB" />
-                  <span style={{
-                    fontSize: 12, color: '#9AAABB',
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                    {branch.address}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{
-                    fontSize: 12, fontWeight: 600, color: '#00B894',
-                    fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                    <MapPinIcon size={12} color="#00B894" />
-                    {branch.distance}
-                  </span>
-                  <button style={{
-                    background: '#F2F4F7', border: 'none', borderRadius: 8,
-                    padding: '7px 14px', cursor: 'pointer',
-                    fontSize: 12, fontWeight: 600, color: '#0F1D2D',
-                    fontFamily: "'DM Sans', sans-serif",
-                    display: 'flex', alignItems: 'center', gap: 5,
-                  }}>
-                    <MapPinIcon size={12} color="#5d7ea0" />
-                    Cómo llegar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
       </div>
     </div>
   )

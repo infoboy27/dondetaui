@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import type { Screen, Tab } from './types'
 import type { Product } from './types'
+import { PRODUCTS } from './data/mock'
+import { getPriceDropNotifications } from './domain/notifications'
+import { useCatalogProducts } from './hooks/useCatalogProducts'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SearchScreen from './screens/SearchScreen'
@@ -13,6 +16,7 @@ import DesktopView from './screens/DesktopView'
 import StoreDetailScreen from './screens/StoreDetailScreen'
 import NearbyStoresScreen from './screens/NearbyStoresScreen'
 import EquipaHogarScreen from './screens/EquipaHogarScreen'
+import NotificationsScreen from './screens/NotificationsScreen'
 
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
@@ -21,7 +25,17 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedStoreAbbr, setSelectedStoreAbbr] = useState<string | null>(null)
   const [history, setHistory] = useState<Screen[]>(['home'])
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(
+    () => new Set(PRODUCTS.filter(p => p.favorite).map(p => p.id)),
+  )
+  const [alertsTab, setAlertsTab] = useState<'alertas' | 'favoritos'>('alertas')
+  const [alertedIds, setAlertedIds] = useState<Set<string>>(
+    () => new Set(PRODUCTS.filter(p => p.alerted).map(p => p.id)),
+  )
+  const { products: catalogProducts } = useCatalogProducts()
+  const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 1024)
@@ -48,6 +62,7 @@ export default function App() {
 
   const handleTab = (tab: Tab) => {
     setActiveTab(tab)
+    if (tab === 'alerts') setAlertsTab('alertas')
     const screenMap: Record<Tab, Screen> = {
       home: 'home',
       search: 'search',
@@ -71,6 +86,24 @@ export default function App() {
   const handleCategory = (catId: string) => {
     setSearchQuery(catId)
     navigate('results')
+  }
+
+  const toggleFavorite = (id: string) => {
+    setFavoriteIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const openFavorites = () => {
+    setAlertsTab('favoritos')
+    navigate('alerts')
+  }
+
+  const addAlert = (id: string) => {
+    setAlertedIds(prev => new Set(prev).add(id))
   }
 
   // Desktop view
@@ -165,6 +198,10 @@ export default function App() {
               onCategory={handleCategory}
               onEquipa={() => navigate('equipa')}
               onNearby={() => navigate('nearby')}
+              onNotifications={() => navigate('notifications')}
+              hasNotifications={hasNotifications}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={toggleFavorite}
             />
           )}
           {screen === 'search' && (
@@ -175,28 +212,47 @@ export default function App() {
               query={searchQuery}
               onBack={goBack}
               onProduct={handleProduct}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={toggleFavorite}
             />
           )}
           {screen === 'product' && selectedProduct && (
-            <ProductDetailScreen product={selectedProduct} onBack={goBack} />
+            <ProductDetailScreen
+              product={selectedProduct}
+              onBack={goBack}
+              isFavorite={favoriteIds.has(selectedProduct.id)}
+              onToggleFavorite={() => toggleFavorite(selectedProduct.id)}
+              onCreateAlert={() => addAlert(selectedProduct.id)}
+            />
           )}
           {screen === 'scanner' && (
             <ScannerScreen onBack={goBack} onProduct={handleProduct} />
           )}
           {screen === 'alerts' && (
-            <AlertsScreen onProduct={handleProduct} />
+            <AlertsScreen
+              onProduct={handleProduct}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={toggleFavorite}
+              initialTab={alertsTab}
+            />
           )}
           {screen === 'profile' && (
-            <ProfileScreen />
+            <ProfileScreen favoriteCount={favoriteIds.size} onFavorites={openFavorites} />
           )}
           {screen === 'store' && (
-            <StoreDetailScreen onBack={goBack} onProduct={handleProduct} />
+            <StoreDetailScreen storeAbbr={selectedStoreAbbr} onBack={goBack} onProduct={handleProduct} />
           )}
           {screen === 'nearby' && (
-            <NearbyStoresScreen onBack={goBack} onStore={() => navigate('store')} />
+            <NearbyStoresScreen
+              onBack={goBack}
+              onStore={abbr => { setSelectedStoreAbbr(abbr); navigate('store') }}
+            />
           )}
           {screen === 'equipa' && (
             <EquipaHogarScreen onBack={goBack} />
+          )}
+          {screen === 'notifications' && (
+            <NotificationsScreen alertedIds={alertedIds} onBack={goBack} onProduct={handleProduct} />
           )}
         </div>
 

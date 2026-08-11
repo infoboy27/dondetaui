@@ -9,10 +9,11 @@ import StoreOfferRow from './StoreOfferRow'
 interface ProductComparisonCardProps {
   product: Product
   onProduct: (product: Product) => void
+  isFavorite: boolean
+  onToggleFavorite: () => void
 }
 
-export default function ProductComparisonCard({ product, onProduct }: ProductComparisonCardProps) {
-  const [fav, setFav] = useState(product.favorite ?? false)
+export default function ProductComparisonCard({ product, onProduct, isFavorite, onToggleFavorite }: ProductComparisonCardProps) {
   const [expanded, setExpanded] = useState(false)
   const rankedOffers = rankOffers(product.prices)
   const bestOffer = rankedOffers[0]
@@ -101,11 +102,11 @@ export default function ProductComparisonCard({ product, onProduct }: ProductCom
 
         <button
           type="button"
-          aria-label={fav ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
-          aria-pressed={fav}
+          aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+          aria-pressed={isFavorite}
           onClick={event => {
             event.stopPropagation()
-            setFav(value => !value)
+            onToggleFavorite()
           }}
           style={{
             background: 'none',
@@ -115,7 +116,7 @@ export default function ProductComparisonCard({ product, onProduct }: ProductCom
             padding: 4,
           }}
         >
-          <HeartIcon size={18} filled={fav} />
+          <HeartIcon size={18} filled={isFavorite} />
         </button>
       </div>
 

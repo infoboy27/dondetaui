@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { formatPrice } from '../domain/currency'
 import { getBestOffer } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
@@ -8,6 +7,8 @@ import { HeartIcon } from './Icons'
 interface ProductCardProps {
   product: Product
   onProduct: (product: Product) => void
+  isFavorite: boolean
+  onToggleFavorite: () => void
 }
 
 function DiscountBadge({ pct }: { pct: number }) {
@@ -30,8 +31,7 @@ function DiscountBadge({ pct }: { pct: number }) {
   )
 }
 
-export default function ProductCard({ product, onProduct }: ProductCardProps) {
-  const [fav, setFav] = useState(product.favorite ?? false)
+export default function ProductCard({ product, onProduct, isFavorite, onToggleFavorite }: ProductCardProps) {
   const bestOffer = getBestOffer(product.prices)
 
   return (
@@ -68,11 +68,11 @@ export default function ProductCard({ product, onProduct }: ProductCardProps) {
         </div>
         <button
           type="button"
-          aria-label={fav ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
-          aria-pressed={fav}
+          aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+          aria-pressed={isFavorite}
           onClick={event => {
             event.stopPropagation()
-            setFav(value => !value)
+            onToggleFavorite()
           }}
           style={{
             position: 'absolute',
@@ -90,7 +90,7 @@ export default function ProductCard({ product, onProduct }: ProductCardProps) {
             boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
           }}
         >
-          <HeartIcon size={15} filled={fav} />
+          <HeartIcon size={15} filled={isFavorite} />
         </button>
       </div>
 

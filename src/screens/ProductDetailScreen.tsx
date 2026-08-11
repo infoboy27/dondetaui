@@ -17,12 +17,14 @@ import type { Product } from '../types'
 interface Props {
   product: Product
   onBack: () => void
+  isFavorite: boolean
+  onToggleFavorite: () => void
+  onCreateAlert: () => void
 }
 
 const PERIODS = ['7D', '30D', '90D', '6M', '1A']
 
-export default function ProductDetailScreen({ product, onBack }: Props) {
-  const [fav, setFav] = useState(product.favorite ?? false)
+export default function ProductDetailScreen({ product, onBack, isFavorite, onToggleFavorite, onCreateAlert }: Props) {
   const [period, setPeriod] = useState('30D')
   const [showAlertSheet, setShowAlertSheet] = useState(false)
   const [alertPrice, setAlertPrice] = useState('')
@@ -37,6 +39,7 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
   const createAlert = () => {
     if (!bestOffer) return
 
+    onCreateAlert()
     setAlertCreated(true)
     setTimeout(() => {
       setShowAlertSheet(false)
@@ -76,17 +79,17 @@ export default function ProductDetailScreen({ product, onBack }: Props) {
         </span>
         <button
           type="button"
-          onClick={() => setFav(value => !value)}
-          aria-label={fav ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
-          aria-pressed={fav}
+          onClick={onToggleFavorite}
+          aria-label={isFavorite ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
+          aria-pressed={isFavorite}
           style={{
             width: 36, height: 36, borderRadius: 10,
-            background: fav ? '#FFF3E0' : '#F2F4F7',
+            background: isFavorite ? '#FFF3E0' : '#F2F4F7',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <HeartIcon size={18} filled={fav} />
+          <HeartIcon size={18} filled={isFavorite} />
         </button>
         <button
           type="button"

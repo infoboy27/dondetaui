@@ -9,6 +9,7 @@ export type Screen =
   | 'equipa'
   | 'store'
   | 'nearby'
+  | 'notifications'
 
 export type Tab = 'home' | 'search' | 'scanner' | 'alerts' | 'profile'
 
