@@ -25,6 +25,7 @@ import NearbyStoresScreen from './screens/NearbyStoresScreen'
 import EquipaHogarScreen from './screens/EquipaHogarScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
 import LoginScreen from './screens/LoginScreen'
+import SplashOverlay from './components/SplashOverlay'
 
 function pathToTab(pathname: string): Tab | null {
   if (pathname === '/') return 'home'
@@ -270,21 +271,26 @@ export default function App() {
   // Desktop view
   if (isDesktop && !isMobileView) {
     return (
-      <DesktopView
-        onMobile={() => setIsMobileView(true)}
-        alertedIds={alertedIds}
-        onToggleAlert={handleToggleDesktopAlert}
-        favoriteIds={favoriteIds}
-        onToggleFavorite={toggleFavorite}
-        user={user}
-        onLogout={logout}
-      />
+      <>
+        <SplashOverlay />
+        <DesktopView
+          onMobile={() => setIsMobileView(true)}
+          alertedIds={alertedIds}
+          onToggleAlert={handleToggleDesktopAlert}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={toggleFavorite}
+          user={user}
+          onLogout={logout}
+        />
+      </>
     )
   }
 
   const isScanner = location.pathname === '/scanner'
 
   return (
+    <>
+    <SplashOverlay />
     <div style={{
       display: 'flex',
       minHeight: '100vh',
@@ -477,6 +483,7 @@ export default function App() {
         )}
       </div>
     </div>
+    </>
   )
 }
 
