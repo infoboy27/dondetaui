@@ -5,6 +5,9 @@
   "robots": {
     "index": true
   },
+  "analytics": {
+    "googleAnalyticsId": "G-2Z34SRMEGW"
+  },
   "accessibility": {
     "addBypassLinks": true,
     "ignoreReducedMotion": false
