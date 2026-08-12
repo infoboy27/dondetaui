@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
@@ -22,6 +22,7 @@ type SortKey = 'price-asc' | 'price-desc' | 'relevance'
 type DesktopScreen = 'results' | 'categories' | 'stores' | 'deals' | 'alerts'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
+const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price-asc', label: 'Precio ↑' },
@@ -1215,21 +1216,36 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
           maxWidth: 1360, margin: '0 auto',
           display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 20,
         }}>
-          <a
-            href={DISCORD_INVITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              textDecoration: 'none', border: '1px solid #E8EDF2', borderRadius: 12,
-              padding: '10px 16px',
-            }}
-          >
-            <DiscordIcon size={20} />
-            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
-              Únete a nuestro Discord
-            </span>
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                textDecoration: 'none', border: '1px solid #E8EDF2', borderRadius: 12,
+                padding: '10px 16px',
+              }}
+            >
+              <DiscordIcon size={20} />
+              <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
+                Únete a nuestro Discord
+              </span>
+            </a>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="DóndeTa en Instagram"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 44, height: 44,
+                border: '1px solid #E8EDF2', borderRadius: 12,
+              }}
+            >
+              <InstagramIcon size={20} />
+            </a>
+          </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{

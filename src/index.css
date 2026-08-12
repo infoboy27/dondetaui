@@ -153,3 +153,16 @@ h1, h2, h3, h4, h5 {
   .splash-overlay { animation: splash-overlay-out 0.01s linear 0.4s forwards; }
   .splash-mark, .splash-word { animation: none; opacity: 1; }
 }
+
+@keyframes ad-slot-glow {
+  0%, 100% { border-color: #D8E6F0; box-shadow: 0 0 0 0 rgba(0, 184, 148, 0); }
+  50% { border-color: #00B894; box-shadow: 0 0 0 4px rgba(0, 184, 148, 0.08); }
+}
+
+.ad-slot-placeholder {
+  animation: ad-slot-glow 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-slot-placeholder { animation: none; }
+}

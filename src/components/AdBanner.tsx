@@ -71,8 +71,9 @@ export default function AdBanner({ width, height, label, className, slot }: Prop
   }
 
   return (
-    <div
-      className={className}
+    <a
+      href="mailto:jonathanmaria@gmail.com?subject=Quiero%20anunciarme%20en%20DóndeTa"
+      className={`ad-slot-placeholder${className ? ` ${className}` : ''}`}
       style={{
         width: '100%',
         maxWidth: width,
@@ -86,17 +87,19 @@ export default function AdBanner({ width, height, label, className, slot }: Prop
         alignItems: 'center',
         justifyContent: 'center',
         gap: 2,
+        textDecoration: 'none',
+        cursor: 'pointer',
       }}
     >
       <span style={{
         fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13,
-        color: '#9AAABB',
+        color: '#00B894',
       }}>
         Anúnciate aquí
       </span>
       <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#B0C4D8' }}>
         {width}×{height}px{label ? ` · ${label}` : ''}
       </span>
-    </div>
+    </a>
   )
 }
