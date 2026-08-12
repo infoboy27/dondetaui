@@ -82,6 +82,12 @@ services:
     networks:
       - default
       - proxy
+    # Host port publish, used by reverse proxies that route via
+    # host.docker.internal:PORT from a file-based config instead of
+    # discovering the `proxy` network's Traefik labels above (e.g. a shared
+    # Traefik whose Docker provider only watches an unrelated network).
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
