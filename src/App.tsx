@@ -26,6 +26,7 @@ import EquipaHogarScreen from './screens/EquipaHogarScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
 import LoginScreen from './screens/LoginScreen'
 import SplashOverlay from './components/SplashOverlay'
+import AuthModal from './components/AuthModal'
 
 function pathToTab(pathname: string): Tab | null {
   if (pathname === '/') return 'home'
@@ -142,6 +143,7 @@ function readGuestFavorites(): Set<string> {
 
 export default function App() {
   const [isMobileView, setIsMobileView] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
   // Guest favorites persist in localStorage until the guest logs in, at which
   // point they're merged into the account's real favorites (see the effect
@@ -258,7 +260,7 @@ export default function App() {
 
   const handleToggleDesktopAlert = (productId: string) => {
     if (!user) {
-      setIsMobileView(true)
+      setShowLoginModal(true)
       return
     }
     if (alertedIds.has(productId)) {
@@ -274,7 +276,7 @@ export default function App() {
       <>
         <SplashOverlay />
         <DesktopView
-          onMobile={() => setIsMobileView(true)}
+          onRequireLogin={() => setShowLoginModal(true)}
           alertedIds={alertedIds}
           onToggleAlert={handleToggleDesktopAlert}
           favoriteIds={favoriteIds}
@@ -282,6 +284,15 @@ export default function App() {
           user={user}
           onLogout={logout}
         />
+        {showLoginModal && (
+          <AuthModal
+            onClose={() => setShowLoginModal(false)}
+            onLogin={login}
+            onRegister={register}
+            loading={authLoading}
+            error={authError}
+          />
+        )}
       </>
     )
   }

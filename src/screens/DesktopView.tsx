@@ -31,7 +31,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 ]
 
 interface Props {
-  onMobile: () => void
+  onRequireLogin: () => void
   alertedIds: Set<string>
   onToggleAlert: (id: string) => void
   favoriteIds: Set<string>
@@ -451,7 +451,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
   )
 }
 
-export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favoriteIds, onToggleFavorite, user, onLogout }: Props) {
+export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert, favoriteIds, onToggleFavorite, user, onLogout }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>([])
@@ -711,13 +711,11 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
             </button>
             <div style={{ position: 'relative' }}>
               <button
-                // Desktop has no profile screen of its own yet, so "not
-                // logged in" still routes to the mobile login flow (the
-                // only place sign-in actually lives). Logged in, this opens
-                // a small account menu instead of doing anything itself —
-                // it used to sign out immediately on click, which is too
-                // easy to trigger by accident for a one-click action.
-                onClick={() => (user ? setShowAccountMenu(v => !v) : onMobile())}
+                // Not logged in: opens AuthModal (see App.tsx). Logged in,
+                // this opens a small account menu instead of doing anything
+                // itself — it used to sign out immediately on click, which
+                // is too easy to trigger by accident for a one-click action.
+                onClick={() => (user ? setShowAccountMenu(v => !v) : onRequireLogin())}
                 aria-label={user ? `Cuenta de ${user.name ?? user.email}` : 'Iniciar sesión'}
                 title={user ? `Cuenta de ${user.name ?? user.email}` : 'Iniciar sesión'}
                 aria-expanded={user ? showAccountMenu : undefined}
@@ -1189,7 +1187,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
                   isFavorite={favoriteIds.has(p.id)}
                   onToggleFavorite={() => onToggleFavorite(p.id)}
                   isLoggedIn={Boolean(user)}
-                  onRequireLogin={onMobile}
+                  onRequireLogin={onRequireLogin}
                 />
               ))}
               <PaginationControls
