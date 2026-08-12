@@ -199,7 +199,7 @@ export default function HomeScreen({
 
       {/* Ad slot */}
       <div style={{ padding: '20px 20px 0' }}>
-        <AdBanner {...AD_SIZES.mobileBanner} />
+        <AdBanner {...AD_SIZES.mobileBanner} slot={appConfig.adsenseSlots.mobileBanner} />
       </div>
 
       {/* Ofertas de hoy */}
