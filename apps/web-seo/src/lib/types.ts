@@ -23,7 +23,19 @@ export interface Product {
   rating: number
   reviews: number
   category: string
+  categoryId: string
   prices: Offer[]
+}
+
+export interface Store {
+  id: string
+  slug: string
+  name: string
+  abbr: string
+  color: string
+  websiteUrl: string | null
+  logoUrl: string | null
+  productCount: number
 }
 
 export interface Review {
