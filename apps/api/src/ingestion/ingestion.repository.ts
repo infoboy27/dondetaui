@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
 
@@ -75,13 +76,19 @@ export class IngestionRepository {
           [productId, item.name, item.brand, item.imageUrl ?? null, categoryId],
         )
       } else {
-        const product = await client.query<{ id: string }>(
-          `insert into products(category_id, name, brand, subtitle, image_url)
-           values ($1, $2, $3, $4, $5)
-           returning id::text`,
-          [categoryId, item.name, item.brand, item.model, item.imageUrl ?? null],
+        // Generated client-side (rather than the products.id column's own
+        // gen_random_uuid() default) so the slug -- which embeds a slice of
+        // the id for collision-avoidance -- can be included in this same
+        // insert instead of a separate update, since slug has been NOT NULL
+        // since migration 006.
+        productId = randomUUID()
+        const slug = slugify(`${item.brand} ${item.name}`, productId)
+
+        await client.query(
+          `insert into products(id, category_id, name, brand, subtitle, image_url, slug)
+           values ($1, $2, $3, $4, $5, $6, $7)`,
+          [productId, categoryId, item.name, item.brand, item.model, item.imageUrl ?? null, slug],
         )
-        productId = product.rows[0].id
 
         const variant = await client.query<{ id: string }>(
           `insert into product_variants(product_id, model, ean, upc, manufacturer_sku, is_primary)
@@ -91,11 +98,6 @@ export class IngestionRepository {
         )
         variantId = variant.rows[0].id
         createdProduct = true
-
-        await client.query('update products set slug = $2 where id = $1', [
-          productId,
-          slugify(`${item.brand} ${item.name}`, productId),
-        ])
       }
 
       const offerId = await this.upsertOffer(client, retailerId, variantId, item)
