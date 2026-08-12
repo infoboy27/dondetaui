@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
+import { appConfig } from '../config/env'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
@@ -815,17 +816,6 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
                 </>
               )}
             </div>
-            <button
-              onClick={onMobile}
-              style={{
-                background: '#E6F7F3', border: '1px solid #00B894',
-                borderRadius: 8, padding: '7px 12px', minHeight: 44, cursor: 'pointer',
-                fontSize: 12, color: '#00B894', fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-              }}
-            >
-              Vista móvil
-            </button>
           </div>
         </div>
       </header>
@@ -1096,11 +1086,16 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
                 </label>
               ))}
             </div>
-          </div>
 
-          {/* Ad slot */}
-          <div style={{ marginTop: 16 }}>
-            <AdBanner {...AD_SIZES.mediumRectangle} />
+            {/* Ad slot -- lives inside the sticky panel itself (not as a
+                sibling after it): position: sticky promotes this panel to a
+                higher paint layer than static-flow siblings, so a sibling ad
+                slot here would render at its pre-scroll flow position and
+                get visually covered by the (now-stuck) panel once scrolled,
+                never actually becoming visible. */}
+            <div style={{ marginTop: 16 }}>
+              <AdBanner {...AD_SIZES.mediumRectangle} slot={appConfig.adsenseSlots.mediumRectangle} />
+            </div>
           </div>
         </aside>
 
@@ -1147,7 +1142,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
 
           {/* Ad slot */}
           <div style={{ marginBottom: 20 }}>
-            <AdBanner {...AD_SIZES.leaderboard} />
+            <AdBanner {...AD_SIZES.leaderboard} slot={appConfig.adsenseSlots.leaderboard} />
           </div>
 
           {/* Best deal callout */}
