@@ -86,8 +86,11 @@ services:
     # host.docker.internal:PORT from a file-based config instead of
     # discovering the `proxy` network's Traefik labels above (e.g. a shared
     # Traefik whose Docker provider only watches an unrelated network).
+    # Defaults to loopback-only; a shared Traefik reaches the host through
+    # the Docker bridge gateway, not 127.0.0.1, so hosts using that pattern
+    # need WEB_BIND_ADDRESS=0.0.0.0 in their .env.
     ports:
-      - "127.0.0.1:${WEB_PORT:-8080}:80"
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:80"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
