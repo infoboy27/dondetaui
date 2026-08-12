@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   description: 'Cómo DóndeTa recopila, usa y protege tus datos.',
 }
 
+// Otherwise this page pre-renders once at `next build` time -- before
+// SITE_URL (a docker-compose runtime env var) exists -- permanently baking
+// in site.ts's fallback domain. Same root cause as robots.ts.
+export const dynamic = 'force-dynamic'
+
 const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
 const LAST_UPDATED = '12 de agosto de 2026'
 const SITE_HOSTNAME = new URL(SITE_URL).hostname
