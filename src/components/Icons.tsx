@@ -77,6 +77,24 @@ export const AppleIcon = ({ size = 24, color = '#0F1D2D', className = '' }: Icon
     <path d="M16.365 1.43c0 1.14-.415 2.19-1.213 3.032-.878.94-2.288 1.665-3.406 1.573-.15-1.11.39-2.28 1.152-3.032C13.72 2.03 15.06 1.44 16.365 1.43zM20.65 17.02c-.402.918-.887 1.79-1.462 2.61-.815 1.17-1.66 2.34-2.99 2.365-1.31.026-1.73-.777-3.226-.777-1.5 0-1.965.752-3.204.803-1.29.05-2.28-1.263-3.1-2.428-1.68-2.383-2.965-6.73-1.24-9.667.858-1.46 2.392-2.384 4.06-2.408 1.263-.025 2.455.85 3.226.85.77 0 2.216-1.05 3.735-.896.636.026 2.42.257 3.567 1.938-.092.058-2.13 1.244-2.106 3.71.026 2.947 2.585 3.928 2.612 3.94-.02.066-.41 1.404-1.35 2.86z" />
   </svg>
 )
+
+// The DóndeTa mark: a location pin containing a magnifying glass over a
+// price tag. Traced from the approved brand sheet (logo.png) rather than
+// the app's earlier placeholder "D" badge -- same composition/colors, just
+// vector so it stays crisp at any size (favicon through app icon).
+export const DondeTaMark = ({ size = 24, className = '' }: IconProps) => (
+  <svg width={size} height={(size * 280) / 240} viewBox="0 0 240 280" className={className}>
+    <path d="M210,100 C210,170 120,230 120,230 S30,170 30,100 A90,90 0 0,1 210,100 Z" fill="#00B894" />
+    <circle cx="120" cy="100" r="58" fill="#ffffff" />
+    <line x1="144" y1="129" x2="183" y2="168" stroke="#0F1D2D" strokeWidth="26" strokeLinecap="round" />
+    <circle cx="110" cy="95" r="48" fill="none" stroke="#0F1D2D" strokeWidth="14" />
+    <g transform="translate(82,62) rotate(14) scale(0.65)">
+      <path d="M22,0 L64,0 Q72,0 72,8 L72,76 Q72,84 64,84 L8,84 Q0,84 0,76 L0,22 Z" fill="#FF9F1C" />
+      <circle cx="14" cy="14" r="6" fill="#ffffff" />
+      <text x="36" y="60" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="46" fill="#ffffff" textAnchor="middle">$</text>
+    </g>
+  </svg>
+)
 export const ShieldIcon = ic('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
 export const HelpCircleIcon = ic('M12 22a10 10 0 100-20 10 10 0 000 20z M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3 M12 17h.01')
 export const SettingsIcon = ic('M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z')

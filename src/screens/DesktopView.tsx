@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -586,14 +586,7 @@ export default function DesktopView({ onMobile, alertedIds, onToggleAlert, favor
         <div style={{ maxWidth: 1360, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64, gap: 32 }}>
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: '#00B894',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0,184,148,0.35)',
-            }}>
-              <span style={{ fontSize: 16, color: '#fff', fontWeight: 900, fontFamily: "'Poppins', sans-serif" }}>D</span>
-            </div>
+            <DondeTaMark size={34} />
             <div>
               <div style={{
                 fontSize: 18, fontWeight: 800,
