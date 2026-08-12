@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { colors } from '../lib/tokens'
+import { SITE_URL } from '../lib/site'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://dondeta.jfmcss.com'),
+  metadataBase: new URL(SITE_URL),
 }
 
 const gaId = process.env.GA_MEASUREMENT_ID

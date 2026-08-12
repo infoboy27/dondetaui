@@ -4,6 +4,7 @@ import { getProductBySlug, getProductReviews } from '../../../lib/api'
 import { formatPrice } from '../../../lib/format'
 import { getBestOffer, rankOffers } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
+import { SITE_URL } from '../../../lib/site'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -68,7 +69,7 @@ export default async function ProductPage({ params }: Props) {
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <a href="https://dondeta.jfmcss.com" style={{ fontSize: 13, color: colors.navy400, fontFamily: fonts.body, textDecoration: 'none' }}>
+      <a href={SITE_URL} style={{ fontSize: 13, color: colors.navy400, fontFamily: fonts.body, textDecoration: 'none' }}>
         ← DóndeTa
       </a>
 

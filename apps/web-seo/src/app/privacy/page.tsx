@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { colors, fonts } from '../../lib/tokens'
+import { SITE_URL } from '../../lib/site'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad — DóndeTa',
@@ -7,7 +8,8 @@ export const metadata: Metadata = {
 }
 
 const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
-const LAST_UPDATED = '11 de agosto de 2026'
+const LAST_UPDATED = '12 de agosto de 2026'
+const SITE_HOSTNAME = new URL(SITE_URL).hostname
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -34,7 +36,7 @@ export default function PrivacyPolicyPage() {
       <Section title="Qué es DóndeTa">
         <p>
           DóndeTa es una aplicación de comparación de precios de electrodomésticos y productos en tiendas de
-          República Dominicana, disponible en <strong>dondeta.jfmcss.com</strong> y como aplicación para Android.
+          República Dominicana, disponible en <strong>{SITE_HOSTNAME}</strong> y como aplicación para Android.
           Esta política aplica a ambas.
         </p>
       </Section>

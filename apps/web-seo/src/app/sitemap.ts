@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { getAllProducts } from '../lib/api'
-
-const SITE_URL = 'https://dondeta.jfmcss.com'
+import { SITE_URL } from '../lib/site'
 
 // The API isn't reachable at Docker build time (it's a separate container
 // that starts later), and a stale build-time snapshot would defeat the
