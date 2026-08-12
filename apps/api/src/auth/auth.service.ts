@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import bcrypt from 'bcryptjs'
+import { sendDiscordAlert } from '../common/discord-webhook'
 import { UsersRepository } from './users.repository'
 import type { AuthResultDto, LoginDto, RegisterDto, UserDto } from './auth.types'
 
@@ -20,6 +21,8 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS)
     const row = await this.users.create(dto.email, passwordHash, dto.name ?? null, dto.phone ?? null)
     const user = this.users.toDto(row)
+
+    sendDiscordAlert(process.env.DISCORD_WEBHOOK_REGISTRATIONS, `🆕 Nuevo registro en DóndeTa: ${user.email}`)
 
     return { token: this.sign(user), user }
   }

@@ -57,6 +57,8 @@ services:
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      DISCORD_WEBHOOK_REGISTRATIONS: ${DISCORD_WEBHOOK_REGISTRATIONS:-}
+      DISCORD_WEBHOOK_ALERTS: ${DISCORD_WEBHOOK_ALERTS:-}
     ports:
       - "127.0.0.1:${API_PORT:-3001}:3001"
     depends_on:

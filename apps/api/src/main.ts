@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
+import { AlertingExceptionFilter } from './common/alerting-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -36,6 +37,7 @@ async function bootstrap() {
   })
   app.setGlobalPrefix('api')
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }))
+  app.useGlobalFilters(new AlertingExceptionFilter())
 
   const port = Number(process.env.PORT ?? 3001)
   await app.listen(port, '0.0.0.0')

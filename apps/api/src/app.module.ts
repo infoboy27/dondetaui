@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
+import { ThrottlerModule } from '@nestjs/throttler'
 import { AlertsModule } from './alerts/alerts.module'
+import { AlertingThrottlerGuard } from './common/alerting-throttler.guard'
 import { AuthModule } from './auth/auth.module'
 import { DatabaseModule } from './database/database.module'
 import { FavoritesModule } from './favorites/favorites.module'
@@ -26,6 +27,6 @@ import { StoresModule } from './stores/stores.module'
     NotificationsModule,
   ],
   controllers: [HealthController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [{ provide: APP_GUARD, useClass: AlertingThrottlerGuard }],
 })
 export class AppModule {}
