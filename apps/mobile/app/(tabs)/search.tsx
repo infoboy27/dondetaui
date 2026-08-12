@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
+import AdBanner from '../../src/components/AdBanner'
 import ProductCard from '../../src/components/ProductCard'
 import PaginationControls from '../../src/components/PaginationControls'
 import { usePagination } from '../../src/hooks/usePagination'
@@ -68,6 +69,7 @@ export default function SearchScreen() {
         {loading && <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />}
         {!loading && searched && (
           <>
+            <AdBanner />
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Resultados para "{query}"</Text>
               <Text style={styles.count}>{products.length}</Text>

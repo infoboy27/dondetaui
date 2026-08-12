@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
+import AdBanner from '../../src/components/AdBanner'
 import ProductCard from '../../src/components/ProductCard'
 import PaginationControls from '../../src/components/PaginationControls'
 import { usePagination } from '../../src/hooks/usePagination'
@@ -77,6 +78,8 @@ export default function HomeScreen() {
             <Text style={styles.retry}>Toca para reintentar</Text>
           </Pressable>
         )}
+
+        <AdBanner />
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
