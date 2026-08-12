@@ -10,6 +10,16 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+// jsonLd embeds retailer-scraped fields (product name, offer store/url) that
+// aren't fully trusted -- JSON.stringify alone doesn't escape `<`, so a
+// value containing a literal `</script>` could close this tag early and
+// inject arbitrary HTML. < is a valid JSON escape for `<` and decodes
+// back to the same character once parsed, so this is a no-op for legitimate
+// content and only neutralizes the breakout string.
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c')
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const product = await getProductBySlug(slug)
@@ -67,7 +77,7 @@ export default async function ProductPage({ params }: Props) {
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 64px' }}>
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
 
       <a href={SITE_URL} style={{ fontSize: 13, color: colors.navy400, fontFamily: fonts.body, textDecoration: 'none' }}>
         ← DóndeTa
