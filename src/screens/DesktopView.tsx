@@ -338,6 +338,8 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
           </button>
           <button
             onClick={toggleExpanded}
+            aria-label={expanded ? `Ocultar comparación de tiendas para ${product.name}` : `Ver comparación de tiendas para ${product.name}`}
+            aria-expanded={expanded}
             style={{
               width: 44, height: 44, borderRadius: 10,
               border: '1px solid #E8EDF2', background: '#F2F4F7',
