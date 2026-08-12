@@ -25,7 +25,25 @@ declare global {
   }
 }
 
-type ScanState = 'requesting' | 'scanning' | 'denied' | 'unsupported' | 'detected' | 'not-found'
+type ScanState = 'requesting' | 'scanning' | 'denied' | 'unsupported' | 'detected' | 'not-found' | 'error'
+
+// iOS Safari can resolve video.play() before videoWidth/videoHeight are
+// actually populated -- starting frame detection before then means every
+// read sees an empty frame and just never matches anything, with no error
+// to explain why. Wait for real dimensions (already-ready videos resolve
+// immediately) instead of assuming play() means frames are available.
+function waitForVideoFrame(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= 2 && video.videoWidth > 0) return Promise.resolve()
+  return new Promise(resolve => {
+    const onReady = () => {
+      if (video.videoWidth > 0) {
+        video.removeEventListener('loadeddata', onReady)
+        resolve()
+      }
+    }
+    video.addEventListener('loadeddata', onReady)
+  })
+}
 
 export default function ScannerScreen({ onBack, onProduct }: Props) {
   const [state, setState] = useState<ScanState>('requesting')
@@ -33,6 +51,11 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
   const [flashSupported, setFlashSupported] = useState(false)
   const [detectedProduct, setDetectedProduct] = useState<Product | null>(null)
   const [lastCode, setLastCode] = useState<string | null>(null)
+  // Bumping this re-runs the setup effect below from scratch (new
+  // getUserMedia call, new detector init) -- unlike `rescan`, which only
+  // resets UI state and assumes the camera/detector are already running.
+  // Needed for retrying after 'error', where they aren't.
+  const [retryKey, setRetryKey] = useState(0)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -59,6 +82,14 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
     setDetectedProduct(null)
     setLastCode(null)
     setState('scanning')
+  }
+
+  const retry = () => {
+    resolvingRef.current = false
+    setDetectedProduct(null)
+    setLastCode(null)
+    setState('requesting')
+    setRetryKey(k => k + 1)
   }
 
   const toggleFlash = async () => {
@@ -102,35 +133,45 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         await videoRef.current.play().catch(() => {})
+        await waitForVideoFrame(videoRef.current)
       }
+      if (cancelled) return
       setState('scanning')
 
-      if (window.BarcodeDetector) {
-        const detector = new window.BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
-        })
-        const tick = async () => {
-          if (cancelled || !videoRef.current || resolvingRef.current) {
+      // Detector setup (native BarcodeDetector, or the dynamically-imported
+      // zxing fallback) was previously fire-and-forget: any failure here
+      // left the UI stuck on the scanning animation forever with no
+      // indication anything had gone wrong. Surface it instead.
+      try {
+        if (window.BarcodeDetector) {
+          const detector = new window.BarcodeDetector({
+            formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
+          })
+          const tick = async () => {
+            if (cancelled || !videoRef.current || resolvingRef.current) {
+              if (!cancelled) rafRef.current = requestAnimationFrame(tick)
+              return
+            }
+            try {
+              const results = await detector.detect(videoRef.current)
+              if (results[0]?.rawValue) void lookupCode(results[0].rawValue)
+            } catch { /* transient decode failure -- try again next frame */ }
             if (!cancelled) rafRef.current = requestAnimationFrame(tick)
-            return
           }
-          try {
-            const results = await detector.detect(videoRef.current)
-            if (results[0]?.rawValue) void lookupCode(results[0].rawValue)
-          } catch { /* transient decode failure -- try again next frame */ }
-          if (!cancelled) rafRef.current = requestAnimationFrame(tick)
+          rafRef.current = requestAnimationFrame(tick)
+        } else {
+          const { BrowserMultiFormatReader } = await import('@zxing/browser')
+          if (cancelled || !videoRef.current) return
+          const reader = new BrowserMultiFormatReader()
+          zxingReaderRef.current = reader
+          const controls = await reader.decodeFromVideoElement(videoRef.current, (result) => {
+            const text = result?.getText()
+            if (text) void lookupCode(text)
+          })
+          zxingControlsRef.current = controls
         }
-        rafRef.current = requestAnimationFrame(tick)
-      } else {
-        const { BrowserMultiFormatReader } = await import('@zxing/browser')
-        if (cancelled || !videoRef.current) return
-        const reader = new BrowserMultiFormatReader()
-        zxingReaderRef.current = reader
-        const controls = await reader.decodeFromVideoElement(videoRef.current, (result) => {
-          const text = result?.getText()
-          if (text) void lookupCode(text)
-        })
-        zxingControlsRef.current = controls
+      } catch {
+        if (!cancelled) setState('error')
       }
     }
 
@@ -142,7 +183,7 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
       zxingControlsRef.current?.stop()
       streamRef.current?.getTracks().forEach(track => track.stop())
     }
-  }, [])
+  }, [retryKey])
 
   const cheapest = detectedProduct ? getBestOffer(detectedProduct.prices) : null
   const savings = detectedProduct ? getSavingsRange(detectedProduct.prices) : 0
@@ -217,11 +258,11 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
             position: 'absolute', inset: 0,
             width: '100%', height: '100%', objectFit: 'cover',
             background: 'linear-gradient(135deg, #0d1f35 0%, #0A1628 50%, #0d1f35 100%)',
-            display: state === 'requesting' || state === 'denied' || state === 'unsupported' ? 'none' : 'block',
+            display: state === 'requesting' || state === 'denied' || state === 'unsupported' || state === 'error' ? 'none' : 'block',
           }}
         />
 
-        {(state === 'denied' || state === 'unsupported' || state === 'requesting') && (
+        {(state === 'denied' || state === 'unsupported' || state === 'requesting' || state === 'error') && (
           <div style={{
             position: 'absolute', inset: 0,
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -246,6 +287,27 @@ export default function ScannerScreen({ onBack, onProduct }: Props) {
               <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontFamily: "'DM Sans', sans-serif" }}>
                 Este navegador no soporta acceso a la cámara.
               </span>
+            )}
+            {state === 'error' && (
+              <>
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
+                  No pudimos iniciar el escáner
+                </span>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans', sans-serif" }}>
+                  Inténtalo de nuevo o busca el producto manualmente.
+                </span>
+                <button
+                  onClick={retry}
+                  style={{
+                    padding: '8px 20px', borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)',
+                    color: '#fff', fontSize: 13, fontWeight: 600,
+                    fontFamily: "'DM Sans', sans-serif", cursor: 'pointer',
+                  }}
+                >
+                  Reintentar
+                </button>
+              </>
             )}
           </div>
         )}
