@@ -228,7 +228,7 @@ export default function App() {
   }
 
   const handleCategory = (catId: string) => {
-    navigate(`/results?q=${encodeURIComponent(catId)}`)
+    navigate(`/results?category=${encodeURIComponent(catId)}`)
   }
 
   const toggleFavorite = (id: string) => {
@@ -405,6 +405,7 @@ export default function App() {
               element={(
                 <ResultsScreen
                   query={searchParams.get('q') ?? ''}
+                  category={searchParams.get('category') ?? undefined}
                   onBack={goBack}
                   onProduct={handleProduct}
                   favoriteIds={favoriteIds}

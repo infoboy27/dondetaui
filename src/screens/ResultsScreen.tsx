@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import ProductComparisonCard from '../components/ProductComparisonCard'
 import PaginationControls from '../components/PaginationControls'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
+import { CATEGORIES } from '../data/mock'
+import { matchesCategory } from '../domain/categories'
 import { getBestOffer, getOfferTotal } from '../domain/offers'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { usePagination } from '../hooks/usePagination'
@@ -9,6 +11,13 @@ import type { Product } from '../types'
 
 interface Props {
   query: string
+  // A curated category id (Home screen's quick-filter buttons), distinct
+  // from a free-text search: it's matched against real category data via
+  // matchesCategory (src/domain/categories.ts) instead of being sent to the
+  // search API as literal text -- "muebles" or "electrodomesticos" (no
+  // accent) essentially never appears as a substring in real product names,
+  // so treating it as a search query silently returned zero/wrong results.
+  category?: string
   onBack: () => void
   onProduct: (p: Product) => void
   favoriteIds: Set<string>
@@ -17,23 +26,30 @@ interface Props {
 
 const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
-export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, onToggleFavorite }: Props) {
+export default function ResultsScreen({ query, category, onBack, onProduct, favoriteIds, onToggleFavorite }: Props) {
   const [sortBy, setSortBy] = useState<'precio' | 'relevancia'>('precio')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedStores, setSelectedStores] = useState<string[]>(STORE_FILTERS)
   const [stockOnly, setStockOnly] = useState(false)
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
-  const { products } = useCatalogProducts(query)
+  // Category mode fetches the whole catalog (matchesCategory filters
+  // client-side, same as DesktopView) rather than sending the category id
+  // to the free-text search API.
+  const { products } = useCatalogProducts(category ? '' : query)
+  const categoryLabel = category ? CATEGORIES.find(c => c.id === category)?.label : undefined
+  const headingText = categoryLabel || query || 'Todos los productos'
 
   const displayResults = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     const filtered = products.filter(product => {
-      const matchesQuery = !normalizedQuery ||
-        product.name.toLowerCase().includes(normalizedQuery) ||
-        product.category.toLowerCase().includes(normalizedQuery) ||
-        product.brand.toLowerCase().includes(normalizedQuery) ||
-        normalizedQuery.includes(product.brand.toLowerCase())
+      const matchesQuery = category
+        ? matchesCategory(product, category)
+        : !normalizedQuery ||
+          product.name.toLowerCase().includes(normalizedQuery) ||
+          product.category.toLowerCase().includes(normalizedQuery) ||
+          product.brand.toLowerCase().includes(normalizedQuery) ||
+          normalizedQuery.includes(product.brand.toLowerCase())
 
       if (!matchesQuery) return false
 
@@ -58,7 +74,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
 
       return getOfferTotal(aOffer) - getOfferTotal(bOffer)
     })
-  }, [products, query, selectedStores, stockOnly, freeShippingOnly, sortBy])
+  }, [products, query, category, selectedStores, stockOnly, freeShippingOnly, sortBy])
 
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(displayResults)
 
@@ -74,7 +90,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
 
   return (
     <>
-      <title>{query ? `${query} — Resultados | DóndeTa` : 'Resultados | DóndeTa'}</title>
+      <title>{headingText === 'Todos los productos' ? 'Resultados | DóndeTa' : `${headingText} — Resultados | DóndeTa`}</title>
       <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{
@@ -103,7 +119,7 @@ export default function ResultsScreen({ query, onBack, onProduct, favoriteIds, o
             fontFamily: "'DM Sans', sans-serif",
             fontWeight: 500,
           }}>
-            {query || 'Todos los productos'}
+            {headingText}
           </div>
         </div>
 
