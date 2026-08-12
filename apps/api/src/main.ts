@@ -6,6 +6,18 @@ import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+
+  // Requests arrive through two proxy hops in production (Traefik, then the
+  // `web` container's nginx, see deploy/nginx.conf's /api/ location) --
+  // without this, Express's req.ip (which @nestjs/throttler keys rate
+  // limits on) sees nginx's container IP for every request, collapsing
+  // the whole site's traffic into one shared rate-limit bucket instead of
+  // one per real visitor. 2 is deliberately a specific hop count, not
+  // `true` (trust everything) -- the API is only reachable through that
+  // exact chain (127.0.0.1-bound / Docker-internal), so this can't be
+  // spoofed by an outside client forging X-Forwarded-For.
+  app.getHttpAdapter().getInstance().set('trust proxy', 2)
+
   const origins = (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map(value => value.trim())
