@@ -46,17 +46,6 @@ const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
   { key: 'deals', label: 'Ofertas' },
   { key: 'alerts', label: 'Alertas' },
 ]
-const STORE_COLORS: Record<string, string> = {
-  'Plaza Lama': '#C0392B', Sirena: '#2980B9', Corripio: '#27AE60', Jumbo: '#E67E22', PriceSmart: '#8E44AD',
-}
-// This screen's own "Tiendas" grid only has plain store name strings
-// (STORE_FILTERS), not a full offer/store object with a real .abbr -- and
-// name.slice(0,2) doesn't match the canonical abbr for every store
-// (PriceSmart -> "PR" that way, but "PS" everywhere else in the app).
-const STORE_ABBRS: Record<string, string> = {
-  'Plaza Lama': 'PL', Sirena: 'SI', Corripio: 'CO', Jumbo: 'JU', PriceSmart: 'PS',
-}
-const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
 
 // Lives in its own component so useProductReviews only mounts (and only
 // fires its fetch) once a row is actually expanded, instead of every
@@ -464,6 +453,20 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const { products, loading, error } = useCatalogProducts(query)
+  // Derived from real offer data instead of a hardcoded DR-only list, so
+  // this filter/directory reflects whatever retailers this deployment
+  // actually ingests (per AGENTS.md: store info comes from retailer data,
+  // not hardcoded UI conditionals). Stable order via sort so the grid/list
+  // doesn't reshuffle as products load.
+  const availableStores = useMemo(() => {
+    const byName = new Map<string, { name: string; abbr: string; color: string }>()
+    for (const product of products) {
+      for (const offer of product.prices) {
+        if (!byName.has(offer.store)) byName.set(offer.store, { name: offer.store, abbr: offer.abbr, color: offer.color })
+      }
+    }
+    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }, [products])
   const searchHistory = useSearchHistory(user)
   const hasNotifications = getPriceDropNotifications(products, alertedIds).length > 0
 
@@ -842,14 +845,14 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               Tiendas
             </h1>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-              {STORE_FILTERS.map(store => (
+              {availableStores.map(({ name: store, abbr, color }) => (
                 <button key={store} onClick={() => goToStore(store)} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   background: '#fff', border: '1px solid #E8EDF2',
                   borderRadius: 14, padding: '20px', cursor: 'pointer',
                   textAlign: 'left', minHeight: 44,
                 }}>
-                  <StoreLogo store={store} abbr={STORE_ABBRS[store]} color={STORE_COLORS[store]} size={44} />
+                  <StoreLogo store={store} abbr={abbr} color={color} size={44} />
                   <span style={{
                     fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
                     color: '#0F1D2D',
@@ -899,7 +902,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               }}>
                 Tiendas
               </div>
-              {STORE_FILTERS.map(store => (
+              {availableStores.map(({ name: store }) => (
                 <label key={store} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 0', minHeight: 44, cursor: 'pointer',
@@ -1099,7 +1102,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                 fontFamily: "'DM Sans', sans-serif",
                 margin: '4px 0 0',
               }}>
-                {visibleProducts.length} productos comparados en {STORE_FILTERS.length} tiendas
+                {visibleProducts.length} productos comparados en {availableStores.length} tiendas
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
