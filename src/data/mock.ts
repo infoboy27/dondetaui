@@ -176,5 +176,9 @@ export const TRENDING = [
   'Nevera French Door 26 pies',
 ]
 
-export const formatPrice = (price: number): string =>
-  `RD$${price.toLocaleString('es-DO')}`
+// Re-exported so every screen that historically imported formatPrice from
+// here (before src/domain/currency.ts existed) picks up the deployment's
+// real currency config instead of a second, separately-hardcoded 'RD$' --
+// caught live via /qa: DesktopView and five other screens were still
+// showing RD$ on the dondeta-co stack.
+export { formatPrice } from '../domain/currency'

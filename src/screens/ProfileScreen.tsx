@@ -3,6 +3,7 @@ import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRig
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
 import { userInitials } from '../domain/user'
+import { CURRENCY_SYMBOL } from '../domain/currency'
 import type { User } from '../types'
 
 interface Props {
@@ -40,7 +41,7 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
       title: 'Preferencias',
       items: [
         { icon: SettingsIcon, label: 'Notificaciones', value: 'Activas', accent: false },
-        { icon: SettingsIcon, label: 'Moneda', value: 'DOP (RD$)', accent: false },
+        { icon: SettingsIcon, label: 'Moneda', value: CURRENCY_SYMBOL, accent: false },
       ],
     },
     {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatPrice } from '../data/mock'
+import { CURRENCY_SYMBOL } from '../domain/currency'
 import { ChevronLeft, CheckIcon, ArrowRightIcon } from '../components/Icons'
 
 const CATEGORIES = [
@@ -105,7 +106,7 @@ export default function EquipaHogarScreen({ onBack }: Props) {
               fontFamily: "'Poppins', sans-serif",
               color: '#0F1D2D',
             }}>
-              RD$
+              {CURRENCY_SYMBOL}
             </span>
             <input
               value={budget}

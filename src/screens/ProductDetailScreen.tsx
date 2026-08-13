@@ -12,6 +12,7 @@ import {
 } from '../components/Icons'
 import ProductImage from '../components/ProductImage'
 import { formatPrice } from '../data/mock'
+import { CURRENCY_SYMBOL } from '../domain/currency'
 import { getBestOffer } from '../domain/offers'
 import { useProductReviews } from '../hooks/useProductReviews'
 import type { Product } from '../types'
@@ -502,7 +503,7 @@ export default function ProductDetailScreen({
                       fontFamily: "'Poppins', sans-serif",
                       color: '#0F1D2D',
                     }}>
-                      RD$
+                      {CURRENCY_SYMBOL}
                     </span>
                     <input
                       id="alert-target-price"
