@@ -16,6 +16,7 @@ run() {
 
 while true; do
   run elektra node dist/ingestion/vtex-api.cli.js elektra
+  run chedraui node dist/ingestion/vtex-api.cli.js chedraui
 
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"

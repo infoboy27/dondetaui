@@ -38,4 +38,12 @@ export const VTEX_RETAILER_CONFIGS: Record<string, VtexRetailerConfig> = {
     categoryPaths: ['linea-blanca'],
     defaultCategory: { name: 'Línea Blanca', slug: 'linea-blanca' },
   },
+  chedraui: {
+    key: 'chedraui', name: 'Chedraui', slug: 'chedraui', abbr: 'CH', primaryColor: '#EE1C25',
+    websiteUrl: 'https://www.chedraui.com.mx',
+    // Confirmed live: this path returns clean appliance categories
+    // (Refrigeradores y frigobares, Lavado y secado, Planchado).
+    categoryPaths: ['electrodomesticos-y-linea-blanca'],
+    defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
+  },
 }
