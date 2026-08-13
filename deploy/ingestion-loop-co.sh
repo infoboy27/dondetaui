@@ -18,6 +18,7 @@ while true; do
   run exito node dist/ingestion/vtex-api.cli.js exito
   run alkosto node dist/ingestion/algolia-api.cli.js alkosto
   run ktronix node dist/ingestion/algolia-api.cli.js ktronix
+  run falabella-co node dist/ingestion/falabella.cli.js falabella-co
 
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
