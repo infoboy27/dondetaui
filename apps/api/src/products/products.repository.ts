@@ -38,8 +38,106 @@ export class ProductsRepository {
       order by p.name asc`,
       params,
     )
+    if (!result.rows.length) return []
 
-    return Promise.all(result.rows.map(row => this.hydrateProduct(row)))
+    // Bulk-fetch offers/history for every row in two queries instead of
+    // hydrateProduct's per-product pair -- with a few hundred products that
+    // N+1 pattern was fine, but at a few thousand (multi-country catalogs)
+    // it opened thousands of pool connections at once and the endpoint
+    // started timing out client-side.
+    const productIds = result.rows.map(row => row.id)
+    const [offersByProduct, historyByProduct] = await Promise.all([
+      this.bulkOffers(productIds),
+      this.bulkHistory(productIds),
+    ])
+
+    return result.rows.map(row =>
+      this.mapProduct(row, offersByProduct.get(row.id) ?? [], historyByProduct.get(row.id) ?? []),
+    )
+  }
+
+  private async bulkOffers(productIds: string[]): Promise<Map<string, OfferDto[]>> {
+    const result = await this.pool.query<{
+      product_id: string
+      retailer_id: string
+      store_id: string | null
+      retailer_name: string
+      retailer_abbr: string
+      retailer_color: string
+      price: string
+      shipping_price: string
+      availability: string
+      updated_at: Date
+      url: string | null
+    }>(
+      `select
+        pv.product_id::text as product_id,
+        r.id::text as retailer_id,
+        s.id::text as store_id,
+        r.name as retailer_name,
+        r.abbr as retailer_abbr,
+        r.primary_color as retailer_color,
+        o.price,
+        o.shipping_price,
+        o.availability,
+        o.last_seen_at as updated_at,
+        o.url
+      from offers o
+      join product_variants pv on pv.id = o.product_variant_id
+      join retailers r on r.id = o.retailer_id
+      left join stores s on s.id = o.store_id
+      where pv.product_id = any($1::uuid[])
+      order by
+        pv.product_id,
+        case when o.availability = 'in_stock' then 0 else 1 end,
+        (o.price + o.shipping_price) asc`,
+      [productIds],
+    )
+
+    const byProduct = new Map<string, OfferDto[]>()
+    for (const row of result.rows) {
+      const offer: OfferDto = {
+        store: row.retailer_name,
+        abbr: row.retailer_abbr,
+        color: row.retailer_color,
+        price: Number(row.price),
+        shipping: Number(row.shipping_price) === 0 ? 'Gratis' : formatPrice(Number(row.shipping_price)),
+        available: row.availability === 'in_stock',
+        updated: this.relativeAge(row.updated_at),
+        retailerId: row.retailer_id,
+        storeId: row.store_id ?? undefined,
+        url: row.url ?? undefined,
+      }
+      const list = byProduct.get(row.product_id)
+      if (list) list.push(offer)
+      else byProduct.set(row.product_id, [offer])
+    }
+    return byProduct
+  }
+
+  private async bulkHistory(productIds: string[]): Promise<Map<string, Array<{ date: string; price: number }>>> {
+    const result = await this.pool.query<{ product_id: string; date: string; price: string }>(
+      `select
+        pv.product_id::text as product_id,
+        po.observed_at::date::text as date,
+        min(po.price + po.shipping_price)::text as price
+      from price_observations po
+      join offers o on o.id = po.offer_id
+      join product_variants pv on pv.id = o.product_variant_id
+      where pv.product_id = any($1::uuid[])
+      group by pv.product_id, po.observed_at::date
+      order by pv.product_id, po.observed_at::date asc`,
+      [productIds],
+    )
+
+    const byProduct = new Map<string, Array<{ date: string; price: number }>>()
+    for (const row of result.rows) {
+      const point = { date: row.date, price: Number(row.price) }
+      const list = byProduct.get(row.product_id)
+      if (list) list.push(point)
+      else byProduct.set(row.product_id, [point])
+    }
+    return byProduct
   }
 
   private searchClause(query?: string): { where: string; params: unknown[] } {
@@ -219,7 +317,10 @@ export class ProductsRepository {
 
   private async hydrateProduct(row: ProductRow): Promise<ProductDto> {
     const [prices, priceHistory] = await Promise.all([this.offers(row.id), this.history(row.id)])
+    return this.mapProduct(row, prices, priceHistory)
+  }
 
+  private mapProduct(row: ProductRow, prices: OfferDto[], priceHistory: Array<{ date: string; price: number }>): ProductDto {
     return {
       id: row.id,
       slug: row.slug,
