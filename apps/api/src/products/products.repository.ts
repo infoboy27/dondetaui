@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
+import { formatPrice } from '../common/currency'
 import type { OfferDto, ProductDto } from './products.types'
 
 interface ProductRow {
@@ -190,7 +191,7 @@ export class ProductsRepository {
       abbr: row.retailer_abbr,
       color: row.retailer_color,
       price: Number(row.price),
-      shipping: Number(row.shipping_price) === 0 ? 'Gratis' : `RD$${Number(row.shipping_price).toLocaleString('es-DO')}`,
+      shipping: Number(row.shipping_price) === 0 ? 'Gratis' : formatPrice(Number(row.shipping_price)),
       available: row.availability === 'in_stock',
       updated: this.relativeAge(row.updated_at),
       retailerId: row.retailer_id,

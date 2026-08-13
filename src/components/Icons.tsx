@@ -84,23 +84,49 @@ export const InstagramIcon = ({ size = 24, color = '#E4405F', className = '' }: 
   </svg>
 )
 
+// Per-country badge on the mark, e.g. "🇩🇴"/"🇨🇴"/"🇲🇽" -- baked in at Vite
+// build time per deployment (see Dockerfile.web). Blank on stacks that
+// don't set it, so this is purely additive to the existing single-country
+// deployment.
+const COUNTRY_FLAG = import.meta.env.VITE_COUNTRY_FLAG || ''
+
 // The DóndeTa mark: a location pin containing a magnifying glass over a
 // price tag. Traced from the approved brand sheet (logo.png) rather than
 // the app's earlier placeholder "D" badge -- same composition/colors, just
 // vector so it stays crisp at any size (favicon through app icon).
-export const DondeTaMark = ({ size = 24, className = '' }: IconProps) => (
-  <svg width={size} height={(size * 280) / 240} viewBox="0 0 240 280" className={className}>
-    <path d="M210,100 C210,170 120,230 120,230 S30,170 30,100 A90,90 0 0,1 210,100 Z" fill="#00B894" />
-    <circle cx="120" cy="100" r="58" fill="#ffffff" />
-    <line x1="144" y1="129" x2="183" y2="168" stroke="#0F1D2D" strokeWidth="26" strokeLinecap="round" />
-    <circle cx="110" cy="95" r="48" fill="none" stroke="#0F1D2D" strokeWidth="14" />
-    <g transform="translate(82,62) rotate(14) scale(0.65)">
-      <path d="M22,0 L64,0 Q72,0 72,8 L72,76 Q72,84 64,84 L8,84 Q0,84 0,76 L0,22 Z" fill="#FF9F1C" />
-      <circle cx="14" cy="14" r="6" fill="#ffffff" />
-      <text x="36" y="60" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="46" fill="#ffffff" textAnchor="middle">$</text>
-    </g>
-  </svg>
-)
+export const DondeTaMark = ({ size = 24, className = '' }: IconProps) => {
+  const height = (size * 280) / 240
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', width: size, height, flexShrink: 0 }}>
+      <svg width={size} height={height} viewBox="0 0 240 280" className={className}>
+        <path d="M210,100 C210,170 120,230 120,230 S30,170 30,100 A90,90 0 0,1 210,100 Z" fill="#00B894" />
+        <circle cx="120" cy="100" r="58" fill="#ffffff" />
+        <line x1="144" y1="129" x2="183" y2="168" stroke="#0F1D2D" strokeWidth="26" strokeLinecap="round" />
+        <circle cx="110" cy="95" r="48" fill="none" stroke="#0F1D2D" strokeWidth="14" />
+        <g transform="translate(82,62) rotate(14) scale(0.65)">
+          <path d="M22,0 L64,0 Q72,0 72,8 L72,76 Q72,84 64,84 L8,84 Q0,84 0,76 L0,22 Z" fill="#FF9F1C" />
+          <circle cx="14" cy="14" r="6" fill="#ffffff" />
+          <text x="36" y="60" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="46" fill="#ffffff" textAnchor="middle">$</text>
+        </g>
+      </svg>
+      {COUNTRY_FLAG && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            right: -2,
+            bottom: -2,
+            fontSize: Math.max(10, size * 0.34),
+            lineHeight: 1,
+            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))',
+          }}
+        >
+          {COUNTRY_FLAG}
+        </span>
+      )}
+    </span>
+  )
+}
 export const ShieldIcon = ic('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
 export const HelpCircleIcon = ic('M12 22a10 10 0 100-20 10 10 0 000 20z M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3 M12 17h.01')
 export const SettingsIcon = ic('M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z')

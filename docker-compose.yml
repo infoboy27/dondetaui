@@ -59,6 +59,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       DISCORD_WEBHOOK_REGISTRATIONS: ${DISCORD_WEBHOOK_REGISTRATIONS:-}
       DISCORD_WEBHOOK_ALERTS: ${DISCORD_WEBHOOK_ALERTS:-}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
+      CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
     ports:
       - "127.0.0.1:${API_PORT:-3001}:3001"
     depends_on:
@@ -84,6 +86,12 @@ services:
         VITE_ADSENSE_SLOT_LEADERBOARD: ${VITE_ADSENSE_SLOT_LEADERBOARD:-}
         VITE_ADSENSE_SLOT_MEDIUM_RECTANGLE: ${VITE_ADSENSE_SLOT_MEDIUM_RECTANGLE:-}
         VITE_ADSENSE_SLOT_MOBILE_BANNER: ${VITE_ADSENSE_SLOT_MOBILE_BANNER:-}
+        # Per-country deployment config -- defaults match the original DR
+        # stack, so dondeta.com.do needs no .env changes. dondeta.co/.mx set
+        # their own in their respective .env files.
+        VITE_CURRENCY_SYMBOL: ${VITE_CURRENCY_SYMBOL:-}
+        VITE_CURRENCY_LOCALE: ${VITE_CURRENCY_LOCALE:-es-DO}
+        VITE_COUNTRY_FLAG: ${VITE_COUNTRY_FLAG:-}
     restart: unless-stopped
     networks:
       - default
@@ -132,6 +140,8 @@ services:
       API_BASE_URL: http://api:3001/api
       SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
+      CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
     depends_on:
       api:
         condition: service_healthy
@@ -166,9 +176,19 @@ services:
       CORRIPIO_MAX_PRODUCTS: ${CORRIPIO_MAX_PRODUCTS:-500}
       PRICESMART_MAX_PAGES: ${PRICESMART_MAX_PAGES:-20}
       PRICESMART_MAX_PRODUCTS: ${PRICESMART_MAX_PRODUCTS:-300}
+      EXITO_MAX_PRODUCTS: ${EXITO_MAX_PRODUCTS:-500}
+      EXITO_REQUEST_DELAY_MS: ${EXITO_REQUEST_DELAY_MS:-500}
+      ELEKTRA_MAX_PRODUCTS: ${ELEKTRA_MAX_PRODUCTS:-500}
+      ELEKTRA_REQUEST_DELAY_MS: ${ELEKTRA_REQUEST_DELAY_MS:-500}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
+      CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
     volumes:
-      - ./deploy/ingestion-loop.sh:/deploy/ingestion-loop.sh:ro
-    entrypoint: ["/bin/sh", "/deploy/ingestion-loop.sh"]
+      # INGESTION_LOOP_SCRIPT picks which country's retailer set runs --
+      # ingestion-loop.sh (DR: Plaza Lama/Jumbo/Sirena/Corripio/PriceSmart),
+      # ingestion-loop-co.sh (Éxito), or ingestion-loop-mx.sh (Elektra).
+      # Same image, same repo, three deployments -- not three codebases.
+      - ./deploy:/deploy:ro
+    entrypoint: ["/bin/sh", "/deploy/${INGESTION_LOOP_SCRIPT:-ingestion-loop.sh}"]
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -187,6 +207,8 @@ services:
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
       TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-}
+      CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
+      CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
     volumes:
       - ./deploy/alerts-loop.sh:/deploy/alerts-loop.sh:ro
     entrypoint: ["/bin/sh", "/deploy/alerts-loop.sh"]

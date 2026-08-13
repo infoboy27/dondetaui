@@ -3,6 +3,7 @@ import { chromium } from 'playwright'
 import { IngestionRepository } from './ingestion.repository'
 import { PriceSmartAdapter } from './pricesmart.adapter'
 import { PriceSmartCatalogDiscovery } from './pricesmart.discovery'
+import { formatPrice } from '../common/currency'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
@@ -100,7 +101,7 @@ async function main() {
         await repository.ingest(item, runId)
         ingested += 1
         console.log(
-          `[pricesmart] ${index + 1}/${urls.length} ingested ${item.externalSku} ${item.name} RD$${item.price}`,
+          `[pricesmart] ${index + 1}/${urls.length} ingested ${item.externalSku} ${item.name} ${formatPrice(item.price)}`,
         )
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)

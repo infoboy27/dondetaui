@@ -1,6 +1,6 @@
-// Mirrors src/domain/currency.ts, but this is a server-rendered app so the
-// values come from plain runtime env vars (set per country stack in
-// docker-compose.yml) rather than a build-time Vite define.
+// Deployment-specific currency for server-generated text (alert messages,
+// CLI logs, API responses) -- mirrors src/domain/currency.ts's web
+// equivalent. Set via CURRENCY_SYMBOL/CURRENCY_LOCALE per country stack.
 const CURRENCY_SYMBOL = process.env.CURRENCY_SYMBOL || 'RD$'
 const CURRENCY_LOCALE = process.env.CURRENCY_LOCALE || 'es-DO'
 

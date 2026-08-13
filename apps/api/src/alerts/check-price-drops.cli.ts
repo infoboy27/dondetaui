@@ -4,6 +4,7 @@ import { EmailProvider } from '../notifications/email.provider'
 import { SmsProvider } from '../notifications/sms.provider'
 import { PushProvider } from '../notifications/push.provider'
 import { NotificationsService } from '../notifications/notifications.service'
+import { formatPrice } from '../common/currency'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
@@ -67,7 +68,7 @@ async function main() {
     )
     await alerts.markNotified(candidate.alert_id, latest.price)
     notified += 1
-    console.log(`[alerts] notified ${candidate.user_email} — ${name} dropped to RD$${latest.price}`)
+    console.log(`[alerts] notified ${candidate.user_email} — ${name} dropped to ${formatPrice(latest.price)}`)
   }
 
   console.log(`[alerts] checked ${candidates.length} alerts, sent ${notified} notifications`)

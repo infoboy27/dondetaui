@@ -3,6 +3,7 @@ import { chromium } from 'playwright'
 import { IngestionRepository } from './ingestion.repository'
 import { PlazaLamaAdapter } from './plaza-lama.adapter'
 import { PlazaLamaCatalogDiscovery } from './plaza-lama.discovery'
+import { formatPrice } from '../common/currency'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
@@ -106,7 +107,7 @@ async function main() {
         ingested += 1
         console.log(
           `[plaza-lama] ${index + 1}/${urls.length} ingested ` +
-          `${item.ean ?? item.externalSku} ${item.name} RD$${item.price}`,
+          `${item.ean ?? item.externalSku} ${item.name} ${formatPrice(item.price)}`,
         )
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)

@@ -3,6 +3,7 @@ import { IngestionRepository } from './ingestion.repository'
 import { RetailerHtmlAdapter } from './retailer.adapter'
 import { RETAILER_CONFIGS, type RetailerKey } from './retailer.config'
 import { RetailerCatalogDiscovery } from './retailer.discovery'
+import { formatPrice } from '../common/currency'
 
 const key = process.argv[2] as RetailerKey | undefined
 if (!key || !(key in RETAILER_CONFIGS)) {
@@ -50,7 +51,7 @@ async function main() {
         const item = await adapter.fetchProduct(url)
         await repository.ingest(item, runId)
         ingested += 1
-        console.log(`[${config.slug}] ${ingested}/${urls.length} ${item.externalSku} ${item.name} RD$${item.price}`)
+        console.log(`[${config.slug}] ${ingested}/${urls.length} ${item.externalSku} ${item.name} ${formatPrice(item.price)}`)
       } catch (error) {
         skipped += 1
         console.warn(`[${config.slug}] skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
