@@ -20,11 +20,18 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
       {children}
       <footer style={{ marginTop: 56, paddingTop: 24, borderTop: `1px solid ${colors.border}`, fontFamily: fonts.body, fontSize: 13, color: colors.navy400 }}>
-        <p>Datos de precios recopilados regularmente desde tiendas publicas. Verifica precio final y disponibilidad antes de comprar.</p>
         <p>
+          DóndeTa registra precios publicados por tiendas dominicanas para dar contexto antes de comprar. No vendemos
+          productos ni garantizamos precio, inventario ni condiciones finales: verifícalos con la tienda.
+        </p>
+        <p>
+          <a href="/metodologia" style={{ color: colors.primary }}>Metodología</a>
+          {' · '}
+          <a href="/guias" style={{ color: colors.primary }}>Guías</a>
+          {' · '}
           <a href="/privacy" style={{ color: colors.primary }}>Privacidad</a>
           {' · '}
-          <a href="/terminos" style={{ color: colors.primary }}>Terminos</a>
+          <a href="/terminos" style={{ color: colors.primary }}>Términos</a>
           {' · '}
           <a href="/contacto" style={{ color: colors.primary }}>Contacto</a>
         </p>
@@ -49,6 +56,20 @@ export function H2({ children }: { children: ReactNode }) {
   return <h2 style={{ fontFamily: fonts.display, fontSize: 22, color: colors.navy, margin: '0 0 10px' }}>{children}</h2>
 }
 
+export function H3({ children }: { children: ReactNode }) {
+  return <h3 style={{ fontFamily: fonts.display, fontSize: 17, color: colors.navy, margin: '0 0 8px' }}>{children}</h3>
+}
+
 export function P({ children }: { children: ReactNode }) {
   return <p style={{ fontFamily: fonts.body, fontSize: 15, lineHeight: 1.75, color: colors.navy400, margin: '0 0 12px' }}>{children}</p>
+}
+
+export function List({ items }: { items: string[] }) {
+  return (
+    <ul style={{ fontFamily: fonts.body, fontSize: 15, lineHeight: 1.7, color: colors.navy400, margin: '0 0 12px', paddingLeft: 20 }}>
+      {items.map((item, i) => (
+        <li key={i} style={{ marginBottom: 4 }}>{item}</li>
+      ))}
+    </ul>
+  )
 }
