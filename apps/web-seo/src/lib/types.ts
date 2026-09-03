@@ -12,6 +12,13 @@ export interface Offer {
   url?: string
 }
 
+// One dated observation of a product's published price, as returned by the
+// API's `priceHistory` array. The API records one point per ingestion cycle.
+export interface PricePoint {
+  date: string
+  price: number
+}
+
 export interface Product {
   id: string
   slug: string
@@ -25,6 +32,12 @@ export interface Product {
   category: string
   categoryId: string
   prices: Offer[]
+  // Optional: `/products` and `/products/by-slug/:slug` include these, other
+  // endpoints may not. `discount`/`previousPrice` are 0 when the API has no
+  // reference price.
+  priceHistory?: PricePoint[]
+  previousPrice?: number
+  discount?: number
 }
 
 export interface Store {

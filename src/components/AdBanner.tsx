@@ -36,11 +36,10 @@ function loadAdSenseScript(clientId: string): Promise<void> {
   return scriptLoad
 }
 
-// Renders a real AdSense unit once both VITE_ADSENSE_CLIENT_ID and this
-// placement's slot id are configured. Until then (site pending AdSense
-// review), falls back to the "Anúnciate aquí" placeholder so the layout
-// stays exactly as designed with no visual regression.
-export default function AdBanner({ width, height, label, className, slot }: Props) {
+// Renders a real AdSense unit only after the site is approved and both
+// VITE_ADSENSE_CLIENT_ID and the placement slot id are configured. During
+// review, render nothing so app screens cannot look like ad placeholders.
+export default function AdBanner({ width, className, slot }: Props) {
   const pushedRef = useRef(false)
   const clientId = appConfig.adsenseClientId
   const isLive = Boolean(clientId && slot)
@@ -70,36 +69,5 @@ export default function AdBanner({ width, height, label, className, slot }: Prop
     )
   }
 
-  return (
-    <a
-      href="mailto:jonathanmaria@gmail.com?subject=Quiero%20anunciarme%20en%20DóndeTa"
-      className={`ad-slot-placeholder${className ? ` ${className}` : ''}`}
-      style={{
-        width: '100%',
-        maxWidth: width,
-        aspectRatio: `${width} / ${height}`,
-        margin: '0 auto',
-        borderRadius: 12,
-        border: '1.5px dashed #D8E6F0',
-        background: '#F8FAFC',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-        textDecoration: 'none',
-        cursor: 'pointer',
-      }}
-    >
-      <span style={{
-        fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: 13,
-        color: '#00B894',
-      }}>
-        Anúnciate aquí
-      </span>
-      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: '#B0C4D8' }}>
-        {width}×{height}px{label ? ` · ${label}` : ''}
-      </span>
-    </a>
-  )
+  return null
 }

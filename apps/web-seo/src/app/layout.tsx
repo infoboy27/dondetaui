@@ -8,6 +8,7 @@ export const metadata: Metadata = {
 }
 
 const gaId = process.env.GA_MEASUREMENT_ID
+const adsenseClientId = process.env.ADSENSE_CLIENT_ID
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -26,6 +27,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               }}
             />
           </>
+        )}
+        {adsenseClientId && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
+            crossOrigin="anonymous"
+          />
         )}
       </head>
       <body style={{ margin: 0, background: colors.background, fontFamily: "'DM Sans', sans-serif" }}>
