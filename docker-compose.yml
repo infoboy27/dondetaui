@@ -140,6 +140,7 @@ services:
       API_BASE_URL: http://api:3001/api
       SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+      ADSENSE_CLIENT_ID: ${VITE_ADSENSE_CLIENT_ID:-}
       CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
       CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
     depends_on:

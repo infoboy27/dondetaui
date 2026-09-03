@@ -1,0 +1,11 @@
+# Server-local only (not committed) -- this box's shared Traefik discovers
+# ANY container with traefik.enable=true via the Docker socket regardless of
+# network membership, so the base compose file's labels (meant for the
+# 10.0.0.160 dev host's own Traefik + dondeta.jfmcss.com/cloudflare
+# resolver) get picked up here too and error out. Routing on this host goes
+# through /home/ubuntu/loadbalancer/dynamic/dondeta.yml instead (see
+# WEB_PORT), so disable label discovery for this deployment.
+services:
+  web:
+    labels:
+      - "traefik.enable=false"

@@ -53,6 +53,15 @@ export default async function StorePage({ params }: Props) {
         {products.length} producto{products.length === 1 ? '' : 's'} comparados en DóndeTa
       </p>
 
+      <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, marginBottom: 18 }}>
+        <h2 style={{ fontFamily: fonts.display, fontSize: 16, color: colors.navy, margin: '0 0 8px' }}>
+          Precios publicados de {store.name}
+        </h2>
+        <p style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: 0 }}>
+          Esta pagina agrupa productos monitoreados para facilitar comparaciones entre tiendas. DóndeTa no vende directamente; cada precio debe confirmarse con {store.name}, especialmente si aplica envio, instalacion, membresia o condiciones por sucursal.
+        </p>
+      </section>
+
       {products.length === 0 && (
         <p style={{ fontFamily: fonts.body, fontSize: 14, color: colors.navy400 }}>
           Todavía no tenemos productos de {store.name} en el catálogo.
@@ -96,6 +105,10 @@ export default async function StorePage({ params }: Props) {
           </a>
         )
       })}
+
+      <p style={{ marginTop: 20, fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400 }}>
+        Tambien puedes revisar nuestra <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>guia para comparar electrodomesticos antes de comprar</a>.
+      </p>
     </main>
   )
 }

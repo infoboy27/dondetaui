@@ -61,6 +61,15 @@ export default async function CategoryPage({ params }: Props) {
         {products.length} producto{products.length === 1 ? '' : 's'} comparados en DóndeTa
       </p>
 
+      <section style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, marginBottom: 18 }}>
+        <h2 style={{ fontFamily: fonts.display, fontSize: 16, color: colors.navy, margin: '0 0 8px' }}>
+          Que revisar en {category.label.toLowerCase()}
+        </h2>
+        <p style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: 0 }}>
+          Usa esta categoria para ubicar precios publicados y comparar opciones disponibles. Antes de comprar, valida modelo exacto, garantia, entrega, instalacion y condiciones de la tienda. DóndeTa organiza datos de referencia; el precio final se confirma con el comercio.
+        </p>
+      </section>
+
       {products.map(product => {
         const offer = getBestOffer(product.prices)
         return (
@@ -98,6 +107,10 @@ export default async function CategoryPage({ params }: Props) {
           </a>
         )
       })}
+
+      <p style={{ marginTop: 20, fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400 }}>
+        Para entender como se ordenan ofertas y que limitaciones tienen los precios publicados, consulta la <a href="/metodologia" style={{ color: colors.primary }}>metodologia de DóndeTa</a>.
+      </p>
     </main>
   )
 }

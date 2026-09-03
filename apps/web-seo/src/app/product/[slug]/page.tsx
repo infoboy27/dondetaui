@@ -47,6 +47,7 @@ export default async function ProductPage({ params }: Props) {
     Promise.resolve(rankOffers(product.prices)),
   ])
   const bestOffer = offers[0]
+  const comparedStores = new Set(offers.map(offer => offer.store)).size
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -149,6 +150,18 @@ export default async function ProductPage({ params }: Props) {
         ))}
       </section>
 
+      <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '16px' }}>
+        <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 10px' }}>
+          Como leer esta comparacion
+        </h2>
+        <p style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: '0 0 10px' }}>
+          Este producto tiene {comparedStores} tienda{comparedStores === 1 ? '' : 's'} con precio publicado en DóndeTa. Cuando existen varias ofertas, priorizamos disponibilidad y costo total estimado; cuando solo hay una, la pagina funciona como monitoreo de precio y punto de verificacion.
+        </p>
+        <p style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: 0 }}>
+          Antes de comprar, confirma precio final, envio, garantia e instalacion con la tienda. Lee nuestra <a href="/metodologia" style={{ color: colors.primary }}>metodologia de comparacion</a> para entender las limitaciones de los datos.
+        </p>
+      </section>
+
       {reviews.reviews.length > 0 && (
         <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '14px 16px' }}>
           <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 12px' }}>
@@ -170,7 +183,7 @@ export default async function ProductPage({ params }: Props) {
       )}
 
       <p style={{ marginTop: 24, fontFamily: fonts.body, fontSize: 12, color: colors.navy200 }}>
-        Precios actualizados regularmente. Verifica disponibilidad en tienda.
+        Precios actualizados regularmente. Verifica disponibilidad en tienda. Para compras grandes, revisa tambien la guia para <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>comparar electrodomesticos en RD</a>.
       </p>
     </main>
   )
