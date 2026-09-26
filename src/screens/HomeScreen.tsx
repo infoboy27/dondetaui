@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
 import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
+import RecommendedProductCard from '../components/RecommendedProductCard'
 import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { usePagination } from '../hooks/usePagination'
 import PaginationControls from '../components/PaginationControls'
 import { storesApi } from '../api/stores'
 import { appConfig } from '../config/env'
+import { loadRecommendationEvents, rankProducts, recordRecommendationEvent } from '../domain/recommendations'
 import type { Product } from '../types'
 
 interface Props {
@@ -30,6 +32,31 @@ export default function HomeScreen({
   const { products } = useCatalogProducts()
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
   const [storeCount, setStoreCount] = useState<number | null>(null)
+  const [recommendationVersion, setRecommendationVersion] = useState(0)
+
+  const recommendations = useMemo(
+    () => rankProducts(products, loadRecommendationEvents()).slice(0, 8),
+    [products, recommendationVersion],
+  )
+
+  const refreshRecommendations = () => setRecommendationVersion(value => value + 1)
+
+  const openRecommendedProduct = (product: Product) => {
+    recordRecommendationEvent(product, 'open')
+    refreshRecommendations()
+    onProduct(product)
+  }
+
+  const toggleRecommendedFavorite = (product: Product) => {
+    if (!favoriteIds.has(product.id)) recordRecommendationEvent(product, 'favorite')
+    onToggleFavorite(product.id)
+    refreshRecommendations()
+  }
+
+  const hideRecommendedProduct = (product: Product) => {
+    recordRecommendationEvent(product, 'hide')
+    refreshRecommendations()
+  }
 
   useEffect(() => {
     if (!appConfig.useApi) return
@@ -90,7 +117,6 @@ export default function HomeScreen({
           </button>
         </div>
 
-        {/* Search Bar */}
         <div
           onClick={() => onSearch('')}
           style={{
@@ -112,7 +138,6 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* DóndeTa Banner */}
       <div style={{ padding: '16px 20px 0' }}>
         <div style={{
           background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
@@ -149,7 +174,6 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Categories */}
       <div style={{ padding: '20px 20px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h2 style={{
@@ -197,12 +221,55 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Ad slot */}
       <div style={{ padding: '20px 20px 0' }}>
         <AdBanner {...AD_SIZES.mobileBanner} slot={appConfig.adsenseSlots.mobileBanner} />
       </div>
 
-      {/* Ofertas de hoy */}
+      {recommendations.length > 0 && (
+        <div style={{ padding: '24px 0 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 14 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h2 style={{
+                  fontSize: 17, fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  color: '#0F1D2D', margin: 0,
+                  letterSpacing: '-0.02em',
+                }}>
+                  Para ti
+                </h2>
+                <span style={{
+                  background: '#E6F7F3', color: '#00B894',
+                  fontSize: 9, fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  padding: '3px 7px', borderRadius: 999,
+                }}>
+                  APRENDE CONTIGO
+                </span>
+              </div>
+              <div style={{
+                marginTop: 3, fontSize: 11, color: '#9AAABB',
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Recomendados por ahorro, calidad y tus intereses
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 14, padding: '4px 20px 8px', overflowX: 'auto' }}>
+            {recommendations.map(recommendation => (
+              <RecommendedProductCard
+                key={recommendation.product.id}
+                recommendation={recommendation}
+                onProduct={openRecommendedProduct}
+                isFavorite={favoriteIds.has(recommendation.product.id)}
+                onToggleFavorite={() => toggleRecommendedFavorite(recommendation.product)}
+                onHide={() => hideRecommendedProduct(recommendation.product)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ padding: '24px 0 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -240,9 +307,17 @@ export default function HomeScreen({
             <ProductCard
               key={p.id}
               product={p}
-              onProduct={onProduct}
+              onProduct={product => {
+                recordRecommendationEvent(product, 'open')
+                refreshRecommendations()
+                onProduct(product)
+              }}
               isFavorite={favoriteIds.has(p.id)}
-              onToggleFavorite={() => onToggleFavorite(p.id)}
+              onToggleFavorite={() => {
+                if (!favoriteIds.has(p.id)) recordRecommendationEvent(p, 'favorite')
+                onToggleFavorite(p.id)
+                refreshRecommendations()
+              }}
             />
           ))}
         </div>
@@ -258,9 +333,7 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* Quick action cards */}
       <div style={{ padding: '20px 20px 0', display: 'flex', gap: 10 }}>
-        {/* Equipa tu hogar */}
         <button
           onClick={() => onEquipa?.()}
           style={{
@@ -289,7 +362,6 @@ export default function HomeScreen({
           </span>
         </button>
 
-        {/* Tiendas cerca */}
         <button
           onClick={() => onNearby?.()}
           style={{
@@ -321,7 +393,6 @@ export default function HomeScreen({
         </button>
       </div>
 
-      {/* Trust note */}
       <div style={{ padding: '16px 20px 0', textAlign: 'center' }}>
         <span style={{
           fontSize: 11, color: '#B0C4D8',
