@@ -7,6 +7,7 @@ import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { usePagination } from '../hooks/usePagination'
 import PaginationControls from '../components/PaginationControls'
+import { SiteLinks } from '../components/SiteLinks'
 import { storesApi } from '../api/stores'
 import { appConfig } from '../config/env'
 import type { Product } from '../types'
@@ -329,6 +330,10 @@ export default function HomeScreen({
         }}>
           Precios actualizados cada hora · Disponibilidad puede variar
         </span>
+      </div>
+
+      <div style={{ padding: '16px 20px 0' }}>
+        <SiteLinks align="center" />
       </div>
     </div>
   )

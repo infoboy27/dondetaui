@@ -42,7 +42,7 @@ export default function PaginationControls({ page, totalPages, pageSize, total, 
         Mostrando <strong style={{ color: colors.navy }}>{start}–{end}</strong> de <strong style={{ color: colors.navy }}>{total}</strong>
       </span>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing.lg }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
           <span style={{ fontSize: 12, color: colors.navy400, fontFamily: fonts.body }}>Por página</span>
           <div style={{ display: 'flex', gap: 4, background: colors.background, borderRadius: radii.md, padding: 3 }}>
