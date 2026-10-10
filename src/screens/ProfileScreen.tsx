@@ -1,5 +1,5 @@
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon } from '../components/Icons'
-import { SiteLinks } from '../components/SiteLinks'
+import { SiteLinks, DONATE_URL } from '../components/SiteLinks'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
@@ -268,6 +268,32 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
           }}>
             Síguenos en Instagram
           </span>
+          <ChevronRight size={16} color="#B0C4D8" />
+        </button>
+        <button
+          onClick={() => window.open(DONATE_URL, '_blank', 'noopener,noreferrer')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px', background: '#fff', border: '1px solid #E8EDF2',
+            borderRadius: 16, cursor: 'pointer', textAlign: 'left', marginTop: 10,
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: '#00B89414',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, fontSize: 18,
+          }}>
+            💚
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
+              Apoya a DóndeTa
+            </div>
+            <div style={{ fontSize: 12, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+              Haz una donación vía PayPal y ayúdanos a seguir gratis
+            </div>
+          </div>
           <ChevronRight size={16} color="#B0C4D8" />
         </button>
       </div>

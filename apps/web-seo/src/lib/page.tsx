@@ -35,6 +35,13 @@ export function Shell({ children }: { children: ReactNode }) {
           {' · '}
           <a href="/contacto" style={{ color: colors.primary }}>Contacto</a>
         </p>
+        <p>
+          ¿Te ayudó DóndeTa?{' '}
+          <a href="https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8" target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: 700 }}>
+            Apóyanos con una donación vía PayPal
+          </a>
+          {' '}para que siga siendo gratis.
+        </p>
       </footer>
     </main>
   )
