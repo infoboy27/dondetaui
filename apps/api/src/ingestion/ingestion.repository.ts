@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
 import { brandsCompatible, extractModelCodes } from './model-codes'
+import { normalizeBrand } from './brands'
 
 // DóndeTa is an appliance price-comparison app. Discovery is already scoped to each
 // retailer's appliance department by URL, but sites nest non-appliance subcategories
@@ -46,7 +47,8 @@ function slugify(text: string, productId: string): string {
 export class IngestionRepository {
   constructor(private readonly pool: Pool) {}
 
-  async ingest(item: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
+  async ingest(rawItem: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
+    const item = { ...rawItem, brand: normalizeBrand(rawItem.brand) }
     if (!isApplianceCategory(item.categoryName)) {
       throw new Error(`Skipped: category "${item.categoryName}" is not an appliance category`)
     }
@@ -74,7 +76,10 @@ export class IngestionRepository {
         await client.query(
           `update products
            set name = case when shared.yes then name else $2 end,
-               brand = case when shared.yes then brand else $3 end,
+               -- 'dores-y-felpas' is what a broken Jumbo brand regex stored
+               -- (matched inside "marcadores-y-felpas"); repair it even on
+               -- shared products.
+               brand = case when shared.yes and brand not in ('dores-y-felpas', 'Desconocida') then brand else $3 end,
                image_url = coalesce(image_url, $4),
                category_id = case when shared.yes then category_id else $5 end,
                updated_at = now()

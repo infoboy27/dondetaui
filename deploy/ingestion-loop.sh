@@ -21,6 +21,12 @@ while true; do
   run corripio node dist/ingestion/retailer.cli.js corripio
   run pricesmart node dist/ingestion/pricesmart.cli.js
 
+  # Safety net for cross-retailer duplicates that inline matching missed
+  # (e.g. one store listed the product before the other existed).
+  run merge-products node dist/ingestion/merge-products.cli.js --apply
+  # Per-retailer summary; posts to Discord when a scraper broke or shrank.
+  run report node dist/ingestion/ingestion-report.cli.js
+
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
 done

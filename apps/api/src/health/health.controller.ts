@@ -1,6 +1,7 @@
-import { Controller, Get, Inject } from '@nestjs/common'
+import { Controller, Get, Inject, Res } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
+import { ingestionHealth } from '../ingestion/ingestion-health'
 
 @Controller('health')
 export class HealthController {
@@ -18,5 +19,15 @@ export class HealthController {
       latencyMs: Date.now() - startedAt,
       timestamp: new Date().toISOString(),
     }
+  }
+
+  // Per-retailer scraper state; 503 when any retailer needs attention so an
+  // uptime probe can alert on it.
+  @Get('ingestion')
+  async ingestion(@Res({ passthrough: true }) res: { status(code: number): unknown }) {
+    const retailers = await ingestionHealth(this.pool)
+    const ok = retailers.every(r => r.problems.length === 0)
+    if (!ok) res.status(503)
+    return { status: ok ? 'ok' : 'degraded', retailers, timestamp: new Date().toISOString() }
   }
 }

@@ -76,7 +76,7 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
               whiteSpace: 'nowrap',
             }}
           >
-            {product.subtitle}
+            {product.name}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 10, color: '#9AAABB', fontFamily: fonts.body }}>Desde</span>
@@ -92,9 +92,11 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
               {bestOffer ? formatPrice(bestOffer.price) : 'Sin precio'}
             </span>
           </div>
-          <div style={{ fontSize: 11, color: colors.accent, fontWeight: 600, fontFamily: fonts.body }}>
-            Ahorras hasta {formatPrice(savings)} vs tienda más cara
-          </div>
+          {savings > 0 && (
+            <div style={{ fontSize: 11, color: colors.accent, fontWeight: 600, fontFamily: fonts.body }}>
+              Ahorras hasta {formatPrice(savings)} vs tienda más cara
+            </div>
+          )}
         </div>
 
         <button

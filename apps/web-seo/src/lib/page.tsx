@@ -3,46 +3,58 @@ import { MAIN_NAV } from './content'
 import { SITE_URL } from './site'
 import { colors, fonts } from './tokens'
 
+export function SiteHeader() {
+  return (
+    <header style={{ display: 'flex', gap: 18, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 34 }}>
+      <a href={SITE_URL} style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 22, color: colors.navy, textDecoration: 'none' }}>
+        DóndeTa
+      </a>
+      <nav style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        {MAIN_NAV.map(item => (
+          <a key={item.href} href={item.href} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.navy400, textDecoration: 'none', fontWeight: 700 }}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+    </header>
+  )
+}
+
+export function SiteFooter() {
+  return (
+    <footer style={{ marginTop: 56, paddingTop: 24, borderTop: `1px solid ${colors.border}`, fontFamily: fonts.body, fontSize: 13, color: colors.navy400 }}>
+      <p>
+        DóndeTa registra precios publicados por tiendas dominicanas para dar contexto antes de comprar. No vendemos
+        productos ni garantizamos precio, inventario ni condiciones finales: verifícalos con la tienda.
+      </p>
+      <p>
+        <a href="/metodologia" style={{ color: colors.primary }}>Metodología</a>
+        {' · '}
+        <a href="/guias" style={{ color: colors.primary }}>Guías</a>
+        {' · '}
+        <a href="/privacy" style={{ color: colors.primary }}>Privacidad</a>
+        {' · '}
+        <a href="/terminos" style={{ color: colors.primary }}>Términos</a>
+        {' · '}
+        <a href="/contacto" style={{ color: colors.primary }}>Contacto</a>
+      </p>
+      <p>
+        ¿Te ayudó DóndeTa?{' '}
+        <a href="https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8" target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: 700 }}>
+          Apóyanos con una donación vía PayPal
+        </a>
+        {' '}para que siga siendo gratis.
+      </p>
+    </footer>
+  )
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 20px 72px' }}>
-      <header style={{ display: 'flex', gap: 18, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 34 }}>
-        <a href={SITE_URL} style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 22, color: colors.navy, textDecoration: 'none' }}>
-          DóndeTa
-        </a>
-        <nav style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-          {MAIN_NAV.map(item => (
-            <a key={item.href} href={item.href} style={{ fontFamily: fonts.body, fontSize: 13, color: colors.navy400, textDecoration: 'none', fontWeight: 700 }}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </header>
+      <SiteHeader />
       {children}
-      <footer style={{ marginTop: 56, paddingTop: 24, borderTop: `1px solid ${colors.border}`, fontFamily: fonts.body, fontSize: 13, color: colors.navy400 }}>
-        <p>
-          DóndeTa registra precios publicados por tiendas dominicanas para dar contexto antes de comprar. No vendemos
-          productos ni garantizamos precio, inventario ni condiciones finales: verifícalos con la tienda.
-        </p>
-        <p>
-          <a href="/metodologia" style={{ color: colors.primary }}>Metodología</a>
-          {' · '}
-          <a href="/guias" style={{ color: colors.primary }}>Guías</a>
-          {' · '}
-          <a href="/privacy" style={{ color: colors.primary }}>Privacidad</a>
-          {' · '}
-          <a href="/terminos" style={{ color: colors.primary }}>Términos</a>
-          {' · '}
-          <a href="/contacto" style={{ color: colors.primary }}>Contacto</a>
-        </p>
-        <p>
-          ¿Te ayudó DóndeTa?{' '}
-          <a href="https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8" target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: 700 }}>
-            Apóyanos con una donación vía PayPal
-          </a>
-          {' '}para que siga siendo gratis.
-        </p>
-      </footer>
+      <SiteFooter />
     </main>
   )
 }

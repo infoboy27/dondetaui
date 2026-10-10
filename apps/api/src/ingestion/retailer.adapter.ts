@@ -1,6 +1,7 @@
 import type { NormalizedRetailerItem } from './ingestion.types'
 import type { RetailerConfig } from './retailer.config'
 import { fetchHtmlWithCookies } from './http-client'
+import { brandFromName } from './brands'
 
 function decodeHtml(value: string): string {
   return value
@@ -119,7 +120,7 @@ function inferCategory(url: string, html: string, config: RetailerConfig): { nam
 }
 
 function inferModel(name: string, html: string, product: Record<string, unknown> | null): string {
-  const explicit = nestedString(product, 'model') ?? nestedString(product, 'sku') ?? first(html, [
+  const explicit = nestedString(product, 'model') ?? first(html, [/data-th=["']MPN["'][^>]*>\s*([A-Z0-9][A-Z0-9._\/-]{3,})/i]) ?? nestedString(product, 'sku') ?? first(html, [
     /\bModelo\s*(?:<[^>]+>|[:|\-\s])*\s*([A-Z0-9][A-Z0-9._\/-]{3,})/i,
     /\bArt\s*(?:<[^>]+>|[:|\-\s])*\s*([A-Z0-9][A-Z0-9._\/-]{3,})/i,
     /["'](?:model|sku)["']\s*:\s*["']([^"']+)["']/i,
@@ -136,9 +137,15 @@ function inferBrand(name: string, html: string, product: Record<string, unknown>
     const value = nestedString(brandValue, 'name')
     if (value) return value
   }
-  const explicit = first(html, [/["']brand["']\s*:\s*["']([^"']+)["']/i, /\bMarca\s*(?:<[^>]+>|[:|\-\s])*\s*([A-Za-z0-9 &._-]{2,40})/i])
+  // \bMarca\b: without the trailing boundary this matched inside nav links
+  // like "marcadores-y-felpas" and every Jumbo product got brand "dores-y-felpas".
+  const explicit = first(html, [
+    /class=["']brand-name["'][^>]*>\s*([^<]{2,40}?)\s*</i,
+    /["']brand["']\s*:\s*["']([^"']+)["']/i,
+    /\bMarca\b\s*(?:<[^>]+>|[:|\-\s])*\s*([A-Za-z0-9 &._-]{2,40})/i,
+  ])
   if (explicit) return explicit.trim()
-  return name.split(/\s+/)[0] || 'Desconocida'
+  return brandFromName(name) ?? (name.split(/\s+/)[0] || 'Desconocida')
 }
 
 function inferAvailability(html: string, product: Record<string, unknown> | null): boolean {

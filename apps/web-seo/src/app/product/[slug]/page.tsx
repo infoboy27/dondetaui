@@ -6,6 +6,7 @@ import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
 import { outboundHref, rankOffers } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
+import { SiteFooter, SiteHeader } from '../../../lib/page'
 import { SITE_URL } from '../../../lib/site'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
 import type { Product } from '../../../lib/types'
@@ -128,6 +129,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 64px' }}>
+      <SiteHeader />
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
@@ -290,6 +292,7 @@ export default async function ProductPage({ params }: Props) {
         </a>
         .
       </p>
+      <SiteFooter />
     </main>
   )
 }
