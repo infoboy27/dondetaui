@@ -1,4 +1,5 @@
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon } from '../components/Icons'
+import { SiteLinks } from '../components/SiteLinks'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
@@ -303,6 +304,10 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
             </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ padding: '0 20px 8px' }}>
+        <SiteLinks align="center" />
       </div>
 
       {/* Made in RD */}

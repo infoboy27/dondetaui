@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { SiteLinks } from '../components/SiteLinks'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
@@ -1274,6 +1275,9 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
           <span style={{ fontSize: 12, color: '#B0C4D8', fontFamily: "'DM Sans', sans-serif" }}>
             Hecho en 🇩🇴 RD con ❤️ · DóndeTa v1.0.0
           </span>
+        </div>
+        <div style={{ maxWidth: 1360, margin: '16px auto 0' }}>
+          <SiteLinks />
         </div>
       </footer>
     </div>
