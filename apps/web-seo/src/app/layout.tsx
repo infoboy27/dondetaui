@@ -3,6 +3,14 @@ import type { ReactNode } from 'react'
 import { colors } from '../lib/tokens'
 import { SITE_URL } from '../lib/site'
 
+// Render every page at request time. SITE_URL, GA_MEASUREMENT_ID and
+// ADSENSE_CLIENT_ID only exist in the container's runtime environment, not
+// during `next build` -- statically pre-rendered pages (guías, metodología,
+// sobre, términos, contacto) were shipping with the fallback canonical domain
+// (dondeta.jfmcss.com) and no GA/AdSense tags. robots.ts and sitemap.ts
+// already had this for the same reason.
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 }

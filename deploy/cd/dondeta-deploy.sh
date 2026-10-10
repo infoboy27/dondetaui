@@ -57,9 +57,24 @@ healthy() {
   return 1
 }
 
+# ingestion-worker / alerts-worker / backup sit behind compose profiles, so a
+# plain build/up skips them and they keep running the old image. Include
+# exactly the profiles whose service is already running on this stack --
+# never switch on a service a stack wasn't running.
+active_profiles() {
+  local dir="$1" running args=""
+  running="$(cd "$dir" && docker compose ps --services --status running 2>/dev/null || true)"
+  grep -qx ingestion-worker <<<"$running" && args="$args --profile ingestion"
+  grep -qx alerts-worker <<<"$running" && args="$args --profile alerts"
+  grep -qx backup <<<"$running" && args="$args --profile backup"
+  echo "$args"
+}
+
 build_and_up() {
-  local dir="$1"
-  (cd "$dir" && docker compose build --quiet && docker compose up -d) >>"$LOG" 2>&1
+  local dir="$1" profiles
+  profiles="$(active_profiles "$dir")"
+  # shellcheck disable=SC2086
+  (cd "$dir" && docker compose $profiles build --quiet && docker compose $profiles up -d) >>"$LOG" 2>&1
   # nginx.conf may be bind-mounted; make sure the running nginx has it.
   (cd "$dir" && docker compose exec -T web nginx -s reload) >>"$LOG" 2>&1 || true
 }
