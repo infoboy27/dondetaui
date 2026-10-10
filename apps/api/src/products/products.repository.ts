@@ -71,7 +71,9 @@ export class ProductsRepository {
       updated_at: Date
       url: string | null
     }>(
-      `select
+      // One row per retailer: a store that lists the same product twice
+      // (duplicate listings get merged into one product) shows its best offer.
+      `select * from (select distinct on (pv.product_id, r.id)
         pv.product_id::text as product_id,
         r.id::text as retailer_id,
         s.id::text as store_id,
@@ -90,9 +92,13 @@ export class ProductsRepository {
       where pv.product_id = any($1::uuid[])
         and ${freshOfferSql()}
       order by
-        pv.product_id,
+        pv.product_id, r.id,
         case when o.availability = 'in_stock' then 0 else 1 end,
-        (o.price + o.shipping_price) asc`,
+        (o.price + o.shipping_price) asc) best
+      order by
+        product_id,
+        case when availability = 'in_stock' then 0 else 1 end,
+        (price + shipping_price) asc`,
       [productIds],
     )
 
@@ -280,7 +286,7 @@ export class ProductsRepository {
       updated_at: Date
       url: string | null
     }>(
-      `select
+      `select * from (select distinct on (r.id)
         r.id::text as retailer_id,
         s.id::text as store_id,
         r.name as retailer_name,
@@ -298,8 +304,12 @@ export class ProductsRepository {
       where pv.product_id = $1
         and ${freshOfferSql()}
       order by
+        r.id,
         case when o.availability = 'in_stock' then 0 else 1 end,
-        (o.price + o.shipping_price) asc`,
+        (o.price + o.shipping_price) asc) best
+      order by
+        case when availability = 'in_stock' then 0 else 1 end,
+        (price + shipping_price) asc`,
       [productId],
     )
 

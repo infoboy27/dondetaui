@@ -48,9 +48,9 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
     {
       title: 'Soporte',
       items: [
-        { icon: HelpCircleIcon, label: 'Ayuda y soporte', value: '', accent: false },
-        { icon: ShieldIcon, label: 'Privacidad y seguridad', value: '', accent: false },
-        { icon: HelpCircleIcon, label: 'Acerca de DóndeTa', value: 'v1.0.0', accent: false },
+        { icon: HelpCircleIcon, label: 'Ayuda y soporte', value: '', accent: false, onClick: () => { window.location.href = '/contacto' } },
+        { icon: ShieldIcon, label: 'Privacidad y seguridad', value: '', accent: false, onClick: () => { window.location.href = '/privacy' } },
+        { icon: HelpCircleIcon, label: 'Acerca de DóndeTa', value: 'v1.0.0', accent: false, onClick: () => { window.location.href = '/sobre-dondeta' } },
       ],
     },
     ...(user
