@@ -6,6 +6,7 @@ export interface RetailerIngestionHealth {
   lastStatus: string | null
   lastFinishedAt: string | null
   lastIngested: number
+  lastError: string | null
   previousIngested: number | null
   freshOffers: number
   problems: string[]
@@ -29,6 +30,7 @@ export async function ingestionHealth(pool: Pool): Promise<RetailerIngestionHeal
     last_status: string | null
     last_finished_at: Date | null
     last_ingested: number | null
+    last_error: string | null
     previous_ingested: number | null
     fresh_offers: string
   }>(
@@ -37,11 +39,12 @@ export async function ingestionHealth(pool: Pool): Promise<RetailerIngestionHeal
        last_run.status as last_status,
        coalesce(last_run.finished_at, last_run.started_at) as last_finished_at,
        last_run.items_ingested as last_ingested,
+       last_run.error_message as last_error,
        prev_run.items_ingested as previous_ingested,
        (select count(*) from offers o where o.retailer_id = r.id and ${freshOfferSql('o')})::text as fresh_offers
      from retailers r
      left join lateral (
-       select status, finished_at, started_at, items_ingested from ingestion_runs
+       select status, finished_at, started_at, items_ingested, error_message from ingestion_runs
        where (retailer_id = r.id or source like r.slug || '-%') order by started_at desc limit 1
      ) last_run on true
      left join lateral (
@@ -57,7 +60,7 @@ export async function ingestionHealth(pool: Pool): Promise<RetailerIngestionHeal
     const problems: string[] = []
     const lastIngested = row.last_ingested ?? 0
     if (!row.last_status) problems.push('sin corridas registradas')
-    else if (row.last_status === 'failed') problems.push('la última corrida falló')
+    else if (row.last_status === 'failed') problems.push(`la última corrida falló: ${(row.last_error ?? 'sin detalle').slice(0, 160)}`)
     if (row.last_finished_at && Date.now() - row.last_finished_at.getTime() > STALE_HOURS * 3_600_000) {
       problems.push(`sin corrida en más de ${STALE_HOURS} h`)
     }
@@ -69,6 +72,7 @@ export async function ingestionHealth(pool: Pool): Promise<RetailerIngestionHeal
       lastStatus: row.last_status,
       lastFinishedAt: row.last_finished_at?.toISOString() ?? null,
       lastIngested,
+      lastError: row.last_status === 'failed' ? row.last_error : null,
       previousIngested: row.previous_ingested,
       freshOffers: Number(row.fresh_offers),
       problems,

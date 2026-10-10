@@ -1,5 +1,6 @@
 import { Pool } from 'pg'
 import { chromium } from 'playwright'
+import { recordEarlyFailure } from './ingestion-runs'
 import { IngestionRepository } from './ingestion.repository'
 import { PriceSmartAdapter } from './pricesmart.adapter'
 import { PriceSmartCatalogDiscovery } from './pricesmart.discovery'
@@ -62,6 +63,8 @@ async function resolveUrls(discovery: PriceSmartCatalogDiscovery): Promise<strin
   return result.productUrls
 }
 
+let runRecorded = false
+
 async function main() {
   // Same rationale as plaza-lama.cli.ts: Chromium via apt in the ingestion-worker
   // container (Dockerfile.ingestion), Playwright's own managed browser locally.
@@ -91,6 +94,7 @@ async function main() {
     [urls.length],
   )
   const runId = run.rows[0].id
+  runRecorded = true
   let ingested = 0
   const failures: string[] = []
 
@@ -158,7 +162,8 @@ async function main() {
 }
 
 main()
-  .catch(error => {
+  .catch(async error => {
+    if (!runRecorded) await recordEarlyFailure(pool, 'pricesmart-catalog', error)
     console.error(error)
     process.exitCode = 1
   })

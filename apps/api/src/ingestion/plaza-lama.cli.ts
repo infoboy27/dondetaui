@@ -1,5 +1,6 @@
 import { Pool } from 'pg'
 import { chromium } from 'playwright'
+import { recordEarlyFailure } from './ingestion-runs'
 import { IngestionRepository } from './ingestion.repository'
 import { PlazaLamaAdapter } from './plaza-lama.adapter'
 import { PlazaLamaCatalogDiscovery } from './plaza-lama.discovery'
@@ -62,6 +63,8 @@ async function resolveUrls(discovery: PlazaLamaCatalogDiscovery): Promise<string
   return result.productUrls
 }
 
+let runRecorded = false
+
 async function main() {
   // In the ingestion-worker container, Chromium is installed via apt (see
   // Dockerfile.ingestion) instead of Playwright's own bundled download.
@@ -96,6 +99,7 @@ async function main() {
     [urls.length],
   )
   const runId = run.rows[0].id
+  runRecorded = true
   let ingested = 0
   const failures: string[] = []
 
@@ -164,7 +168,8 @@ async function main() {
 }
 
 main()
-  .catch(error => {
+  .catch(async error => {
+    if (!runRecorded) await recordEarlyFailure(pool, 'plaza-lama-catalog', error)
     console.error(error)
     process.exitCode = 1
   })
