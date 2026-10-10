@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBestOffer, getHighestAvailableOffer, getOfferTotal, getSavingsRange, rankOffers } from './offers'
+import { getBestOffer, getHighestAvailableOffer, getOfferTotal, getOutboundUrl, getSavingsRange, rankOffers } from './offers'
 import type { StorePrice } from '../types'
 
 function offer(overrides: Partial<StorePrice>): StorePrice {
@@ -90,5 +90,24 @@ describe('getSavingsRange', () => {
       offer({ store: 'Sirena', price: 1000 }),
     ])
     expect(savings).toBe(2000)
+  })
+})
+
+describe('getOutboundUrl', () => {
+  it('routes through the API click counter when an API and retailer id exist', () => {
+    const url = getOutboundUrl('p-1', offer({ url: 'https://store.do/x', retailerId: 'r-1' }), 'https://dondeta.com.do/api')
+    expect(url).toBe('https://dondeta.com.do/api/go/p-1/r-1?src=web')
+  })
+
+  it('links straight to the store without an API (mock mode)', () => {
+    expect(getOutboundUrl('p-1', offer({ url: 'https://store.do/x', retailerId: 'r-1' }))).toBe('https://store.do/x')
+  })
+
+  it('links straight to the store when the offer has no retailer id', () => {
+    expect(getOutboundUrl('p-1', offer({ url: 'https://store.do/x' }), 'https://api')).toBe('https://store.do/x')
+  })
+
+  it('returns nothing when the offer has no store url', () => {
+    expect(getOutboundUrl('p-1', offer({ retailerId: 'r-1' }), 'https://api')).toBeUndefined()
   })
 })

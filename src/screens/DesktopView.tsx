@@ -4,7 +4,7 @@ import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
-import { getBestOffer, getOfferTotal, getSavingsRange } from '../domain/offers'
+import { getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -288,7 +288,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
             {isAlerted ? 'Alerta activa' : 'Alerta'}
           </button>
           <button
-            onClick={() => { if (cheapest.url) window.open(cheapest.url, '_blank', 'noopener,noreferrer') }}
+            onClick={() => { const href = getOutboundUrl(product.id, cheapest, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
             disabled={!cheapest.url}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
@@ -416,7 +416,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
 
               <div style={{ textAlign: 'center' }}>
                 <button
-                  onClick={() => { if (sp.url) window.open(sp.url, '_blank', 'noopener,noreferrer') }}
+                  onClick={() => { const href = getOutboundUrl(product.id, sp, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
                   disabled={!sp.available || !sp.url}
                   style={{
                     border: 'none', borderRadius: 8,

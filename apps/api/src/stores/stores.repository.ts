@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
 import type { StoreBranchDto, StoreDto } from './stores.types'
+import { freshOfferSql } from '../common/freshness'
 
 interface StoreRow {
   id: string
@@ -43,7 +44,7 @@ export class StoresRepository {
         r.logo_url,
         count(distinct pv.product_id) as product_count
       from retailers r
-      left join offers o on o.retailer_id = r.id
+      left join offers o on o.retailer_id = r.id and ${freshOfferSql()}
       left join product_variants pv on pv.id = o.product_variant_id
       group by r.id
       order by r.name asc`,
@@ -63,7 +64,7 @@ export class StoresRepository {
         r.logo_url,
         count(distinct pv.product_id) as product_count
       from retailers r
-      left join offers o on o.retailer_id = r.id
+      left join offers o on o.retailer_id = r.id and ${freshOfferSql()}
       left join product_variants pv on pv.id = o.product_variant_id
       where r.slug = $1
       group by r.id
@@ -80,7 +81,7 @@ export class StoresRepository {
       join product_variants pv on pv.product_id = p.id
       join offers o on o.product_variant_id = pv.id
       join retailers r on r.id = o.retailer_id
-      where r.slug = $1
+      where r.slug = $1 and ${freshOfferSql()}
       order by p.id::text
       limit 100`,
       [slug],

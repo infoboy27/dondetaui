@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
 import { formatPrice } from '../common/currency'
+import { freshOfferSql } from '../common/freshness'
 import type { OfferDto, ProductDto } from './products.types'
 
 interface ProductRow {
@@ -87,6 +88,7 @@ export class ProductsRepository {
       join retailers r on r.id = o.retailer_id
       left join stores s on s.id = o.store_id
       where pv.product_id = any($1::uuid[])
+        and ${freshOfferSql()}
       order by
         pv.product_id,
         case when o.availability = 'in_stock' then 0 else 1 end,
@@ -140,10 +142,18 @@ export class ProductsRepository {
     return byProduct
   }
 
+  // Listings only include products with at least one current offer -- a
+  // product whose every offer went stale has no price to show.
   private searchClause(query?: string): { where: string; params: unknown[] } {
-    if (!query?.trim()) return { where: '', params: [] }
+    const hasFreshOffer = `exists (
+        select 1 from offers o
+        join product_variants fv on fv.id = o.product_variant_id
+        where fv.product_id = p.id and ${freshOfferSql()}
+      )`
+    if (!query?.trim()) return { where: `where ${hasFreshOffer}`, params: [] }
     return {
-      where: `where p.name ilike $1 or p.brand ilike $1 or pv.model ilike $1 or c.name ilike $1`,
+      where: `where ${hasFreshOffer}
+        and (p.name ilike $1 or p.brand ilike $1 or pv.model ilike $1 or c.name ilike $1)`,
       params: [`%${query.trim()}%`],
     }
   }
@@ -234,7 +244,15 @@ export class ProductsRepository {
       [slug],
     )
 
-    return result.rows[0] ? this.hydrateProduct(result.rows[0]) : null
+    if (result.rows[0]) return this.hydrateProduct(result.rows[0])
+
+    // Slug of a product merged into another (merge-products.cli.ts): resolve
+    // to the survivor, whose own slug tells callers where to redirect.
+    const redirect = await this.pool.query<{ product_id: string }>(
+      'select product_id::text from product_slug_redirects where old_slug = $1',
+      [slug],
+    )
+    return redirect.rows[0] ? this.findById(redirect.rows[0].product_id) : null
   }
 
   async findByBarcode(code: string): Promise<ProductDto | null> {
@@ -278,6 +296,7 @@ export class ProductsRepository {
       join retailers r on r.id = o.retailer_id
       left join stores s on s.id = o.store_id
       where pv.product_id = $1
+        and ${freshOfferSql()}
       order by
         case when o.availability = 'in_stock' then 0 else 1 end,
         (o.price + o.shipping_price) asc`,

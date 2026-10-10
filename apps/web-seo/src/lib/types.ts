@@ -10,6 +10,7 @@ export interface Offer {
   totalPrice?: number
   shippingCost?: number
   url?: string
+  retailerId?: string
 }
 
 // One dated observation of a product's published price, as returned by the

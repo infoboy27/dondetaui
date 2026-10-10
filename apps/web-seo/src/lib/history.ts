@@ -211,6 +211,8 @@ export function isThinProduct(
   storeCount: number,
   history: PricePoint[] | undefined,
 ): boolean {
+  // No current offer at all (every offer went stale): nothing to show.
+  if (storeCount === 0) return true
   if (storeCount >= 2) return false
   const stats = analyzeHistory(history)
   return !stats || stats.count < 5

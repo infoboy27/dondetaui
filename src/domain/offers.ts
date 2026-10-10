@@ -58,3 +58,16 @@ export function getSavingsRange(offers: StorePrice[]): number {
 
   return Math.max(0, getOfferTotal(highest) - getOfferTotal(best))
 }
+
+// "Ver en {tienda}" target. With a real API behind the app, clicks go through
+// /api/go so DóndeTa can count outbound traffic per retailer before the
+// redirect; mock mode (no API, no real ids) links straight to the store.
+export function getOutboundUrl(
+  productId: string,
+  offer: StorePrice,
+  apiBaseUrl?: string,
+): string | undefined {
+  if (!offer.url) return undefined
+  if (!apiBaseUrl || !offer.retailerId) return offer.url
+  return `${apiBaseUrl}/go/${encodeURIComponent(productId)}/${encodeURIComponent(offer.retailerId)}?src=web`
+}

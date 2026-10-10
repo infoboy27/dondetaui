@@ -36,3 +36,10 @@ export function rankOffers(offers: Offer[]): Offer[] {
 export function getBestOffer(offers: Offer[]): Offer | undefined {
   return rankOffers(offers)[0]
 }
+
+// Store link through the API's click counter (/api/go, same origin behind
+// nginx), so outbound traffic per retailer is measurable.
+export function outboundHref(productId: string, offer: Offer): string | undefined {
+  if (!offer.url) return undefined
+  return offer.retailerId ? `/api/go/${productId}/${offer.retailerId}?src=seo` : offer.url
+}

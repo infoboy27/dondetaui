@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
 import { NotificationsModule } from './notifications/notifications.module'
+import { OutboundController } from './outbound/outbound.controller'
 import { ProductsModule } from './products/products.module'
 import { ReviewsModule } from './reviews/reviews.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
@@ -26,7 +27,7 @@ import { StoresModule } from './stores/stores.module'
     ReviewsModule,
     NotificationsModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, OutboundController],
   providers: [{ provide: APP_GUARD, useClass: AlertingThrottlerGuard }],
 })
 export class AppModule {}
