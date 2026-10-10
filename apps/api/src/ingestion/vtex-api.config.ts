@@ -38,6 +38,22 @@ export const VTEX_RETAILER_CONFIGS: Record<string, VtexRetailerConfig> = {
     categoryPaths: ['linea-blanca'],
     defaultCategory: { name: 'Línea Blanca', slug: 'linea-blanca' },
   },
+  sirena: {
+    key: 'sirena', name: 'Sirena', slug: 'sirena', abbr: 'SI', primaryColor: '#0072BC',
+    websiteUrl: 'https://www.sirena.do',
+    // Replaces the HTML crawler (retailer.cli.ts sirena), whose discovery only
+    // ever reached ~70 of the ~430 appliances. Same retailer slug, so offers
+    // and history stay on the same retailer row. Appliance subtrees only --
+    // /electrodomesticos also holds laptops, phones and batteries.
+    categoryPaths: [
+      'electrodomesticos/climatizacion',
+      'electrodomesticos/electrodomesticos-de-cocina',
+      'electrodomesticos/electrodomesticos-pequenos',
+      'electrodomesticos/lavado-y-secado',
+      'electrodomesticos/televisores-y-barras-de-sonido',
+    ],
+    defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
+  },
   chedraui: {
     key: 'chedraui', name: 'Chedraui', slug: 'chedraui', abbr: 'CH', primaryColor: '#EE1C25',
     websiteUrl: 'https://www.chedraui.com.mx',

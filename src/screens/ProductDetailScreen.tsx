@@ -13,7 +13,8 @@ import {
 import ProductImage from '../components/ProductImage'
 import { formatPrice } from '../data/mock'
 import { CURRENCY_SYMBOL } from '../domain/currency'
-import { getBestOffer } from '../domain/offers'
+import { appConfig } from '../config/env'
+import { getBestOffer, getOutboundUrl } from '../domain/offers'
 import { useProductReviews } from '../hooks/useProductReviews'
 import type { Product } from '../types'
 
@@ -376,7 +377,7 @@ export default function ProductDetailScreen({
         </button>
         <button
           type="button"
-          onClick={() => { if (bestOffer?.url) window.open(bestOffer.url, '_blank', 'noopener,noreferrer') }}
+          onClick={() => { const href = bestOffer && getOutboundUrl(product.id, bestOffer, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
           disabled={!bestOffer?.url}
           style={{
             flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',

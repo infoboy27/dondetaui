@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
+import { brandsCompatible, extractModelCodes } from './model-codes'
 
 // DóndeTa is an appliance price-comparison app. Discovery is already scoped to each
 // retailer's appliance department by URL, but sites nest non-appliance subcategories
@@ -17,6 +18,7 @@ const APPLIANCE_CATEGORY_KEYWORDS = [
   'licuad', 'batidor', 'cafeter', 'tostad', 'plancha',
   'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
   'dispensador', 'freidora', 'air fryer',
+  'extractor', 'procesador', 'barras de sonido',
 ]
 
 function isApplianceCategory(categoryName: string): boolean {
@@ -56,7 +58,8 @@ export class IngestionRepository {
 
       const retailerId = await this.upsertRetailer(client, item)
       const categoryId = await this.upsertCategory(client, item)
-      const matched = await this.findVariant(client, item)
+      const modelCodes = extractModelCodes(item.name, item.model)
+      const matched = await this.findVariant(client, item, retailerId, modelCodes)
 
       let productId: string
       let variantId: string
@@ -65,16 +68,34 @@ export class IngestionRepository {
       if (matched) {
         productId = matched.productId
         variantId = matched.variantId
+        // Once a second retailer's offer is attached, the product's name and
+        // category belong to whoever created it -- otherwise every run would
+        // flip the title back and forth between retailers' wording.
         await client.query(
           `update products
-           set name = $2,
-               brand = $3,
-               image_url = coalesce($4, image_url),
-               category_id = $5,
+           set name = case when shared.yes then name else $2 end,
+               brand = case when shared.yes then brand else $3 end,
+               image_url = coalesce(image_url, $4),
+               category_id = case when shared.yes then category_id else $5 end,
                updated_at = now()
+           from (
+             select exists (
+               select 1 from offers o
+               join product_variants pv on pv.id = o.product_variant_id
+               where pv.product_id = $1 and o.retailer_id <> $6
+             ) as yes
+           ) shared
            where id = $1`,
-          [productId, item.name, item.brand, item.imageUrl ?? null, categoryId],
+          [productId, item.name, item.brand, item.imageUrl ?? null, categoryId, retailerId],
         )
+        if (modelCodes.length) {
+          await client.query(
+            `update product_variants
+             set model_codes = array(select distinct unnest(model_codes || $2::text[]) order by 1)
+             where id = $1`,
+            [variantId, modelCodes],
+          )
+        }
       } else {
         // Generated client-side (rather than the products.id column's own
         // gen_random_uuid() default) so the slug -- which embeds a slice of
@@ -91,10 +112,10 @@ export class IngestionRepository {
         )
 
         const variant = await client.query<{ id: string }>(
-          `insert into product_variants(product_id, model, ean, upc, manufacturer_sku, is_primary)
-           values ($1, $2, $3, $4, $5, true)
+          `insert into product_variants(product_id, model, ean, upc, manufacturer_sku, model_codes, is_primary)
+           values ($1, $2, $3, $4, $5, $6, true)
            returning id::text`,
-          [productId, item.model, item.ean ?? null, item.upc ?? null, item.externalSku],
+          [productId, item.model, item.ean ?? null, item.upc ?? null, item.externalSku, modelCodes],
         )
         variantId = variant.rows[0].id
         createdProduct = true
@@ -159,7 +180,24 @@ export class IngestionRepository {
   private async findVariant(
     client: PoolClient,
     item: NormalizedRetailerItem,
+    retailerId: string,
+    modelCodes: string[],
   ): Promise<{ productId: string; variantId: string } | null> {
+    // This retailer has listed this exact SKU before: stay on the same
+    // product even if its name/model wording changed since.
+    const bySku = await client.query<{ product_id: string; variant_id: string }>(
+      `select pv.product_id::text, pv.id::text as variant_id
+       from offers o
+       join product_variants pv on pv.id = o.product_variant_id
+       where o.retailer_id = $1 and o.external_sku = $2
+       order by o.last_seen_at desc
+       limit 1`,
+      [retailerId, item.externalSku],
+    )
+    if (bySku.rows[0]) {
+      return { productId: bySku.rows[0].product_id, variantId: bySku.rows[0].variant_id }
+    }
+
     if (item.ean) {
       const byEan = await client.query<{ product_id: string; variant_id: string }>(
         `select product_id::text, id::text as variant_id
@@ -180,9 +218,34 @@ export class IngestionRepository {
       [item.brand, item.model],
     )
 
-    return byModel.rows[0]
-      ? { productId: byModel.rows[0].product_id, variantId: byModel.rows[0].variant_id }
-      : null
+    if (byModel.rows[0]) {
+      return { productId: byModel.rows[0].product_id, variantId: byModel.rows[0].variant_id }
+    }
+
+    return this.findVariantByModelCodes(client, item, modelCodes)
+  }
+
+  // Same manufacturer model code in another product's name/model (see
+  // model-codes.ts) -- the match that actually links retailers, since their
+  // `model` fields rarely agree. Most shared codes first.
+  private async findVariantByModelCodes(
+    client: PoolClient,
+    item: NormalizedRetailerItem,
+    modelCodes: string[],
+  ): Promise<{ productId: string; variantId: string } | null> {
+    if (!modelCodes.length) return null
+    const candidates = await client.query<{ product_id: string; variant_id: string; brand: string; name: string }>(
+      `select pv.product_id::text, pv.id::text as variant_id, p.brand, p.name
+       from product_variants pv
+       join products p on p.id = pv.product_id
+       where pv.model_codes && $1::text[]
+       order by cardinality(array(select unnest(pv.model_codes) intersect select unnest($1::text[]))) desc,
+                p.created_at asc
+       limit 10`,
+      [modelCodes],
+    )
+    const match = candidates.rows.find(row => brandsCompatible({ brand: row.brand, name: row.name }, item))
+    return match ? { productId: match.product_id, variantId: match.variant_id } : null
   }
 
   private async upsertOffer(

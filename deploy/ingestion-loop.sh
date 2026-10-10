@@ -17,7 +17,7 @@ run() {
 while true; do
   run plaza-lama node dist/ingestion/plaza-lama.cli.js
   run jumbo node dist/ingestion/retailer.cli.js jumbo
-  run sirena node dist/ingestion/retailer.cli.js sirena
+  run sirena node dist/ingestion/vtex-api.cli.js sirena
   run corripio node dist/ingestion/retailer.cli.js corripio
   run pricesmart node dist/ingestion/pricesmart.cli.js
 

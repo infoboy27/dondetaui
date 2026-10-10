@@ -6,6 +6,7 @@ import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
 import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offers'
 import { formatPrice } from '../../src/domain/currency'
+import { appConfig } from '../../src/config/env'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 import { shadows } from '../../src/design/shadows'
@@ -137,7 +138,7 @@ export default function ProductDetailScreen() {
                 <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
                 {!!offer.url && (
                   <Pressable
-                    onPress={() => Linking.openURL(offer.url!)}
+                    onPress={() => Linking.openURL(offer.retailerId ? `${appConfig.apiBaseUrl}/go/${product.id}/${offer.retailerId}?src=app` : offer.url!)}
                     style={styles.offerLink}
                     accessibilityRole="link"
                     accessibilityLabel={`Ver oferta en la página de ${offer.store}`}

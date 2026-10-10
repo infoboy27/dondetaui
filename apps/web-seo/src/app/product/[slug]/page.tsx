@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { getProductBySlug, getProductReviews } from '../../../lib/api'
 import { SEO_CATEGORIES, matchesCategory } from '../../../lib/categories'
 import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
-import { rankOffers } from '../../../lib/offers'
+import { outboundHref, rankOffers } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
 import { SITE_URL } from '../../../lib/site'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
@@ -61,6 +61,8 @@ export default async function ProductPage({ params }: Props) {
   const { slug } = await params
   const product = await getProductBySlug(slug)
   if (!product) notFound()
+  // Old slug of a product merged into this one.
+  if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`)
 
   const [reviews, offers] = await Promise.all([
     getProductReviews(product.id),
@@ -179,8 +181,8 @@ export default async function ProductPage({ params }: Props) {
               </div>
               {bestOffer.url && (
                 <a
-                  href={bestOffer.url}
-                  rel="nofollow noopener"
+                  href={outboundHref(product.id, bestOffer)}
+                  rel="nofollow sponsored noopener"
                   target="_blank"
                   style={{ display: 'inline-block', marginTop: 12, background: colors.primary, color: '#fff', padding: '10px 16px', borderRadius: 10, fontFamily: fonts.display, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
                 >
@@ -215,8 +217,20 @@ export default async function ProductPage({ params }: Props) {
                 {offer.available ? 'Disponible' : 'No disponible'} · Envío {offer.shipping}
               </div>
             </div>
-            <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
-              {formatPrice(offer.price)}
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
+                {formatPrice(offer.price)}
+              </div>
+              {offer.url && (
+                <a
+                  href={outboundHref(product.id, offer)}
+                  rel="nofollow sponsored noopener"
+                  target="_blank"
+                  style={{ fontFamily: fonts.body, fontSize: 12, fontWeight: 600, color: colors.primary, textDecoration: 'none' }}
+                >
+                  Ver en {offer.store} ↗
+                </a>
+              )}
             </div>
           </div>
         ))}
