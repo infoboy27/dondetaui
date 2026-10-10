@@ -11,6 +11,8 @@ const LINKS = [
   { href: '/contacto', label: 'Contacto' },
 ]
 
+export const DONATE_URL = 'https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8'
+
 export function SiteLinks({ align = 'left' }: { align?: 'left' | 'center' }) {
   return (
     <nav
@@ -29,6 +31,14 @@ export function SiteLinks({ align = 'left' }: { align?: 'left' | 'center' }) {
           {link.label}
         </a>
       ))}
+      <a
+        href={DONATE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ fontSize: 12, color: '#00B894', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", textDecoration: 'none' }}
+      >
+        💚 Apóyanos con una donación
+      </a>
     </nav>
   )
 }
