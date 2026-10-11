@@ -58,3 +58,34 @@ export function getSavingsRange(offers: StorePrice[]): number {
 
   return Math.max(0, getOfferTotal(highest) - getOfferTotal(best))
 }
+
+// Default listing order: real comparisons first (more distinct stores), then
+// by how much the cheapest store saves over the priciest, then dearer items
+// first -- so a fridge sold in three stores leads, not a RD$115 blender part.
+export function compareByRelevance(a: { prices: StorePrice[] }, b: { prices: StorePrice[] }): number {
+  const stores = (offers: StorePrice[]) => new Set(offers.map(offer => offer.store)).size
+  const byStores = stores(b.prices) - stores(a.prices)
+  if (byStores) return byStores
+  const bySavings = getSavingsRange(b.prices) - getSavingsRange(a.prices)
+  if (bySavings) return bySavings
+  const total = (offers: StorePrice[]) => {
+    const best = getBestOffer(offers)
+    return best ? getOfferTotal(best) : 0
+  }
+  return total(b.prices) - total(a.prices)
+}
+
+// "Comparaciones del día": products sold by 2+ stores, biggest saving between
+// the cheapest and the priciest store first.
+export function getTopComparisons<T extends { prices: StorePrice[] }>(products: T[], limit = 10): Array<{ product: T; savings: number; stores: number }> {
+  return products
+    .map(product => ({
+      product,
+      savings: getSavingsRange(product.prices),
+      stores: new Set(product.prices.map(offer => offer.store)).size,
+    }))
+    .filter(entry => entry.stores > 1 && entry.savings > 0)
+    .sort((a, b) => b.savings - a.savings)
+    .slice(0, limit)
+}
+

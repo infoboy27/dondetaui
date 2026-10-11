@@ -20,6 +20,11 @@ export function getRecentPriceDrop(product: Product): Omit<PriceDropNotification
   const previous = history[history.length - 2]
   const latest = history[history.length - 1]
   if (!previous || !latest || latest.price >= previous.price) return null
+  // The history is the day's lowest price across every offer ever attached to
+  // the product. When it disagrees with the offers shown now (a stale listing,
+  // or a bundle wrongly merged in) the "drop" is an artifact, not a sale.
+  const current = Math.min(...product.prices.map(offer => offer.price))
+  if (!Number.isFinite(current) || Math.abs(latest.price - current) > current * 0.02) return null
 
   return {
     oldPrice: previous.price,
@@ -43,4 +48,15 @@ export function getPriceDropNotifications(products: Product[], alertedIds: Set<s
   }
 
   return notifications.sort((a, b) => b.pct - a.pct)
+}
+
+// "Bajaron de precio": the whole catalog's real recent drops, biggest first.
+// Drops under minPct are noise (a peso of rounding, a shipping tweak).
+export function getTopPriceDrops(products: Product[], limit = 10, minPct = 3): PriceDropNotification[] {
+  const drops: PriceDropNotification[] = []
+  for (const product of products) {
+    const drop = getRecentPriceDrop(product)
+    if (drop && drop.pct >= minPct) drops.push({ product, ...drop })
+  }
+  return drops.sort((a, b) => b.pct - a.pct).slice(0, limit)
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAppState } from '../../src/state/AppStateContext'
 import { colors, radii, spacing } from '../../src/design/tokens'
@@ -36,6 +36,7 @@ export default function ProfileScreen() {
           <Pressable onPress={() => void logout()} style={styles.logoutButton}>
             <Text style={styles.logoutText}>Cerrar sesión</Text>
           </Pressable>
+          <SupportLinks />
         </View>
       </SafeAreaView>
     )
@@ -123,8 +124,30 @@ function AuthForm({
         <Pressable onPress={() => void submit()} disabled={!canSubmit} style={[styles.submit, !canSubmit && styles.submitDisabled]}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>{mode === 'login' ? 'Entrar' : 'Crear cuenta'}</Text>}
         </Pressable>
+        <SupportLinks />
       </ScrollView>
     </SafeAreaView>
+  )
+}
+
+// Same links as the web footer (src/components/SiteLinks.tsx).
+const LINKS = [
+  { icon: '💚', label: 'Apóyanos con una donación', url: 'https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8' },
+  { icon: '💬', label: 'Comunidad en Discord', url: 'https://discord.gg/sxcSngrTZv' },
+  { icon: '🔒', label: 'Política de privacidad', url: 'https://dondeta.com.do/privacy' },
+]
+
+function SupportLinks() {
+  return (
+    <View style={styles.links}>
+      {LINKS.map(link => (
+        <Pressable key={link.url} onPress={() => void Linking.openURL(link.url)} style={styles.linkRow} accessibilityRole="link">
+          <Text style={styles.linkIcon}>{link.icon}</Text>
+          <Text style={styles.linkText}>{link.label}</Text>
+          <Text style={styles.linkChevron}>↗</Text>
+        </Pressable>
+      ))}
+    </View>
   )
 }
 
@@ -157,4 +180,9 @@ const styles = StyleSheet.create({
   submit: { height: 50, borderRadius: radii.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm },
   submitDisabled: { backgroundColor: colors.navy200 },
   submitText: { color: '#fff', fontFamily: fonts.body.bold, fontSize: 15 },
+  links: { alignSelf: 'stretch', marginTop: spacing.xxl, backgroundColor: colors.card, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  linkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
+  linkIcon: { fontSize: 16 },
+  linkText: { flex: 1, color: colors.navy, fontFamily: fonts.body.medium, fontSize: 14 },
+  linkChevron: { color: colors.navy200, fontSize: 14 },
 })
