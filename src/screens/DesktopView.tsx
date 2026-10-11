@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react'
 import { SiteLinks } from '../components/SiteLinks'
+import DealCard from '../components/DealCard'
+import { getTopPriceDrops } from '../domain/notifications'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
-import { compareByRelevance, getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange } from '../domain/offers'
+import { compareByRelevance, getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange, getTopComparisons } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -454,6 +456,10 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const { products, loading, error } = useCatalogProducts(query)
+  // Home strips (no search, no category): what DóndeTa is for, before the list.
+  const isHome = screen === 'results' && !query.trim() && !selectedCategory
+  const comparisons = useMemo(() => (isHome ? getTopComparisons(products, 5) : []), [products, isHome])
+  const drops = useMemo(() => (isHome ? getTopPriceDrops(products, 5) : []), [products, isHome])
   // Derived from real offer data instead of a hardcoded DR-only list, so
   // this filter/directory reflects whatever retailers this deployment
   // actually ingests (per AGENTS.md: store info comes from retailer data,
@@ -1087,6 +1093,33 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
             unbroken product names/prices) and pushes the whole page into horizontal
             overflow. */}
         <main style={{ minWidth: 0 }}>
+          {comparisons.length > 0 && (
+            <HomeStrip title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda">
+              {comparisons.map(entry => (
+                <DealCard
+                  key={entry.product.id}
+                  product={entry.product}
+                  onProduct={openProductPage}
+                  storeCount={entry.stores}
+                  width="100%"
+                  highlight={{ label: `Ahorras ${formatPrice(entry.savings)}` }}
+                />
+              ))}
+            </HomeStrip>
+          )}
+          {drops.length > 0 && (
+            <HomeStrip title="Bajaron de precio" subtitle="Según nuestro historial de precios">
+              {drops.map(drop => (
+                <DealCard
+                  key={drop.product.id}
+                  product={drop.product}
+                  onProduct={openProductPage}
+                  width="100%"
+                  highlight={{ label: `Bajó ${drop.pct}%`, wasPrice: drop.oldPrice }}
+                />
+              ))}
+            </HomeStrip>
+          )}
           {/* Results header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
@@ -1128,7 +1161,8 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
           </div>
 
           {/* Best deal callout */}
-          {bestDeal && screen !== 'alerts' && (
+          {/* On the home page the "Comparaciones del día" strip already shows this. */}
+          {bestDeal && screen !== 'alerts' && comparisons.length === 0 && (
             <div style={{
               background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
               borderRadius: 14,
@@ -1280,5 +1314,27 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
         </div>
       </footer>
     </div>
+  )
+}
+
+// Desktop has no in-app product page (rows expand in place); deal cards open
+// the server-rendered product page, which has the full comparison and history.
+function openProductPage(product: Product) {
+  window.location.href = `/product/${encodeURIComponent(product.slug || product.id)}`
+}
+
+function HomeStrip({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 12 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D', margin: 0, letterSpacing: '-0.02em' }}>
+          {title}
+        </h2>
+        <div style={{ fontSize: 13, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{subtitle}</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 14 }}>
+        {children}
+      </div>
+    </section>
   )
 }

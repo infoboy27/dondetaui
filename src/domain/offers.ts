@@ -75,6 +75,20 @@ export function compareByRelevance(a: { prices: StorePrice[] }, b: { prices: Sto
   return total(b.prices) - total(a.prices)
 }
 
+// "Comparaciones del día": products sold by 2+ stores, biggest saving between
+// the cheapest and the priciest store first.
+export function getTopComparisons<T extends { prices: StorePrice[] }>(products: T[], limit = 10): Array<{ product: T; savings: number; stores: number }> {
+  return products
+    .map(product => ({
+      product,
+      savings: getSavingsRange(product.prices),
+      stores: new Set(product.prices.map(offer => offer.store)).size,
+    }))
+    .filter(entry => entry.stores > 1 && entry.savings > 0)
+    .sort((a, b) => b.savings - a.savings)
+    .slice(0, limit)
+}
+
 // "Ver en {tienda}" target. With a real API behind the app, clicks go through
 // /api/go so DóndeTa can count outbound traffic per retailer before the
 // redirect; mock mode (no API, no real ids) links straight to the store.

@@ -5,11 +5,13 @@ import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
 import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
-import { compareByRelevance } from '../domain/offers'
-import { usePagination } from '../hooks/usePagination'
-import PaginationControls from '../components/PaginationControls'
+import { compareByRelevance, getTopComparisons } from '../domain/offers'
+import { getTopPriceDrops } from '../domain/notifications'
+import { formatPrice } from '../domain/currency'
+import DealCard from '../components/DealCard'
+import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
-import { storesApi } from '../api/stores'
+import { storesApi, type Store } from '../api/stores'
 import { appConfig } from '../config/env'
 import type { Product } from '../types'
 
@@ -17,8 +19,9 @@ interface Props {
   onSearch: (q: string) => void
   onProduct: (p: Product) => void
   onCategory: (cat: string) => void
-  onEquipa?: () => void
   onNearby?: () => void
+  onStore?: (abbr: string) => void
+  onViewAll: () => void
   onNotifications?: () => void
   hasNotifications?: boolean
   favoriteIds: Set<string>
@@ -26,20 +29,20 @@ interface Props {
 }
 
 export default function HomeScreen({
-  onSearch, onProduct, onCategory, onEquipa, onNearby, onNotifications, hasNotifications,
+  onSearch, onProduct, onCategory, onNearby, onStore, onViewAll, onNotifications, hasNotifications,
   favoriteIds, onToggleFavorite,
 }: Props) {
   const { products } = useCatalogProducts()
-  // Comparisons first (the API lists alphabetically -- "A/A Dimensions..." led).
-  const ranked = useMemo(() => [...products].sort(compareByRelevance), [products])
-  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(ranked)
-  const [storeCount, setStoreCount] = useState<number | null>(null)
+  const comparisons = useMemo(() => getTopComparisons(products, 12), [products])
+  const drops = useMemo(() => getTopPriceDrops(products, 12), [products])
+  const featured = useMemo(() => [...products].sort(compareByRelevance).slice(0, 10), [products])
+  const [stores, setStores] = useState<Store[]>([])
 
   useEffect(() => {
     if (!appConfig.useApi) return
     let cancelled = false
     storesApi.list()
-      .then(stores => { if (!cancelled) setStoreCount(stores.length) })
+      .then(list => { if (!cancelled) setStores([...list].sort((a, b) => b.productCount - a.productCount)) })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
@@ -116,7 +119,7 @@ export default function HomeScreen({
         </div>
       </div>
 
-      {/* DóndeTa Banner */}
+      {/* Value banner: what DóndeTa does, with the live catalog size */}
       <div style={{ padding: '16px 20px 0' }}>
         <div style={{
           background: 'linear-gradient(135deg, #00B894 0%, #00cba0 100%)',
@@ -140,40 +143,75 @@ export default function HomeScreen({
               fontFamily: "'Poppins', sans-serif",
               fontWeight: 600, letterSpacing: '-0.02em',
             }}>
-              Antes de comprar, mira DóndeTa
+              {products.length > 0 && stores.length > 0
+                ? `Comparamos ${products.length.toLocaleString('es-DO')} productos en ${stores.length} tiendas`
+                : 'Antes de comprar, mira DóndeTa'}
             </div>
           </div>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
             background: 'rgba(255,255,255,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, marginLeft: 12,
           }}>
             <ZapIcon size={24} color="#fff" />
           </div>
         </div>
       </div>
 
+      {/* Comparaciones del día: the product's core promise, shown first */}
+      {comparisons.length > 0 && (
+        <Section title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda" action="Ver todo" onAction={onViewAll}>
+          <HorizontalRow>
+            {comparisons.map(entry => (
+              <DealCard
+                key={entry.product.id}
+                product={entry.product}
+                onProduct={onProduct}
+                storeCount={entry.stores}
+                highlight={{ label: `Ahorras ${formatPrice(entry.savings)}` }}
+              />
+            ))}
+          </HorizontalRow>
+        </Section>
+      )}
+
+      {/* Bajaron de precio */}
+      {drops.length > 0 && (
+        <Section title="Bajaron de precio" subtitle="Según nuestro historial de precios">
+          <HorizontalRow>
+            {drops.map(drop => (
+              <DealCard
+                key={drop.product.id}
+                product={drop.product}
+                onProduct={onProduct}
+                highlight={{ label: `Bajó ${drop.pct}%`, wasPrice: drop.oldPrice }}
+              />
+            ))}
+          </HorizontalRow>
+        </Section>
+      )}
+
+      {/* Nothing to compare yet (fresh install, fixtures): still show products */}
+      {comparisons.length === 0 && drops.length === 0 && featured.length > 0 && (
+        <Section title="Destacados" action="Ver todo" onAction={onViewAll}>
+          <HorizontalRow>
+            {featured.map(p => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onProduct={onProduct}
+                isFavorite={favoriteIds.has(p.id)}
+                onToggleFavorite={() => onToggleFavorite(p.id)}
+              />
+            ))}
+          </HorizontalRow>
+        </Section>
+      )}
+
       {/* Categories */}
-      <div style={{ padding: '20px 20px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h2 style={{
-            fontSize: 17, fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            color: '#0F1D2D', margin: 0,
-            letterSpacing: '-0.02em',
-          }}>
-            Categorías destacadas
-          </h2>
-          <button onClick={() => onSearch('')} style={{
-            fontSize: 13, color: '#00B894', fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 2,
-          }}>
-            Ver todas <ChevronRight size={14} color="#00B894" />
-          </button>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <Section title="Categorías">
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', padding: '0 20px' }}>
           {CATEGORIES.map(cat => (
             <button
               key={cat.id}
@@ -199,129 +237,55 @@ export default function HomeScreen({
             </button>
           ))}
         </div>
-      </div>
+      </Section>
+
+      {/* Stores we compare */}
+      {stores.length > 0 && (
+        <Section title="Tiendas que comparamos" action="Cerca de ti" onAction={onNearby}>
+          <HorizontalRow gap={10}>
+            {stores.map(store => (
+              <button
+                key={store.slug}
+                type="button"
+                onClick={() => onStore?.(store.abbr)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  background: '#fff', border: '1px solid #E8EDF2', borderRadius: 14,
+                  padding: '12px 10px', width: 92, flexShrink: 0, cursor: 'pointer',
+                }}
+              >
+                <StoreLogo store={store.name} abbr={store.abbr} color={store.color} size={44} borderRadius={12} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#0F1D2D', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', lineHeight: 1.2 }}>
+                  {store.name}
+                </span>
+                <span style={{ fontSize: 10, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
+                  {store.productCount.toLocaleString('es-DO')} productos
+                </span>
+              </button>
+            ))}
+          </HorizontalRow>
+        </Section>
+      )}
 
       {/* Ad slot */}
       <div style={{ padding: '20px 20px 0' }}>
         <AdBanner {...AD_SIZES.mobileBanner} slot={appConfig.adsenseSlots.mobileBanner} />
       </div>
 
-      {/* Ofertas de hoy */}
-      <div style={{ padding: '24px 0 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <h2 style={{
-              fontSize: 17, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              color: '#0F1D2D', margin: 0,
-              letterSpacing: '-0.02em',
-            }}>
-              Ofertas de hoy
-            </h2>
-            <span style={{
-              background: '#FF9F1C', color: '#fff',
-              fontSize: 10, fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              padding: '2px 6px', borderRadius: 999,
-            }}>
-              LIVE
-            </span>
-          </div>
-          <button onClick={() => onSearch('')} style={{
-            fontSize: 13, color: '#00B894', fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
-            background: 'none', border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 2,
-          }}>
-            Ver todas <ChevronRight size={14} color="#00B894" />
-          </button>
-        </div>
-        <div style={{
-          display: 'flex', gap: 14, padding: '4px 20px 8px',
-          overflowX: 'auto',
-        }}>
-          {pageItems.map(p => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              onProduct={onProduct}
-              isFavorite={favoriteIds.has(p.id)}
-              onToggleFavorite={() => onToggleFavorite(p.id)}
-            />
-          ))}
-        </div>
-        <div style={{ padding: '0 20px' }}>
-          <PaginationControls
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </div>
-      </div>
-
-      {/* Quick action cards */}
-      <div style={{ padding: '20px 20px 0', display: 'flex', gap: 10 }}>
-        {/* Equipa tu hogar */}
+      {/* Whole catalog */}
+      <div style={{ padding: '20px 20px 0' }}>
         <button
-          onClick={() => onEquipa?.()}
+          type="button"
+          onClick={onViewAll}
           style={{
-            flex: 1, background: '#fff',
-            borderRadius: 16, border: '1px solid #E8EDF2',
-            padding: '14px', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', gap: 8,
-            textAlign: 'left',
+            width: '100%', background: '#fff', border: '1.5px solid #00B894', borderRadius: 14,
+            padding: '14px 16px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 14, color: '#00B894',
           }}
         >
-          <span style={{ fontSize: 24 }}>🏠</span>
-          <div style={{
-            fontSize: 13, fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            color: '#0F1D2D', lineHeight: '1.2',
-          }}>
-            Equipa tu hogar
-          </div>
-          <span style={{
-            fontSize: 9, color: '#FF9F1C', fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            background: '#FFF3E0', padding: '2px 6px', borderRadius: 999,
-            alignSelf: 'flex-start',
-          }}>
-            PRÓXIMO
-          </span>
-        </button>
-
-        {/* Tiendas cerca */}
-        <button
-          onClick={() => onNearby?.()}
-          style={{
-            flex: 1, background: '#E6F7F3',
-            borderRadius: 16, border: '1px solid #00B89430',
-            padding: '14px', cursor: 'pointer',
-            display: 'flex', flexDirection: 'column', gap: 8,
-            textAlign: 'left',
-          }}
-        >
-          <span style={{ fontSize: 24 }}>📍</span>
-          <div style={{
-            fontSize: 13, fontWeight: 700,
-            fontFamily: "'Poppins', sans-serif",
-            color: '#0F1D2D', lineHeight: '1.2',
-          }}>
-            Tiendas cerca de ti
-          </div>
-          {storeCount !== null && (
-            <span style={{
-              fontSize: 9, color: '#00B894', fontWeight: 700,
-              fontFamily: "'Poppins', sans-serif",
-              background: '#fff', padding: '2px 6px', borderRadius: 999,
-              alignSelf: 'flex-start',
-            }}>
-              {storeCount} CERCANAS
-            </span>
-          )}
+          {products.length > 0 ? `Explorar los ${products.length.toLocaleString('es-DO')} productos` : 'Explorar todos los productos'}
+          <ChevronRight size={16} color="#00B894" />
         </button>
       </div>
 
@@ -331,13 +295,60 @@ export default function HomeScreen({
           fontSize: 11, color: '#B0C4D8',
           fontFamily: "'DM Sans', sans-serif",
         }}>
-          Precios actualizados cada hora · Disponibilidad puede variar
+          Precios actualizados a diario · Verifica disponibilidad en la tienda
         </span>
       </div>
 
       <div style={{ padding: '16px 20px 0' }}>
         <SiteLinks align="center" />
       </div>
+    </div>
+  )
+}
+
+function Section({ title, subtitle, action, onAction, children }: {
+  title: string
+  subtitle?: string
+  action?: string
+  onAction?: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <div style={{ padding: '24px 0 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 12, gap: 12 }}>
+        <div>
+          <h2 style={{
+            fontSize: 17, fontWeight: 700,
+            fontFamily: "'Poppins', sans-serif",
+            color: '#0F1D2D', margin: 0,
+            letterSpacing: '-0.02em',
+          }}>
+            {title}
+          </h2>
+          {subtitle && (
+            <div style={{ fontSize: 12, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{subtitle}</div>
+          )}
+        </div>
+        {action && onAction && (
+          <button onClick={onAction} style={{
+            fontSize: 13, color: '#00B894', fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif",
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap',
+          }}>
+            {action} <ChevronRight size={14} color="#00B894" />
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function HorizontalRow({ children, gap = 14 }: { children: React.ReactNode; gap?: number }) {
+  return (
+    <div style={{ display: 'flex', gap, padding: '4px 20px 8px', overflowX: 'auto' }}>
+      {children}
     </div>
   )
 }
