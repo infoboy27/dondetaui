@@ -111,7 +111,11 @@ function inferCategory(url: string, html: string, config: RetailerConfig): { nam
 
   const segments = new URL(url).pathname.split('/').filter(Boolean)
   const generic = new Set(['es-do', 'supermercado', 'all-products', 'product', 'producto', 'p'])
-  const candidate = segments.find(segment =>
+  // The most specific category segment: Jumbo's paginated listings link
+  // /electro-hogar/lavado-y-secado/<slug>-<sku>, and the top level ("Electro
+  // Hogar") isn't recognized as an appliance category -- taking it made the
+  // ingestion skip every Jumbo product from page 2 on.
+  const candidate = [...segments].reverse().find(segment =>
     !generic.has(segment.toLowerCase()) && !segment.endsWith('.html') && !looksLikeProductSlug(segment),
   )
   if (!candidate) return config.defaultCategory

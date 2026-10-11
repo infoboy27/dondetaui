@@ -22,11 +22,12 @@ export class PriceSmartAdapter {
   async fetchProduct(url: string): Promise<NormalizedRetailerItem> {
     // No JSON-LD or SSR'd state on PriceSmart's PDP (see discovery.ts) — the content is
     // in the live DOM only, once the app's own client-side fetch resolves.
-    const response = await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+    // domcontentloaded + the h1 wait below, not 'networkidle' (see plaza-lama.adapter.ts).
+    const response = await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 })
     if (response && !response.ok()) {
       throw new Error(`PriceSmart request failed (${response.status()}) for ${url}`)
     }
-    await this.page.waitForSelector('h1', { timeout: 15_000 })
+    await this.page.waitForSelector('h1', { timeout: 25_000 })
 
     const name = (await this.page.locator('h1').first().innerText()).trim()
     if (!name) throw new Error('PriceSmart parser: product name not found')

@@ -173,10 +173,27 @@ export class PlazaLamaAdapter {
     // Plaza Lama's product data (JSON-LD, og:* meta, price) is injected client-side by
     // Next.js — a plain fetch() only sees the pre-hydration shell. Render with a real
     // browser page and read the DOM after it settles, same as catalog discovery.
-    const response = await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+    // Waits for the product JSON-LD instead of 'networkidle', which the page's
+    // analytics connections kept from settling on the server (timeouts there
+    // skipped most products).
+    const response = await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 })
     if (response && !response.ok()) {
       throw new Error(`Plaza Lama request failed (${response.status()}) for ${url}`)
     }
+    await this.page
+      .waitForFunction(
+        // Product data and its breadcrumb (the category comes from it) render
+        // separately; without the breadcrumb every item fell into "Otros" and
+        // was dropped by the appliance-category filter.
+        () => {
+          const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map(el => el.textContent ?? '').join(' ')
+          const hasBreadcrumb = /BreadcrumbList/.test(ld) || Boolean(document.querySelector('nav[class*="readcrumb"] a, ol[class*="readcrumb"] a'))
+          return /"Product"/.test(ld) && hasBreadcrumb
+        },
+        undefined,
+        { timeout: 25_000 },
+      )
+      .catch(() => undefined)
 
     const html = await this.page.content()
     const productLd = extractProductJsonLd(html)

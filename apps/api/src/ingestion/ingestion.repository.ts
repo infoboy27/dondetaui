@@ -19,7 +19,7 @@ const APPLIANCE_CATEGORY_KEYWORDS = [
   'licuad', 'batidor', 'cafeter', 'tostad', 'plancha',
   'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
   'dispensador', 'freidora', 'air fryer',
-  'extractor', 'procesador', 'barras de sonido',
+  'extractor', 'procesador', 'barras de sonido', 'electro hogar', 'electro cocina',
 ]
 
 function isApplianceCategory(categoryName: string): boolean {
