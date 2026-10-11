@@ -4,7 +4,7 @@ import PaginationControls from '../components/PaginationControls'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
 import { CATEGORIES } from '../data/mock'
 import { matchesCategory } from '../domain/categories'
-import { getBestOffer, getOfferTotal } from '../domain/offers'
+import { compareByRelevance, getBestOffer, getOfferTotal } from '../domain/offers'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { usePagination } from '../hooks/usePagination'
 import type { Product } from '../types'
@@ -24,28 +24,37 @@ interface Props {
   onToggleFavorite: (id: string) => void
 }
 
-const STORE_FILTERS = ['Plaza Lama', 'Sirena', 'Corripio', 'Jumbo', 'PriceSmart']
-
 export default function ResultsScreen({ query, category, onBack, onProduct, favoriteIds, onToggleFavorite }: Props) {
-  const [sortBy, setSortBy] = useState<'precio' | 'relevancia'>('precio')
+  const [sortBy, setSortBy] = useState<'precio' | 'relevancia'>('relevancia')
   const [showFilters, setShowFilters] = useState(false)
-  const [selectedStores, setSelectedStores] = useState<string[]>(STORE_FILTERS)
+  // Stores the user switched off. The chips come from the stores actually in
+  // the results -- a hardcoded list ("Corripio" vs the real "Tiendas Corripio",
+  // nothing for Colombia/México) silently filtered whole stores out.
+  const [excludedStores, setExcludedStores] = useState<string[]>([])
   const [stockOnly, setStockOnly] = useState(false)
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
   // Category mode fetches the whole catalog (matchesCategory filters
   // client-side, same as DesktopView) rather than sending the category id
   // to the free-text search API.
-  const { products } = useCatalogProducts(category ? '' : query)
+  const { products, source } = useCatalogProducts(category ? '' : query)
   const categoryLabel = category ? CATEGORIES.find(c => c.id === category)?.label : undefined
   const headingText = categoryLabel || query || 'Todos los productos'
+
+  const storeOptions = useMemo(
+    () => [...new Set(products.flatMap(product => product.prices.map(offer => offer.store)))].sort((a, b) => a.localeCompare(b)),
+    [products],
+  )
+  const isStoreSelected = (store: string) => !excludedStores.includes(store)
 
   const displayResults = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     const filtered = products.filter(product => {
+      // The API already matched the query (name, brand, model, EAN); filtering
+      // again by name here dropped model-code searches. Fixtures still need it.
       const matchesQuery = category
         ? matchesCategory(product, category)
-        : !normalizedQuery ||
+        : !normalizedQuery || source === 'api' ||
           product.name.toLowerCase().includes(normalizedQuery) ||
           product.category.toLowerCase().includes(normalizedQuery) ||
           product.brand.toLowerCase().includes(normalizedQuery) ||
@@ -54,7 +63,7 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
       if (!matchesQuery) return false
 
       return product.prices.some(offer => {
-        const storeMatches = selectedStores.includes(offer.store)
+        const storeMatches = !excludedStores.includes(offer.store)
         const stockMatches = !stockOnly || offer.available
         const shippingMatches = !freeShippingOnly || offer.shipping.toLowerCase().includes('gratis')
 
@@ -62,11 +71,11 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
       })
     })
 
-    if (sortBy === 'relevancia') return filtered
+    if (sortBy === 'relevancia') return [...filtered].sort(compareByRelevance)
 
     return [...filtered].sort((a, b) => {
-      const aOffer = getBestOffer(a.prices.filter(offer => selectedStores.includes(offer.store)))
-      const bOffer = getBestOffer(b.prices.filter(offer => selectedStores.includes(offer.store)))
+      const aOffer = getBestOffer(a.prices.filter(offer => !excludedStores.includes(offer.store)))
+      const bOffer = getBestOffer(b.prices.filter(offer => !excludedStores.includes(offer.store)))
 
       if (!aOffer && !bOffer) return 0
       if (!aOffer) return 1
@@ -74,17 +83,15 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
 
       return getOfferTotal(aOffer) - getOfferTotal(bOffer)
     })
-  }, [products, query, category, selectedStores, stockOnly, freeShippingOnly, sortBy])
+  }, [products, source, query, category, excludedStores, stockOnly, freeShippingOnly, sortBy])
 
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(displayResults)
 
   const toggleStore = (store: string) => {
-    setSelectedStores(current => {
-      if (current.includes(store)) {
-        return current.length === 1 ? current : current.filter(value => value !== store)
-      }
-
-      return [...current, store]
+    setExcludedStores(current => {
+      if (current.includes(store)) return current.filter(value => value !== store)
+      // Keep at least one store switched on.
+      return current.length + 1 >= storeOptions.length ? current : [...current, store]
     })
   }
 
@@ -181,8 +188,8 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
               Tiendas
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {STORE_FILTERS.map(store => {
-                const selected = selectedStores.includes(store)
+              {storeOptions.map(store => {
+                const selected = isStoreSelected(store)
                 return (
                   <button
                     type="button"

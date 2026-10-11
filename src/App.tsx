@@ -62,9 +62,11 @@ function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreate
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
-    if (product) return
+    // With the API, always (re)fetch by slug: products handed over from a
+    // listing carry only the last 30 days of price history.
+    if (product && !appConfig.useApi) return
     let cancelled = false
-    setLoading(true)
+    if (!product) setLoading(true)
     setNotFound(false)
 
     const fetcher = appConfig.useApi
@@ -75,9 +77,9 @@ function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreate
       .then(found => {
         if (cancelled) return
         if (found) setProduct(found)
-        else setNotFound(true)
+        else if (!product) setNotFound(true)
       })
-      .catch(() => { if (!cancelled) setNotFound(true) })
+      .catch(() => { if (!cancelled && !product) setNotFound(true) })
       .finally(() => { if (!cancelled) setLoading(false) })
 
     return () => { cancelled = true }

@@ -59,6 +59,22 @@ export function getSavingsRange(offers: StorePrice[]): number {
   return Math.max(0, getOfferTotal(highest) - getOfferTotal(best))
 }
 
+// Default listing order: real comparisons first (more distinct stores), then
+// by how much the cheapest store saves over the priciest, then dearer items
+// first -- so a fridge sold in three stores leads, not a RD$115 blender part.
+export function compareByRelevance(a: { prices: StorePrice[] }, b: { prices: StorePrice[] }): number {
+  const stores = (offers: StorePrice[]) => new Set(offers.map(offer => offer.store)).size
+  const byStores = stores(b.prices) - stores(a.prices)
+  if (byStores) return byStores
+  const bySavings = getSavingsRange(b.prices) - getSavingsRange(a.prices)
+  if (bySavings) return bySavings
+  const total = (offers: StorePrice[]) => {
+    const best = getBestOffer(offers)
+    return best ? getOfferTotal(best) : 0
+  }
+  return total(b.prices) - total(a.prices)
+}
+
 // "Ver en {tienda}" target. With a real API behind the app, clicks go through
 // /api/go so DóndeTa can count outbound traffic per retailer before the
 // redirect; mock mode (no API, no real ids) links straight to the store.

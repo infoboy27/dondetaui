@@ -5,7 +5,7 @@ import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
-import { getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange } from '../domain/offers'
+import { compareByRelevance, getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -186,7 +186,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
   onRequireLogin: () => void
 }) {
   const cheapest = product.prices[0]
-  const savings = product.prices[product.prices.length - 1].price - cheapest.price
+  const savings = getSavingsRange(product.prices)
   const [expanded, setExpanded] = useState(false)
   const navigate = useNavigate()
 
@@ -233,7 +233,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
           }}>
             {product.name}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {Number(product.reviews) > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StarIcon size={13} />
             <span style={{ fontSize: 12, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D', fontWeight: 600 }}>
               {product.rating}
@@ -241,7 +241,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
             <span style={{ fontSize: 12, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif" }}>
               ({product.reviews} opiniones)
             </span>
-          </div>
+          </div>}
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
@@ -254,12 +254,12 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
           }}>
             {formatPrice(cheapest.price)}
           </div>
-          <div style={{
+          {savings > 0 && <div style={{
             fontSize: 12, color: '#FF9F1C', fontWeight: 600,
             fontFamily: "'DM Sans', sans-serif",
           }}>
             Ahorras hasta {formatPrice(savings)}
-          </div>
+          </div>}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -449,7 +449,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
   const [minPrice, setMinPrice] = useState(0)
   const [maxPrice, setMaxPrice] = useState(100000)
-  const [sortBy, setSortBy] = useState<SortKey>('price-asc')
+  const [sortBy, setSortBy] = useState<SortKey>('relevance')
   const [screen, setScreen] = useState<DesktopScreen>('results')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
@@ -527,7 +527,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
       return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted && inAvailability
     })
 
-    if (sortBy === 'relevance') return filtered
+    if (sortBy === 'relevance') return [...filtered].sort(compareByRelevance)
 
     const sorted = [...filtered].sort((a, b) => {
       const totalA = getOfferTotal(getBestOffer(a.prices) ?? a.prices[0])
@@ -537,19 +537,18 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
     return sorted
   }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, screen, alertedIds, stockOnly, freeShippingOnly])
 
+  // The biggest saving between stores among what's on screen; no banner at
+  // all when nothing is sold in more than one store (it used to crown the
+  // cheapest item -- a RD$115 blender part).
   const bestDeal = useMemo(() => {
-    if (!visibleProducts.length) return null
-    let best = visibleProducts[0]
-    let bestTotal = getOfferTotal(getBestOffer(best.prices) ?? best.prices[0])
-    for (const p of visibleProducts.slice(1)) {
-      const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
-      if (total < bestTotal) {
-        best = p
-        bestTotal = total
-      }
+    let best: { product: Product; savings: number } | null = null
+    for (const p of visibleProducts) {
+      const savings = getSavingsRange(p.prices)
+      if (savings > 0 && (!best || savings > best.savings)) best = { product: p, savings }
     }
-    const offer = getBestOffer(best.prices) ?? best.prices[0]
-    return { product: best, offer, savings: getSavingsRange(best.prices) }
+    if (!best) return null
+    const offer = getBestOffer(best.product.prices) ?? best.product.prices[0]
+    return { product: best.product, offer, savings: best.savings }
   }, [visibleProducts])
 
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(visibleProducts)
@@ -1140,7 +1139,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               <TrendingDownIcon size={24} color="#fff" />
               <div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans', sans-serif" }}>
-                  Mejor oferta encontrada
+                  Mayor ahorro entre tiendas
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: "'Poppins', sans-serif" }}>
                   {bestDeal.product.name} — {bestDeal.offer.store} · {formatPrice(bestDeal.offer.price)}

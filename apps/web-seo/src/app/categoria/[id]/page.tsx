@@ -6,6 +6,7 @@ import { formatPrice } from '../../../lib/format'
 import { analyzeHistory } from '../../../lib/history'
 import { getBestOffer } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
+import { SiteFooter, SiteHeader } from '../../../lib/page'
 import { SITE_URL } from '../../../lib/site'
 
 interface Props {
@@ -69,6 +70,7 @@ export default async function CategoryPage({ params }: Props) {
 
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 64px' }}>
+      <SiteHeader />
       <nav style={{ fontFamily: fonts.body, fontSize: 13, color: colors.navy400 }}>
         <a href={SITE_URL} style={{ color: colors.navy400, textDecoration: 'none' }}>DóndeTa</a>
         {' / '}
@@ -144,6 +146,7 @@ export default async function CategoryPage({ params }: Props) {
         Para entender cómo se ordenan las ofertas y qué limitaciones tienen los precios publicados, consulta la{' '}
         <a href="/metodologia" style={{ color: colors.primary }}>metodología de DóndeTa</a>.
       </p>
+      <SiteFooter />
     </main>
   )
 }

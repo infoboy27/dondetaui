@@ -12,8 +12,10 @@ interface CatalogState {
 }
 
 export function useCatalogProducts(query = ''): CatalogState {
+  // With a live API, start empty: seeding the fixtures here flashed fake
+  // products on every real page load until the request came back.
   const [state, setState] = useState<CatalogState>({
-    products: PRODUCTS,
+    products: appConfig.useApi ? [] : PRODUCTS,
     loading: appConfig.useApi,
     source: 'fixtures',
     error: null,

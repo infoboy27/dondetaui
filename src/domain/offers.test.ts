@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getBestOffer, getHighestAvailableOffer, getOfferTotal, getOutboundUrl, getSavingsRange, rankOffers } from './offers'
+import { compareByRelevance, getBestOffer, getHighestAvailableOffer, getOfferTotal, getOutboundUrl, getSavingsRange, rankOffers } from './offers'
 import type { StorePrice } from '../types'
 
 function offer(overrides: Partial<StorePrice>): StorePrice {
@@ -109,5 +109,24 @@ describe('getOutboundUrl', () => {
 
   it('returns nothing when the offer has no store url', () => {
     expect(getOutboundUrl('p-1', offer({ retailerId: 'r-1' }), 'https://api')).toBeUndefined()
+  })
+})
+
+describe('compareByRelevance', () => {
+  const part = { prices: [offer({ store: 'Sirena', price: 115 })] }
+  const tv = { prices: [offer({ store: 'Jumbo', price: 30_000 })] }
+  const fridge = { prices: [offer({ store: 'Jumbo', price: 50_000 }), offer({ store: 'Sirena', price: 55_000 })] }
+  const fridgeSameStoreTwice = { prices: [offer({ store: 'Sirena', price: 40_000 }), offer({ store: 'Sirena', price: 41_000 })] }
+
+  it('puts products compared across more stores first', () => {
+    expect([part, tv, fridge].sort(compareByRelevance)[0]).toBe(fridge)
+  })
+
+  it('counts distinct stores, not offers', () => {
+    expect([fridgeSameStoreTwice, fridge].sort(compareByRelevance)[0]).toBe(fridge)
+  })
+
+  it('among single-store products, puts dearer items before accessories', () => {
+    expect([part, tv].sort(compareByRelevance)).toEqual([tv, part])
   })
 })

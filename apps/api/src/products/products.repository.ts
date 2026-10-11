@@ -21,6 +21,8 @@ interface ProductRow {
   previous_price: string | number | null
 }
 
+const LIST_HISTORY_DAYS = 30
+
 @Injectable()
 export class ProductsRepository {
   constructor(@Inject(DATABASE_POOL) private readonly pool: Pool) {}
@@ -133,6 +135,10 @@ export class ProductsRepository {
       join offers o on o.id = po.offer_id
       join product_variants pv on pv.id = o.product_variant_id
       where pv.product_id = any($1::uuid[])
+        -- Listings only need recent points (price-drop badges); the product
+        -- page fetches its full history by slug. Unbounded, this grew every
+        -- day and was already half of the 1 MB catalog payload.
+        and po.observed_at > now() - interval '${LIST_HISTORY_DAYS} days'
       group by pv.product_id, po.observed_at::date
       order by pv.product_id, po.observed_at::date asc`,
       [productIds],

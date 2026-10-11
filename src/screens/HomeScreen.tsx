@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CATEGORIES } from '../data/mock'
 import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../components/Icons'
 import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
 import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { compareByRelevance } from '../domain/offers'
 import { usePagination } from '../hooks/usePagination'
 import PaginationControls from '../components/PaginationControls'
 import { SiteLinks } from '../components/SiteLinks'
@@ -29,7 +30,9 @@ export default function HomeScreen({
   favoriteIds, onToggleFavorite,
 }: Props) {
   const { products } = useCatalogProducts()
-  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
+  // Comparisons first (the API lists alphabetically -- "A/A Dimensions..." led).
+  const ranked = useMemo(() => [...products].sort(compareByRelevance), [products])
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(ranked)
   const [storeCount, setStoreCount] = useState<number | null>(null)
 
   useEffect(() => {
