@@ -65,3 +65,29 @@ export interface ReviewSummary {
   count: number
   reviews: Review[]
 }
+
+// GET /price-check -- see apps/api/src/products/price-check.ts.
+export interface PriceCheck {
+  productId: string
+  productName: string
+  productSlug: string
+  image: string
+  store: string
+  current: number
+  verdict: 'lowest' | 'inflated' | 'raised'
+  reference: number
+  referenceDate: string
+  peak: number
+  peakDate: string
+  pctVsReference: number
+  pctBelowPeak: number
+  days: number
+}
+
+export interface PriceCheckReport {
+  generatedAt: string
+  tracked: number
+  lowest: PriceCheck[]
+  inflated: PriceCheck[]
+  raised: PriceCheck[]
+}

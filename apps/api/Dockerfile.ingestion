@@ -29,9 +29,10 @@ ENV NODE_ENV=production
 # partway through on this connection. apt pulls from the same mirrors the
 # base image itself already resolves fine, and pkg dependencies (fonts,
 # libnss3, etc.) come along automatically via the `chromium` package.
+# ffmpeg turns the Instagram autopilot's Reel scenes into MP4 (instagram-reel.ts).
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt \
     --mount=type=cache,id=apt-lib,target=/var/lib/apt \
-    apt-get update && apt-get install -y --no-install-recommends chromium
+    apt-get update && apt-get install -y --no-install-recommends chromium ffmpeg
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 RUN corepack enable && corepack prepare pnpm@10.34.3 --activate

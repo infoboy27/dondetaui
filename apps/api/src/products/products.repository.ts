@@ -4,6 +4,7 @@ import { DATABASE_POOL } from '../database/database.module'
 import { formatPrice } from '../common/currency'
 import { freshOfferSql } from '../common/freshness'
 import type { OfferDto, ProductDto } from './products.types'
+import type { OfferSeries } from './price-check'
 
 interface ProductRow {
   id: string
@@ -330,6 +331,54 @@ export class ProductsRepository {
       retailerId: row.retailer_id,
       storeId: row.store_id ?? undefined,
       url: row.url ?? undefined,
+    }))
+  }
+
+  // Every live, in-stock offer with its daily lowest price in that store over
+  // the previous 30 days (today excluded), for the price check (price-check.ts).
+  async priceCheckSeries(): Promise<OfferSeries[]> {
+    const result = await this.pool.query<{
+      product_id: string
+      name: string
+      slug: string
+      image_url: string | null
+      store: string
+      current: string
+      points: Array<{ date: string; price: string | number }>
+    }>(
+      `select
+        p.id::text as product_id,
+        p.name,
+        p.slug,
+        p.image_url,
+        r.name as store,
+        (o.price + o.shipping_price)::text as current,
+        coalesce((
+          select json_agg(json_build_object('date', d.day, 'price', d.price) order by d.day)
+          from (
+            select po.observed_at::date::text as day, min(po.price + po.shipping_price) as price
+            from price_observations po
+            where po.offer_id = o.id
+              and po.observed_at >= current_date - 30
+              and po.observed_at < current_date
+            group by po.observed_at::date
+          ) d
+        ), '[]'::json) as points
+      from offers o
+      join product_variants pv on pv.id = o.product_variant_id
+      join products p on p.id = pv.product_id
+      join retailers r on r.id = o.retailer_id
+      where o.availability = 'in_stock'
+        and ${freshOfferSql()}`,
+    )
+    return result.rows.map(row => ({
+      productId: row.product_id,
+      productName: row.name,
+      productSlug: row.slug,
+      image: row.image_url ?? '',
+      store: row.store,
+      current: Number(row.current),
+      points: row.points.map(point => ({ date: point.date, price: Number(point.price) })),
     }))
   }
 

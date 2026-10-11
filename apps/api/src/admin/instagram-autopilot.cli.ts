@@ -1,7 +1,8 @@
 import 'reflect-metadata'
 import { Pool } from 'pg'
 import { chromium } from 'playwright'
-import { pickCandidate, type Candidate, type Kind, type Target } from './instagram-autopilot'
+import { feedFormat, pickCandidate, type Candidate, type Kind, type Target } from './instagram-autopilot'
+import { buildReel } from './instagram-reel'
 import { AUTOPILOT_SLOTS, InstagramService } from './instagram.service'
 
 // Instagram autopilot, run every few minutes by deploy/instagram-autopilot-loop.sh.
@@ -9,7 +10,9 @@ import { AUTOPILOT_SLOTS, InstagramService } from './instagram.service'
 // ig_autopilot = 'on'). For each slot whose hour has come (Dominican time)
 // and that has nothing published today -- by hand or by the autopilot -- it:
 //   1. opens SITE_URL/ig-render in Chromium (the same card code as the portal),
-//   2. picks the best candidate not posted recently,
+//   2. picks the best candidate not posted recently -- or, for the feed, the
+//      day's format (feedFormat): Sunday's "Top 5" carousel, a Reel rendered
+//      with ffmpeg (instagram-reel.ts), or the plain image,
 //   3. publishes it through InstagramService and reports to Discord.
 // A slot that fails is retried on later runs, at most MAX_ATTEMPTS times a day.
 
@@ -37,6 +40,11 @@ async function notify(content: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
   }).catch(() => undefined)
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+function localWeekday(): number {
+  return WEEKDAYS.indexOf(new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short' }).format(new Date()))
 }
 
 function today(): string {
@@ -96,7 +104,101 @@ async function imageDataUrl(url: string | null): Promise<string | null> {
   }
 }
 
-async function publishSlot(instagram: InstagramService, target: Target) {
+type Page = Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newPage']>>
+
+// window.__ig, as seen from Node (src/screens/admin/IgRender.tsx).
+interface Bridge {
+  candidates(): Promise<Candidate[]>
+  render(productId: string, kind: Kind, image: string | null, site: string): Promise<{ caption: string; feed: string; story: string }>
+  weekly(): Promise<{ slug: string; label: string; items: Array<{ productId: string; name: string; imageUrl: string | null }> } | null>
+  renderCarousel(slug: string, images: Record<string, string | null>, site: string): Promise<{ caption: string; slides: string[] }>
+  renderReel(productId: string, kind: Kind, image: string | null, site: string): Promise<{ caption: string; scenes: Array<{ image: string; seconds: number; zoom: boolean }> }>
+}
+
+function bridge<K extends keyof Bridge>(page: Page, method: K, ...args: Parameters<Bridge[K]>): Promise<Awaited<ReturnType<Bridge[K]>>> {
+  return page.evaluate(
+    ([name, params]) => {
+      const ig = (window as unknown as { __ig: Record<string, (...a: unknown[]) => unknown> }).__ig
+      return ig[name](...params)
+    },
+    [method, args] as [string, unknown[]],
+  ) as Promise<Awaited<ReturnType<Bridge[K]>>>
+}
+
+const jpegBuffer = (dataUrl: string) => Buffer.from(dataUrl.replace(/^data:image\/jpeg;base64,/, ''), 'base64')
+
+interface Published {
+  label: string
+  name: string
+  permalink: string | null
+  hadImage: boolean
+  note?: string
+}
+
+async function publishCarousel(page: Page, instagram: InstagramService, site: string): Promise<Published | null> {
+  const weekly = await bridge(page, 'weekly')
+  if (!weekly) return null
+  const images: Record<string, string | null> = {}
+  for (const item of weekly.items) images[item.productId] = await imageDataUrl(item.imageUrl)
+  const rendered = await bridge(page, 'renderCarousel', weekly.slug, images, site)
+  const slides = rendered.slides.map(jpegBuffer)
+  const result = await instagram.publishPost({
+    productId: null,
+    kind: 'top5',
+    target: 'feed',
+    format: 'carousel',
+    caption: rendered.caption,
+    cover: slides[0],
+    media: slides.map(data => ({ contentType: 'image/jpeg' as const, data })),
+    publicBaseUrl: siteUrl,
+    source: 'autopilot',
+  })
+  return {
+    label: 'carrusel',
+    name: `Top 5 ${weekly.label}`,
+    permalink: result.permalink,
+    hadImage: Object.values(images).every(Boolean),
+  }
+}
+
+async function publishProduct(page: Page, instagram: InstagramService, target: Target, format: 'image' | 'reel', site: string): Promise<Published | null> {
+  const candidates = await bridge(page, 'candidates')
+  const pick = pickCandidate(candidates, target, await recentlyPosted(target))
+  if (!pick) return null
+  const image = await imageDataUrl(pick.imageUrl)
+
+  if (format === 'reel') {
+    const rendered = await bridge(page, 'renderReel', pick.productId, pick.kind, image, site)
+    const scenes = rendered.scenes.map(scene => ({ jpeg: jpegBuffer(scene.image), seconds: scene.seconds, zoom: scene.zoom }))
+    const video = await buildReel(scenes)
+    const result = await instagram.publishPost({
+      productId: pick.productId,
+      kind: pick.kind.type,
+      target: 'feed',
+      format: 'reel',
+      caption: rendered.caption,
+      cover: scenes[0].jpeg,
+      media: [{ contentType: 'video/mp4', data: video }],
+      publicBaseUrl: siteUrl,
+      source: 'autopilot',
+    })
+    return { label: 'reel', name: pick.name, permalink: result.permalink, hadImage: Boolean(image) }
+  }
+
+  const rendered = await bridge(page, 'render', pick.productId, pick.kind, image, site)
+  const result = await instagram.publish({
+    productId: pick.productId,
+    kind: pick.kind.type,
+    target,
+    caption: rendered.caption,
+    jpeg: jpegBuffer(target === 'story' ? rendered.story : rendered.feed),
+    publicBaseUrl: siteUrl,
+    source: 'autopilot',
+  })
+  return { label: target === 'story' ? 'historia' : 'post', name: pick.name, permalink: result.permalink, hadImage: Boolean(image) }
+}
+
+async function publishSlot(instagram: InstagramService, target: Target): Promise<Published | null> {
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
     args: ['--no-sandbox', '--disable-dev-shm-usage'],
@@ -105,32 +207,26 @@ async function publishSlot(instagram: InstagramService, target: Target) {
     const page = await browser.newPage()
     await page.goto(`${siteUrl}/ig-render`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     await page.waitForFunction(() => Boolean((window as unknown as { __ig?: unknown }).__ig), null, { timeout: 60_000 })
-    const candidates = await page.evaluate(() => (window as unknown as { __ig: { candidates(): Promise<Candidate[]> } }).__ig.candidates())
-    const pick = pickCandidate(candidates, target, await recentlyPosted(target))
-    if (!pick) {
-      console.log(`[ig-autopilot] ${target}: nothing new to post today`)
-      return null
-    }
-
     const site = new URL(siteUrl).host.replace(/^www\./, '')
-    const image = await imageDataUrl(pick.imageUrl)
-    const rendered = await page.evaluate(
-      ([productId, kind, img, siteHost]) =>
-        (window as unknown as { __ig: { render(a: string, b: Kind, c: string | null, d: string): Promise<{ caption: string; feed: string; story: string }> } })
-          .__ig.render(productId, kind, img, siteHost),
-      [pick.productId, pick.kind, image, site] as const,
-    )
-    const jpeg = Buffer.from((target === 'story' ? rendered.story : rendered.feed).replace(/^data:image\/jpeg;base64,/, ''), 'base64')
-    const result = await instagram.publish({
-      productId: pick.productId,
-      kind: pick.kind.type,
-      target,
-      caption: rendered.caption,
-      jpeg,
-      publicBaseUrl: siteUrl,
-      source: 'autopilot',
-    })
-    return { pick, permalink: result.permalink, hadImage: Boolean(image) }
+
+    const format = target === 'feed' ? feedFormat(localWeekday()) : 'image'
+    // A carousel or Reel that can't be made (not enough products of the
+    // week's type, ffmpeg, Instagram rejecting the video) shouldn't cost the
+    // day's post: fall back to the plain image, and say why.
+    let note: string | undefined
+    if (format !== 'image') {
+      try {
+        const done = format === 'carousel' ? await publishCarousel(page, instagram, site) : await publishProduct(page, instagram, target, 'reel', site)
+        if (done) return done
+        note = `sin ${format === 'carousel' ? 'top semanal' : 'candidato para reel'}`
+      } catch (error) {
+        note = `${format} falló: ${error instanceof Error ? error.message : String(error)}`
+        console.warn(`[ig-autopilot] ${note}`)
+      }
+    }
+    const done = await publishProduct(page, instagram, target, 'image', site)
+    if (!done) console.log(`[ig-autopilot] ${target}: nothing new to post today`)
+    return done && { ...done, note }
   } finally {
     await browser.close()
   }
@@ -152,10 +248,11 @@ async function main() {
     try {
       const done = await publishSlot(instagram, slot.target)
       if (!done) continue
-      console.log(`[ig-autopilot] ${slot.target}: published ${done.pick.name} ${done.permalink ?? ''}`)
+      console.log(`[ig-autopilot] ${slot.target}: published ${done.label} ${done.name} ${done.permalink ?? ''}`)
       await notify(
-        `📸 Instagram automático: ${label} publicado — ${done.pick.name}` +
+        `📸 Instagram automático: ${done.label} publicado — ${done.name}` +
         (done.hadImage ? '' : ' (sin foto)') +
+        (done.note ? `\n(se publicó como imagen: ${done.note})` : '') +
         (done.permalink ? `\n${done.permalink}` : ''),
       )
     } catch (error) {

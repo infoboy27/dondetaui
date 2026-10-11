@@ -5,10 +5,12 @@ import { DATABASE_POOL } from '../database/database.module'
 // Publishing through the Instagram API with Instagram Login (graph.instagram.com):
 // works for Creator and Business accounts, no Facebook Page needed.
 //   1. POST /{ig-user-id}/media         { image_url, caption } -> container id
+//      (a carousel creates one container per slide first, then the parent;
+//      a Reel passes video_url + media_type=REELS)
 //   2. poll the container until FINISHED
 //   3. POST /{ig-user-id}/media_publish { creation_id }        -> media id
-// Instagram downloads image_url itself, so the JPEG is served publicly from
-// /api/ig-media/<post id>.jpg (InstagramMediaController).
+// Instagram downloads the files itself, so they're served publicly from
+// /api/ig-media/<post id>.jpg and <post id>-<n>.(jpg|mp4) (InstagramMediaController).
 //
 // Config: IG_ACCESS_TOKEN (long-lived, 60 days). The token is refreshed here
 // every ~30 days and the fresh one kept in app_settings, so after the first
@@ -25,11 +27,19 @@ export const AUTOPILOT_SLOTS = [
   { target: 'story' as const, hour: Number(process.env.IG_AUTOPILOT_STORY_HOUR ?? 19) },
 ]
 
+export type PostKind = 'comparison' | 'drop' | 'top5'
+export type PostFormat = 'image' | 'carousel' | 'reel'
+export interface MediaFile {
+  contentType: 'image/jpeg' | 'video/mp4'
+  data: Buffer
+}
+
 export interface InstagramPostRow {
   id: string
   product_id: string | null
   kind: string
   target: string
+  format: string
   source: string
   caption: string
   status: string
@@ -111,7 +121,7 @@ export class InstagramService {
 
   async history(limit = 30): Promise<InstagramPostRow[]> {
     const result = await this.pool.query<InstagramPostRow>(
-      `select id::text, product_id::text, kind, target, source, caption, status, permalink, error, created_at, published_at
+      `select id::text, product_id::text, kind, target, format, source, caption, status, permalink, error, created_at, published_at
        from instagram_posts order by created_at desc limit $1`,
       [limit],
     )
@@ -133,7 +143,34 @@ export class InstagramService {
     return result.rows[0]?.image ?? null
   }
 
-  async publish(input: { productId: string | null; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean; source?: 'manual' | 'autopilot' }) {
+  async media(id: string, position: number): Promise<MediaFile | null> {
+    const result = await this.pool.query<{ content_type: MediaFile['contentType']; data: Buffer }>(
+      'select content_type, data from instagram_post_media where post_id = $1 and position = $2',
+      [id, position],
+    )
+    const row = result.rows[0]
+    return row ? { contentType: row.content_type, data: row.data } : null
+  }
+
+  // A single image to the feed or to Stories (the admin portal's publish button).
+  publish(input: { productId: string | null; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean; source?: 'manual' | 'autopilot' }) {
+    return this.publishPost({ ...input, format: 'image', cover: input.jpeg, media: [] })
+  }
+
+  // Any format. `cover` is what the admin history shows (and a Reel's cover
+  // frame); `media` holds the carousel slides, or the Reel's video.
+  async publishPost(input: {
+    productId: string | null
+    kind: PostKind
+    target: 'feed' | 'story'
+    format: PostFormat
+    caption: string
+    cover: Buffer
+    media: MediaFile[]
+    publicBaseUrl: string
+    force?: boolean
+    source?: 'manual' | 'autopilot'
+  }) {
     const token = await this.accessToken()
     if (!token) throw new ServiceUnavailableException('Instagram no está conectado (falta IG_ACCESS_TOKEN)')
 
@@ -151,11 +188,18 @@ export class InstagramService {
     }
 
     const inserted = await this.pool.query<{ id: string }>(
-      `insert into instagram_posts(product_id, kind, target, caption, image, source) values ($1, $2, $3, $4, $5, $6) returning id::text`,
-      [input.productId, input.kind, input.target, input.caption, input.jpeg, input.source ?? 'manual'],
+      `insert into instagram_posts(product_id, kind, target, format, caption, image, source) values ($1, $2, $3, $4, $5, $6, $7) returning id::text`,
+      [input.productId, input.kind, input.target, input.format, input.caption, input.cover, input.source ?? 'manual'],
     )
     const postId = inserted.rows[0].id
-    const imageUrl = `${input.publicBaseUrl}/api/ig-media/${postId}.jpg`
+    for (const [position, file] of input.media.entries()) {
+      await this.pool.query(
+        'insert into instagram_post_media(post_id, position, content_type, data) values ($1, $2, $3, $4)',
+        [postId, position, file.contentType, file.data],
+      )
+    }
+    const base = `${input.publicBaseUrl}/api/ig-media/${postId}`
+    const mediaUrl = (position: number) => `${base}-${position}.${input.media[position].contentType === 'video/mp4' ? 'mp4' : 'jpg'}`
 
     try {
       const me = await graph<{ user_id?: string; id: string }>(`/me?fields=user_id&access_token=${encodeURIComponent(token)}`)
@@ -165,27 +209,42 @@ export class InstagramService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ ...fields, access_token: token }),
       })
-      // Stories take no caption; the feed post carries the text.
-      const container = await graph<{ id: string }>(
-        `/${igUserId}/media`,
-        form(input.target === 'story' ? { image_url: imageUrl, media_type: 'STORIES' } : { image_url: imageUrl, caption: input.caption }),
-      )
+      const create = (fields: Record<string, string>) => graph<{ id: string }>(`/${igUserId}/media`, form(fields))
 
-      // Stories take noticeably longer to process than feed photos (~30-40 s
-      // measured); publishing before FINISHED fails with "The requested
-      // resource does not exist". Stay under nginx's 90 s /api timeout.
-      const deadline = Date.now() + (input.target === 'story' ? 75_000 : 45_000)
-      let finished = false
-      while (Date.now() < deadline) {
-        const state = await graph<{ status_code?: string; status?: string }>(`/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`)
-        if (state.status_code === 'FINISHED') {
-          finished = true
-          break
+      // Instagram processes every container asynchronously; publishing before
+      // FINISHED fails with "The requested resource does not exist". Stories
+      // take ~30-40 s and must stay under nginx's 90 s /api timeout when
+      // published by hand; Reels (autopilot only, no HTTP request waiting)
+      // can take minutes to transcode.
+      const waitFor = async (containerId: string, timeoutMs: number) => {
+        const deadline = Date.now() + timeoutMs
+        while (Date.now() < deadline) {
+          const state = await graph<{ status_code?: string; status?: string }>(`/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(token)}`)
+          if (state.status_code === 'FINISHED') return
+          if (state.status_code === 'ERROR' || state.status_code === 'EXPIRED') throw new Error(`Instagram no pudo procesar el archivo (${state.status ?? state.status_code})`)
+          await new Promise(resolve => setTimeout(resolve, input.format === 'reel' ? 10_000 : 3_000))
         }
-        if (state.status_code === 'ERROR' || state.status_code === 'EXPIRED') throw new Error(`Instagram no pudo procesar la imagen (${state.status ?? state.status_code})`)
-        await new Promise(resolve => setTimeout(resolve, 3_000))
+        throw new Error('Instagram todavía está procesando el archivo. Intenta publicar de nuevo en un minuto.')
       }
-      if (!finished) throw new Error('Instagram todavía está procesando la imagen. Intenta publicar de nuevo en un minuto.')
+
+      let container: { id: string }
+      if (input.format === 'carousel') {
+        const children: string[] = []
+        for (const position of input.media.keys()) {
+          const child = await create({ image_url: mediaUrl(position), is_carousel_item: 'true' })
+          await waitFor(child.id, 45_000)
+          children.push(child.id)
+        }
+        container = await create({ media_type: 'CAROUSEL', children: children.join(','), caption: input.caption })
+        await waitFor(container.id, 60_000)
+      } else if (input.format === 'reel') {
+        container = await create({ media_type: 'REELS', video_url: mediaUrl(0), cover_url: `${base}.jpg`, caption: input.caption, share_to_feed: 'true' })
+        await waitFor(container.id, 5 * 60_000)
+      } else {
+        // Stories take no caption; the feed post carries the text.
+        container = await create(input.target === 'story' ? { image_url: `${base}.jpg`, media_type: 'STORIES' } : { image_url: `${base}.jpg`, caption: input.caption })
+        await waitFor(container.id, input.target === 'story' ? 75_000 : 45_000)
+      }
 
       const media = await graph<{ id: string }>(`/${igUserId}/media_publish`, form({ creation_id: container.id }))
       const details = await graph<{ permalink?: string }>(`/${media.id}?fields=permalink&access_token=${encodeURIComponent(token)}`).catch(() => ({ permalink: undefined }))

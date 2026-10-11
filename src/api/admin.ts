@@ -96,6 +96,7 @@ export interface InstagramPost {
   product_id: string | null
   kind: string
   target: 'feed' | 'story'
+  format?: 'image' | 'carousel' | 'reel'
   source?: 'manual' | 'autopilot'
   caption: string
   status: 'pending' | 'published' | 'failed'

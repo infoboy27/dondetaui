@@ -1,4 +1,4 @@
-import type { Product, ReviewSummary, Store } from './types'
+import type { PriceCheckReport, Product, ReviewSummary, Store } from './types'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001/api'
 
@@ -40,4 +40,8 @@ export function getStoreBySlug(slug: string): Promise<Store | null> {
 export async function getStoreProducts(slug: string): Promise<Product[]> {
   const products = await apiFetch<Product[]>(`/stores/${encodeURIComponent(slug)}/products`)
   return products ?? []
+}
+
+export function getPriceCheck(): Promise<PriceCheckReport | null> {
+  return apiFetch<PriceCheckReport>('/price-check')
 }

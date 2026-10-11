@@ -9,3 +9,13 @@ export function pickCandidate(candidates: Candidate[], target: Target, exclude: 
   const preferred = target === 'feed' ? 'comparison' : 'drop'
   return fresh.find(c => c.kind.type === preferred) ?? fresh[0]
 }
+
+// Feed format per day of the week (Dominican time, 0 = Sunday): Reels reach
+// people who don't follow the account yet, the Sunday "Top 5" carousel gets
+// saved, and the plain image keeps the comparison front and centre on the
+// other days.
+export type FeedFormat = 'image' | 'carousel' | 'reel'
+export function feedFormat(weekday: number): FeedFormat {
+  if (weekday === 0) return 'carousel'
+  return weekday % 2 === 1 ? 'reel' : 'image'
+}

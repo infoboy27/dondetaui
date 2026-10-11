@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Res, UseGuards } from '@nestjs/common'
 import { AdminGuard } from './admin.guard'
-import { InstagramService } from './instagram.service'
+import { InstagramService, type MediaFile } from './instagram.service'
 
 const MAX_CAPTION = 2_200 // Instagram's own limit
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // Instagram's limit for feed images
@@ -61,13 +61,19 @@ export class InstagramMediaController {
     @Param('file') file: string,
     @Res() res: { status(code: number): { end(): void }; setHeader(name: string, value: string): void; end(body: Buffer): void },
   ) {
-    const id = /^([0-9a-f-]{36})\.jpg$/i.exec(file)?.[1]
-    if (!id) throw new NotFoundException()
-    const image = await this.instagram.image(id)
-    if (!image) throw new NotFoundException()
-    res.setHeader('Content-Type', 'image/jpeg')
+    // <id>.jpg is the post's image (or cover); <id>-<n>.jpg|mp4 a carousel
+    // slide or the Reel's video.
+    const match = /^([0-9a-f-]{36})(?:-(\d{1,2})\.(jpg|mp4)|\.jpg)$/i.exec(file)
+    if (!match) throw new NotFoundException()
+    const [, id, position, ext] = match
+    const media: MediaFile | null = position === undefined
+      ? await this.instagram.image(id).then(data => data && { contentType: 'image/jpeg' as const, data })
+      : await this.instagram.media(id, Number(position))
+    if (!media || (ext && (ext.toLowerCase() === 'mp4') !== (media.contentType === 'video/mp4'))) throw new NotFoundException()
+    res.setHeader('Content-Type', media.contentType)
+    res.setHeader('Content-Length', String(media.data.length))
     res.setHeader('Cache-Control', 'public, max-age=86400')
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
-    res.end(image)
+    res.end(media.data)
   }
 }

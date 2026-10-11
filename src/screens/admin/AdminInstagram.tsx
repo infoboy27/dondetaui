@@ -79,7 +79,7 @@ export default function AdminInstagram() {
             {history.map(post => (
               <div key={post.id} style={{ display: 'flex', gap: 12, padding: '10px 14px', borderBottom: `1px solid ${colors.border}`, fontSize: 13, alignItems: 'center' }}>
                 <span style={{ width: 90, color: colors.navy400 }}>{new Date(post.created_at).toLocaleDateString('es-DO')}</span>
-                <span style={{ width: 70, color: colors.navy400 }}>{post.target === 'story' ? 'Historia' : 'Post'}{post.source === 'autopilot' ? ' · auto' : ''}</span>
+                <span style={{ width: 90, color: colors.navy400 }}>{post.target === 'story' ? 'Historia' : post.format === 'reel' ? 'Reel' : post.format === 'carousel' ? 'Carrusel' : 'Post'}{post.source === 'autopilot' ? ' · auto' : ''}</span>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.caption.split('\n')[0]}</span>
                 {post.status === 'published'
                   ? (post.permalink ? <a href={post.permalink} target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: 700 }}>Ver en Instagram ↗</a> : <span style={{ color: colors.primary }}>Publicado</span>)
@@ -125,9 +125,10 @@ function formatHour(hour: number): string {
   return hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`
 }
 
-// Daily scheduled posts (apps/api/src/admin/instagram-autopilot.cli.ts): the
-// best comparison as a feed post at noon and a price drop as a story in the
-// evening, skipped when that slot was already published by hand.
+// Daily scheduled posts (apps/api/src/admin/instagram-autopilot.cli.ts): a
+// feed post at noon -- Reel Mon/Wed/Fri, "Top 5" carousel on Sunday, image
+// the other days -- and a price drop as a story in the evening, skipped when
+// that slot was already published by hand.
 function AutopilotSwitch() {
   const [autopilot, setAutopilot] = useState<InstagramAutopilot | null>(null)
   const [saving, setSaving] = useState(false)
@@ -156,8 +157,8 @@ function AutopilotSwitch() {
       <div style={{ flex: '1 1 260px' }}>
         <b>Piloto automático {autopilot.enabled ? 'activado' : 'apagado'}.</b>{' '}
         {autopilot.enabled
-          ? `Publica cada día ${schedule} (hora de RD), con la mejor comparación o baja que no se haya publicado en los últimos días. Si ya publicaste a mano ese día, no repite. Te avisa por Discord.`
-          : `Al activarlo, publica cada día ${schedule} (hora de RD) sin que tengas que entrar.`}
+          ? `Publica cada día ${schedule} (hora de RD), con la mejor comparación o baja que no se haya publicado en los últimos días. El post es un Reel lunes, miércoles y viernes, y el domingo un carrusel con el Top 5 de la semana. Si ya publicaste a mano ese día, no repite. Te avisa por Discord.`
+          : `Al activarlo, publica cada día ${schedule} (hora de RD) sin que tengas que entrar: Reels lunes, miércoles y viernes, y un carrusel Top 5 los domingos.`}
         {error && <div style={{ color: colors.error, marginTop: 4 }}>{error}</div>}
       </div>
       <button
