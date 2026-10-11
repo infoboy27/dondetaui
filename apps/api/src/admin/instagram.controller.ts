@@ -21,9 +21,10 @@ export class InstagramAdminController {
   }
 
   @Post('posts')
-  async publish(@Body() body: { productId?: string; kind?: string; caption?: string; imageBase64?: string; force?: boolean }) {
+  async publish(@Body() body: { productId?: string; kind?: string; target?: string; caption?: string; imageBase64?: string; force?: boolean }) {
     const kind = body.kind === 'drop' ? 'drop' : body.kind === 'comparison' ? 'comparison' : null
     if (!kind) throw new BadRequestException('kind inválido')
+    const target = body.target === 'story' ? 'story' : 'feed'
     const caption = String(body.caption ?? '').trim()
     if (!caption || caption.length > MAX_CAPTION) throw new BadRequestException('El texto debe tener entre 1 y 2,200 caracteres')
     const productId = body.productId && /^[0-9a-f-]{36}$/i.test(body.productId) ? body.productId : null
@@ -34,7 +35,7 @@ export class InstagramAdminController {
     }
     const publicBaseUrl = (process.env.SITE_URL ?? '').replace(/\/+$/, '')
     if (!/^https:\/\//.test(publicBaseUrl)) throw new BadRequestException('SITE_URL (https) no está configurado en la API')
-    return this.instagram.publish({ productId, kind, caption, jpeg, publicBaseUrl, force: Boolean(body.force) })
+    return this.instagram.publish({ productId, kind, target, caption, jpeg, publicBaseUrl, force: Boolean(body.force) })
   }
 }
 

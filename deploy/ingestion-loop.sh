@@ -14,12 +14,22 @@ run() {
   fi
 }
 
+RETAILERS="plaza-lama jumbo sirena corripio pricesmart"
+
 while true; do
-  run plaza-lama node dist/ingestion/plaza-lama.cli.js
-  run jumbo node dist/ingestion/retailer.cli.js jumbo
-  run sirena node dist/ingestion/vtex-api.cli.js sirena
-  run corripio node dist/ingestion/retailer.cli.js corripio
-  run pricesmart node dist/ingestion/pricesmart.cli.js
+  # Oldest data first (and close runs a restart cut off) -- deploys restart
+  # this loop, and a fixed order starved the retailers at the end of it.
+  ORDER=$(node dist/ingestion/ingestion-order.cli.js $RETAILERS 2>/dev/null) || ORDER=$RETAILERS
+  [ -n "$ORDER" ] || ORDER=$RETAILERS
+  for retailer in $ORDER; do
+    case $retailer in
+      plaza-lama) run plaza-lama node dist/ingestion/plaza-lama.cli.js ;;
+      jumbo) run jumbo node dist/ingestion/retailer.cli.js jumbo ;;
+      sirena) run sirena node dist/ingestion/vtex-api.cli.js sirena ;;
+      corripio) run corripio node dist/ingestion/retailer.cli.js corripio ;;
+      pricesmart) run pricesmart node dist/ingestion/pricesmart.cli.js ;;
+    esac
+  done
 
   # Safety net for cross-retailer duplicates that inline matching missed
   # (e.g. one store listed the product before the other existed).

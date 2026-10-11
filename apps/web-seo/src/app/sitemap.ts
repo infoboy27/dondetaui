@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getAllProducts, getStores } from '../lib/api'
 import { SEO_CATEGORIES } from '../lib/categories'
+import { PRODUCT_TYPES, matchesType } from '../lib/insights'
 import { BUYING_GUIDES } from '../lib/content'
 import { isThinProduct } from '../lib/history'
 import { SITE_URL } from '../lib/site'
@@ -33,6 +34,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly' as const,
       priority: 0.75,
     })),
+    { url: `${SITE_URL}/precios`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${SITE_URL}/comparaciones`, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${SITE_URL}/bajas-de-precio`, changeFrequency: 'daily', priority: 0.85 },
+    ...PRODUCT_TYPES
+      .filter(type => products.filter(p => matchesType(p, type)).length >= 3)
+      .map(type => ({ url: `${SITE_URL}/precios/${type.slug}`, changeFrequency: 'daily' as const, priority: 0.85 })),
     ...SEO_CATEGORIES.map(category => ({
       url: `${SITE_URL}/categoria/${category.id}`,
       changeFrequency: 'daily' as const,

@@ -5,5 +5,6 @@ const CURRENCY_SYMBOL = process.env.CURRENCY_SYMBOL || 'RD$'
 const CURRENCY_LOCALE = process.env.CURRENCY_LOCALE || 'es-DO'
 
 export function formatPrice(price: number): string {
-  return `${CURRENCY_SYMBOL}${price.toLocaleString(CURRENCY_LOCALE)}`
+  // Whole units: some retailers publish cents (RD$56,995.18), which only adds noise.
+  return `${CURRENCY_SYMBOL}${Math.round(price).toLocaleString(CURRENCY_LOCALE)}`
 }

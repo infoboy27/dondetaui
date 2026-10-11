@@ -95,6 +95,7 @@ export interface InstagramPost {
   id: string
   product_id: string | null
   kind: string
+  target: 'feed' | 'story'
   caption: string
   status: 'pending' | 'published' | 'failed'
   permalink: string | null
@@ -110,7 +111,7 @@ export const adminApi = {
   igHistory(): Promise<InstagramPost[]> {
     return apiFetch('/admin/instagram/posts')
   },
-  igPublish(input: { productId: string; kind: 'comparison' | 'drop'; caption: string; imageBase64: string; force?: boolean }): Promise<{ id: string; status: string; permalink: string | null }> {
+  igPublish(input: { productId: string; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; imageBase64: string; force?: boolean }): Promise<{ id: string; status: string; permalink: string | null }> {
     return apiFetch('/admin/instagram/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })
   },
   me(): Promise<{ admin: boolean }> {
