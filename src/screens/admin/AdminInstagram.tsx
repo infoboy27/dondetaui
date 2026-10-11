@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getToken } from '../../auth/session'
 import { productsApi } from '../../api/products'
-import { adminApi, type InstagramPost, type InstagramStatus } from '../../api/admin'
+import { adminApi, type InstagramAutopilot, type InstagramPost, type InstagramStatus } from '../../api/admin'
 import { appConfig } from '../../config/env'
 import { colors, fonts, radii } from '../../design/tokens'
 import { getTopPriceDrops } from '../../domain/notifications'
@@ -56,6 +56,7 @@ export default function AdminInstagram() {
       </header>
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 0' }}>
         <ConnectionBanner status={status} />
+        {canPublish && <AutopilotSwitch />}
       </div>
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 16px 60px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 18 }}>
         {error && <div>No se pudo cargar el catálogo: {error}</div>}
@@ -78,6 +79,7 @@ export default function AdminInstagram() {
             {history.map(post => (
               <div key={post.id} style={{ display: 'flex', gap: 12, padding: '10px 14px', borderBottom: `1px solid ${colors.border}`, fontSize: 13, alignItems: 'center' }}>
                 <span style={{ width: 90, color: colors.navy400 }}>{new Date(post.created_at).toLocaleDateString('es-DO')}</span>
+                <span style={{ width: 70, color: colors.navy400 }}>{post.target === 'story' ? 'Historia' : 'Post'}{post.source === 'autopilot' ? ' · auto' : ''}</span>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.caption.split('\n')[0]}</span>
                 {post.status === 'published'
                   ? (post.permalink ? <a href={post.permalink} target="_blank" rel="noopener noreferrer" style={{ color: colors.primary, fontWeight: 700 }}>Ver en Instagram ↗</a> : <span style={{ color: colors.primary }}>Publicado</span>)
@@ -115,6 +117,59 @@ async function loadProductImage(productId: string): Promise<HTMLImageElement | n
   } catch {
     return null
   }
+}
+
+function formatHour(hour: number): string {
+  if (hour === 0) return '12:00 am'
+  if (hour === 12) return '12:00 pm'
+  return hour < 12 ? `${hour}:00 am` : `${hour - 12}:00 pm`
+}
+
+// Daily scheduled posts (apps/api/src/admin/instagram-autopilot.cli.ts): the
+// best comparison as a feed post at noon and a price drop as a story in the
+// evening, skipped when that slot was already published by hand.
+function AutopilotSwitch() {
+  const [autopilot, setAutopilot] = useState<InstagramAutopilot | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => { adminApi.igAutopilot().then(setAutopilot).catch(() => {}) }, [])
+  if (!autopilot) return null
+
+  const toggle = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      setAutopilot(await adminApi.igSetAutopilot(!autopilot.enabled))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+  const schedule = autopilot.slots
+    .map(slot => `${slot.target === 'story' ? 'una historia' : 'un post'} a las ${formatHour(slot.hour)}`)
+    .join(' y ')
+
+  return (
+    <div style={{ marginTop: 10, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: radii.md, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', fontSize: 13 }}>
+      <div style={{ flex: '1 1 260px' }}>
+        <b>Piloto automático {autopilot.enabled ? 'activado' : 'apagado'}.</b>{' '}
+        {autopilot.enabled
+          ? `Publica cada día ${schedule} (hora de RD), con la mejor comparación o baja que no se haya publicado en los últimos días. Si ya publicaste a mano ese día, no repite. Te avisa por Discord.`
+          : `Al activarlo, publica cada día ${schedule} (hora de RD) sin que tengas que entrar.`}
+        {error && <div style={{ color: colors.error, marginTop: 4 }}>{error}</div>}
+      </div>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={saving}
+        style={{ ...btn, flex: 'none', background: autopilot.enabled ? colors.background : colors.primary, color: autopilot.enabled ? colors.navy : '#fff' }}
+      >
+        {saving ? 'Guardando…' : autopilot.enabled ? 'Apagar' : 'Activar'}
+      </button>
+    </div>
+  )
 }
 
 function ConnectionBanner({ status }: { status: InstagramStatus | null }) {

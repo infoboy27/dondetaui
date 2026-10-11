@@ -20,6 +20,11 @@ export function getRecentPriceDrop(product: Product): Omit<PriceDropNotification
   const previous = history[history.length - 2]
   const latest = history[history.length - 1]
   if (latest.price >= previous.price) return null
+  // The history is the day's lowest price across every offer ever attached to
+  // the product. When it disagrees with the offers shown now (a stale listing,
+  // or a bundle wrongly merged in) the "drop" is an artifact, not a sale.
+  const current = Math.min(...product.prices.map(offer => offer.price))
+  if (!Number.isFinite(current) || Math.abs(latest.price - current) > current * 0.02) return null
 
   return {
     oldPrice: previous.price,

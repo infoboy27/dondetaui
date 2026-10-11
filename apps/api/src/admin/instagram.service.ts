@@ -17,11 +17,20 @@ import { DATABASE_POOL } from '../database/database.module'
 const GRAPH = 'https://graph.instagram.com'
 const REFRESH_AFTER_DAYS = 30
 
+// Autopilot schedule, in Dominican time (UTC-4, no DST): the feed post at
+// noon, the story in the evening. instagram-autopilot.cli.ts posts each one at
+// most once a day, and skips a slot that was already published by hand.
+export const AUTOPILOT_SLOTS = [
+  { target: 'feed' as const, hour: Number(process.env.IG_AUTOPILOT_FEED_HOUR ?? 12) },
+  { target: 'story' as const, hour: Number(process.env.IG_AUTOPILOT_STORY_HOUR ?? 19) },
+]
+
 export interface InstagramPostRow {
   id: string
   product_id: string | null
   kind: string
   target: string
+  source: string
   caption: string
   status: string
   permalink: string | null
@@ -102,11 +111,21 @@ export class InstagramService {
 
   async history(limit = 30): Promise<InstagramPostRow[]> {
     const result = await this.pool.query<InstagramPostRow>(
-      `select id::text, product_id::text, kind, target, caption, status, permalink, error, created_at, published_at
+      `select id::text, product_id::text, kind, target, source, caption, status, permalink, error, created_at, published_at
        from instagram_posts order by created_at desc limit $1`,
       [limit],
     )
     return result.rows
+  }
+
+  async autopilot() {
+    const setting = await this.setting('ig_autopilot')
+    return { enabled: setting?.value === 'on', slots: AUTOPILOT_SLOTS }
+  }
+
+  async setAutopilot(enabled: boolean) {
+    await this.saveSetting('ig_autopilot', enabled ? 'on' : 'off')
+    return this.autopilot()
   }
 
   async image(id: string): Promise<Buffer | null> {
@@ -114,7 +133,7 @@ export class InstagramService {
     return result.rows[0]?.image ?? null
   }
 
-  async publish(input: { productId: string | null; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean }) {
+  async publish(input: { productId: string | null; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean; source?: 'manual' | 'autopilot' }) {
     const token = await this.accessToken()
     if (!token) throw new ServiceUnavailableException('Instagram no está conectado (falta IG_ACCESS_TOKEN)')
 
@@ -132,8 +151,8 @@ export class InstagramService {
     }
 
     const inserted = await this.pool.query<{ id: string }>(
-      `insert into instagram_posts(product_id, kind, target, caption, image) values ($1, $2, $3, $4, $5) returning id::text`,
-      [input.productId, input.kind, input.target, input.caption, input.jpeg],
+      `insert into instagram_posts(product_id, kind, target, caption, image, source) values ($1, $2, $3, $4, $5, $6) returning id::text`,
+      [input.productId, input.kind, input.target, input.caption, input.jpeg, input.source ?? 'manual'],
     )
     const postId = inserted.rows[0].id
     const imageUrl = `${input.publicBaseUrl}/api/ig-media/${postId}.jpg`

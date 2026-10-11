@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Res, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Res, UseGuards } from '@nestjs/common'
 import { AdminGuard } from './admin.guard'
 import { InstagramService } from './instagram.service'
 
@@ -18,6 +18,17 @@ export class InstagramAdminController {
   @Get('posts')
   history() {
     return this.instagram.history()
+  }
+
+  @Get('autopilot')
+  autopilot() {
+    return this.instagram.autopilot()
+  }
+
+  @Put('autopilot')
+  setAutopilot(@Body() body: { enabled?: boolean }) {
+    if (typeof body.enabled !== 'boolean') throw new BadRequestException('enabled debe ser true o false')
+    return this.instagram.setAutopilot(body.enabled)
   }
 
   @Post('posts')

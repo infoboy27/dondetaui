@@ -96,6 +96,7 @@ export interface InstagramPost {
   product_id: string | null
   kind: string
   target: 'feed' | 'story'
+  source?: 'manual' | 'autopilot'
   caption: string
   status: 'pending' | 'published' | 'failed'
   permalink: string | null
@@ -104,7 +105,18 @@ export interface InstagramPost {
   published_at: string | null
 }
 
+export interface InstagramAutopilot {
+  enabled: boolean
+  slots: { target: 'feed' | 'story'; hour: number }[]
+}
+
 export const adminApi = {
+  igAutopilot(): Promise<InstagramAutopilot> {
+    return apiFetch('/admin/instagram/autopilot')
+  },
+  igSetAutopilot(enabled: boolean): Promise<InstagramAutopilot> {
+    return apiFetch('/admin/instagram/autopilot', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) })
+  },
   igStatus(): Promise<InstagramStatus> {
     return apiFetch('/admin/instagram/status')
   },

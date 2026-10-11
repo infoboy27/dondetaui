@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { getPriceDropNotifications, getTopPriceDrops } from './notifications'
 import type { Product } from '../types'
 
-function product(id: string, priceHistory: { date: string; price: number }[]): Product {
+// The current offer defaults to the latest history point, as in real data.
+function product(id: string, priceHistory: { date: string; price: number }[], currentPrice = priceHistory.at(-1)?.price): Product {
   return {
     id,
     name: `Product ${id}`,
@@ -16,10 +17,23 @@ function product(id: string, priceHistory: { date: string; price: number }[]): P
     categoryId: 'electrodomesticos',
     discount: 0,
     previousPrice: 0,
-    prices: [],
+    prices: currentPrice === undefined ? [] : [{ store: 'Store', abbr: 'ST', color: '#000', price: currentPrice, shipping: 'Gratis', available: true, updated: 'hoy' }],
     priceHistory,
   }
 }
+
+describe('getTopPriceDrops sanity check', () => {
+  it('ignores a drop the current offers do not show (stale or merged listing)', () => {
+    // History says 3,695 -> 899, but the only offer shown is still 3,695.
+    const p = product('combo', [{ date: '2026-10-10', price: 3695 }, { date: '2026-10-11', price: 899 }], 3695)
+    expect(getTopPriceDrops([p])).toEqual([])
+  })
+
+  it('keeps a drop that matches the cheapest current offer', () => {
+    const p = product('real', [{ date: '2026-10-10', price: 1000 }, { date: '2026-10-11', price: 800 }], 800)
+    expect(getTopPriceDrops([p]).map(d => d.pct)).toEqual([20])
+  })
+})
 
 describe('getPriceDropNotifications', () => {
   it('ignores products the user has not alerted', () => {

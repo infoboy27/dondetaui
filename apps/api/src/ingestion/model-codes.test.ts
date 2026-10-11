@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { brandsCompatible, extractModelCodes } from './model-codes'
+import { brandsCompatible, bundlesCompatible, extractModelCodes } from './model-codes'
 
 describe('extractModelCodes', () => {
   it('finds the same code in two retailers\' differently worded names', () => {
@@ -25,6 +25,21 @@ describe('extractModelCodes', () => {
 
   it('reads a real code from the model field when the name lacks it', () => {
     expect(extractModelCodes('Abanico De Pedestal Daiwa, 18"', 'AD-WFS1820G')).toEqual(['ADWFS1820G'])
+  })
+})
+
+describe('bundlesCompatible', () => {
+  it('keeps a combo apart from the single product sharing its model code', () => {
+    expect(bundlesCompatible(
+      { name: 'Combo Licuadora Compact Mix HEBL209N + Sandwichera HESM2P155N Home Elements' },
+      { name: 'Sandwichera Home Elements 2 Placas HESM2P155N' },
+    )).toBe(false)
+  })
+
+  it('matches bundles with bundles and singles with singles', () => {
+    expect(bundlesCompatible({ name: 'Combo A' }, { name: 'Kit A' })).toBe(true)
+    expect(bundlesCompatible({ name: 'Nevera LG GT32' }, { name: 'Refrigerador LG GT32' })).toBe(true)
+    expect(bundlesCompatible({ name: 'Batidora KitchenAid KSM150' }, { name: 'KitchenAid KSM150 Artisan' })).toBe(true)
   })
 })
 
