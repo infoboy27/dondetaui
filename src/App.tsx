@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Tab } from './types'
 import type { Product } from './types'
@@ -27,6 +27,9 @@ import NotificationsScreen from './screens/NotificationsScreen'
 import LoginScreen from './screens/LoginScreen'
 import SplashOverlay from './components/SplashOverlay'
 import AuthModal from './components/AuthModal'
+
+// Owner-only portal, split into its own chunk so the public app doesn't ship it.
+const AdminApp = lazy(() => import('./screens/admin/AdminApp'))
 
 function pathToTab(pathname: string): Tab | null {
   if (pathname === '/') return 'home'
@@ -270,6 +273,28 @@ export default function App() {
     } else {
       void priceAlerts.create(productId)
     }
+  }
+
+  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) {
+    return (
+      <Suspense fallback={null}>
+        <Routes>
+          <Route
+            path="/admin/*"
+            element={
+              <AdminApp
+                user={user}
+                authLoading={authLoading}
+                authError={authError}
+                onLogin={login}
+                onRegister={register}
+                onLogout={logout}
+              />
+            }
+          />
+        </Routes>
+      </Suspense>
+    )
   }
 
   // Desktop view
