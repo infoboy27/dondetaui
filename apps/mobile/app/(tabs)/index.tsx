@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
 import AdBanner from '../../src/components/AdBanner'
+import DealCard from '../../src/components/DealCard'
 import ProductCard from '../../src/components/ProductCard'
 import PaginationControls from '../../src/components/PaginationControls'
 import { usePagination } from '../../src/hooks/usePagination'
+import { compareByRelevance, getTopComparisons } from '../../src/domain/offers'
+import { getTopPriceDrops } from '../../src/domain/notifications'
+import { formatPrice } from '../../src/domain/currency'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
 
@@ -17,7 +21,12 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(products)
+  // Same home as the web app: real comparisons first, then real price drops,
+  // then the whole catalog with multi-store products on top.
+  const sorted = useMemo(() => [...products].sort(compareByRelevance), [products])
+  const comparisons = useMemo(() => getTopComparisons(products, 10), [products])
+  const drops = useMemo(() => getTopPriceDrops(products, 10), [products])
+  const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(sorted)
 
   const load = async () => {
     setLoading(true)
@@ -85,8 +94,41 @@ export default function HomeScreen() {
           <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
         ) : (
           <>
+            {comparisons.length > 0 && (
+              <View style={styles.dealSection}>
+                <Text style={styles.sectionTitle}>Comparaciones del día</Text>
+                <Text style={styles.sectionSubtitle}>El mismo producto, más barato en otra tienda</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dealRow} style={styles.dealScroll}>
+                  {comparisons.map(entry => (
+                    <DealCard
+                      key={entry.product.id}
+                      product={entry.product}
+                      storeCount={entry.stores}
+                      highlight={{ label: `Ahorras ${formatPrice(entry.savings)}` }}
+                      onPress={() => openProduct(entry.product)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            {drops.length > 0 && (
+              <View style={styles.dealSection}>
+                <Text style={styles.sectionTitle}>Bajaron de precio</Text>
+                <Text style={styles.sectionSubtitle}>Según nuestro historial de precios</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dealRow} style={styles.dealScroll}>
+                  {drops.map(drop => (
+                    <DealCard
+                      key={drop.product.id}
+                      product={drop.product}
+                      highlight={{ label: `Bajó ${drop.pct}%`, wasPrice: drop.oldPrice }}
+                      onPress={() => openProduct(drop.product)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Precios destacados</Text>
+              <Text style={styles.sectionTitle}>Todos los productos</Text>
               <Text style={styles.count}>{products.length}</Text>
             </View>
             {pageItems.map(product => (
@@ -122,6 +164,11 @@ const styles = StyleSheet.create({
   nearbyChevron: { fontSize: 22, color: colors.navy200 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
+  sectionSubtitle: { fontSize: 12, fontFamily: fonts.body.regular, color: colors.navy400, marginTop: 2 },
+  dealSection: { marginBottom: spacing.xl },
+  // Bleed the row to the screen edges so cards scroll under the page padding.
+  dealScroll: { marginHorizontal: -spacing.xl, marginTop: spacing.md },
+  dealRow: { gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.xs },
   count: { backgroundColor: colors.primaryLight, color: colors.primary, fontFamily: fonts.display.extrabold, paddingHorizontal: 9, paddingVertical: 4, borderRadius: radii.full },
   empty: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
   errorBox: { backgroundColor: '#FFF1F2', borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.lg },
