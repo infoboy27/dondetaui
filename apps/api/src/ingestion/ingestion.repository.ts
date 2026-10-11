@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
-import { brandsCompatible, extractModelCodes } from './model-codes'
-import { normalizeBrand } from './brands'
+import { brandsCompatible, bundlesCompatible, extractModelCodes } from './model-codes'
+import { cleanBrand } from './brands'
 
 // DóndeTa is an appliance price-comparison app. Discovery is already scoped to each
 // retailer's appliance department by URL, but sites nest non-appliance subcategories
@@ -48,7 +48,7 @@ export class IngestionRepository {
   constructor(private readonly pool: Pool) {}
 
   async ingest(rawItem: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
-    const item = { ...rawItem, brand: normalizeBrand(rawItem.brand) }
+    const item = { ...rawItem, brand: cleanBrand(rawItem.brand, rawItem.name) }
     if (!isApplianceCategory(item.categoryName)) {
       throw new Error(`Skipped: category "${item.categoryName}" is not an appliance category`)
     }
@@ -249,7 +249,7 @@ export class IngestionRepository {
        limit 10`,
       [modelCodes],
     )
-    const match = candidates.rows.find(row => brandsCompatible({ brand: row.brand, name: row.name }, item))
+    const match = candidates.rows.find(row => brandsCompatible({ brand: row.brand, name: row.name }, item) && bundlesCompatible(row, item))
     return match ? { productId: match.product_id, variantId: match.variant_id } : null
   }
 

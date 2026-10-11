@@ -61,6 +61,15 @@ function normalizeText(text: string): string {
     .trim()
 }
 
+// "Combo licuadora + sandwichera" carries the sandwichera's model code, but
+// it's a different product at a different price: a bundle only matches
+// another bundle.
+const BUNDLE = /\b(combo|kit|paquete|pack|bundle)\b/i
+
+export function bundlesCompatible(a: { name: string }, b: { name: string }): boolean {
+  return BUNDLE.test(a.name) === BUNDLE.test(b.name)
+}
+
 // Retailer brand fields are unreliable (Jumbo has shipped a category slug,
 // Corripio sometimes "Abanico"), so a mismatch only blocks a match when
 // neither side's brand shows up anywhere in the other product.

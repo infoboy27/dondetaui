@@ -89,25 +89,21 @@ export default async function ProductPage({ params }: Props) {
         reviewCount: reviews.count,
       },
     }),
-    offers:
-      offers.length > 1
-        ? {
-            '@type': 'AggregateOffer',
-            priceCurrency: 'DOP',
-            lowPrice: Math.min(...offers.map(o => o.price)),
-            highPrice: Math.max(...offers.map(o => o.price)),
-            offerCount: offers.length,
-          }
-        : offers.map(offer => ({
-            '@type': 'Offer',
-            price: offer.price,
-            priceCurrency: 'DOP',
-            availability: offer.available
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-            seller: { '@type': 'Organization', name: offer.store },
-            ...(offer.url && { url: offer.url }),
-          })),
+    // Always an AggregateOffer: DóndeTa compares prices, it doesn't sell. A
+    // plain Offer with a seller made Google read single-store pages as
+    // merchant listings and ask for shipping and return policies we can't give.
+    ...(offers.length > 0 && {
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'DOP',
+        lowPrice: Math.min(...offers.map(o => o.price)),
+        highPrice: Math.max(...offers.map(o => o.price)),
+        offerCount: offers.length,
+        availability: offers.some(o => o.available)
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      },
+    }),
   }
 
   const breadcrumbLd = {

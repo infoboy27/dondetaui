@@ -8,7 +8,7 @@
 //
 // Safe to re-run: an already-merged catalog produces no groups.
 import { Pool, type PoolClient } from 'pg'
-import { brandsCompatible, extractModelCodes } from './model-codes'
+import { brandsCompatible, bundlesCompatible, extractModelCodes } from './model-codes'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
@@ -101,7 +101,7 @@ async function main() {
         const b = list[j]
         const sameRetailerOnly = [...a.retailers].every(r => b.retailers.has(r)) && [...b.retailers].every(r => a.retailers.has(r))
         if (sameRetailerOnly) continue
-        if (!key.startsWith('ean:') && !brandsCompatible(a, b)) continue
+        if (!key.startsWith('ean:') && (!brandsCompatible(a, b) || !bundlesCompatible(a, b))) continue
         parent.set(find(a.id), find(b.id))
       }
     }

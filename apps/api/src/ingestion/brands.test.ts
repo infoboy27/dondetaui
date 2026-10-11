@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { brandFromName, normalizeBrand } from './brands'
+import { brandFromName, cleanBrand, normalizeBrand } from './brands'
 
 describe('brandFromName', () => {
   it('finds a brand anywhere in the name, case-insensitively', () => {
@@ -30,5 +30,32 @@ describe('normalizeBrand', () => {
     expect(normalizeBrand('BLACK & DECKER')).toBe('Black & Decker')
     expect(normalizeBrand('ARG')).toBe('ARG')
     expect(normalizeBrand('  Argom ')).toBe('Argom')
+  })
+})
+
+describe('cleanBrand', () => {
+  it('keeps known brands and brands the name mentions', () => {
+    expect(cleanBrand('SAMSUNG', 'Nevera 20 pies RT53')).toBe('Samsung')
+    expect(cleanBrand('Nikkei', 'Licuadora Nikkei 1.5L')).toBe('Nikkei')
+  })
+
+  it('replaces garbage with the brand found in the name', () => {
+    expect(cleanBrand('dores-y-felpas', 'Lavadora Secadora Eléctrica Frigidaire 11 Kg FWD11H4G')).toBe('Frigidaire')
+    expect(cleanBrand('Argomsoporte de televisi', 'Base De Tv Argom, Full Motion, Un Brazo, 32"-55"')).toBe('Argom')
+    expect(cleanBrand('sEstufa Empotrable DRIJA Milano 60 Pro 2', 'Estufa Empotrable Drija, 24"-60Cm')).toBe('Drija')
+  })
+
+  it('trims company suffixes after a known brand', () => {
+    expect(cleanBrand('TCL Comunications Equipment', 'Televisor TCL 55" 4K')).toBe('TCL')
+  })
+
+  it('keeps explicit no-brand markers and decodes HTML entities', () => {
+    expect(cleanBrand('Sin Marca', 'Control Para Aire Universal Kt-E08')).toBe('Sin Marca')
+    expect(cleanBrand('BLACK &amp; DECKER', 'Plancha Black & Decker')).toBe('Black & Decker')
+    expect(cleanBrand('White Westinghouse', 'Lavadora White Westinghouse 14KG')).toBe('White Westinghouse')
+  })
+
+  it('keeps an unknown brand when the name has no better one', () => {
+    expect(cleanBrand('Desconocida', 'Abanico de mesa 12"')).toBe('Desconocida')
   })
 })

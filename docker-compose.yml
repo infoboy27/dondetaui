@@ -69,6 +69,8 @@ services:
       # refreshes it on its own) and the public base URL Instagram downloads
       # the post image from.
       IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
+      IG_AUTOPILOT_FEED_HOUR: ${IG_AUTOPILOT_FEED_HOUR:-12}
+      IG_AUTOPILOT_STORY_HOUR: ${IG_AUTOPILOT_STORY_HOUR:-19}
       SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
     ports:
       - "127.0.0.1:${API_PORT:-3001}:3001"
@@ -201,6 +203,30 @@ services:
       # Same image, same repo, three deployments -- not three codebases.
       - ./deploy:/deploy:ro
     entrypoint: ["/bin/sh", "/deploy/${INGESTION_LOOP_SCRIPT:-ingestion-loop.sh}"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Scheduled Instagram posts (off until switched on from /admin/instagram).
+  # Same image as the ingestion worker: it renders the cards in Chromium.
+  instagram-autopilot:
+    profiles: ["ingestion"]
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.ingestion
+    restart: unless-stopped
+    working_dir: /app
+    shm_size: "512mb"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-dondeta}
+      IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
+      IG_AUTOPILOT_FEED_HOUR: ${IG_AUTOPILOT_FEED_HOUR:-12}
+      IG_AUTOPILOT_STORY_HOUR: ${IG_AUTOPILOT_STORY_HOUR:-19}
+      DISCORD_WEBHOOK_ALERTS: ${DISCORD_WEBHOOK_ALERTS:-}
+      SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
+    volumes:
+      - ./deploy:/deploy:ro
+    entrypoint: ["/bin/sh", "/deploy/instagram-autopilot-loop.sh"]
     depends_on:
       migrate:
         condition: service_completed_successfully

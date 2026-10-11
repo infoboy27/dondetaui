@@ -31,6 +31,8 @@ while true; do
     esac
   done
 
+  # Brands a broken scraper stored on products nobody re-lists any more.
+  run repair-brands node dist/ingestion/repair-brands.cli.js
   # Safety net for cross-retailer duplicates that inline matching missed
   # (e.g. one store listed the product before the other existed).
   run merge-products node dist/ingestion/merge-products.cli.js --apply
