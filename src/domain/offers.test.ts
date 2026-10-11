@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { compareByRelevance, getBestOffer, getHighestAvailableOffer, getOfferTotal, getOutboundUrl, getSavingsRange, rankOffers } from './offers'
+import { compareByRelevance, getTopComparisons, getBestOffer, getHighestAvailableOffer, getOfferTotal, getOutboundUrl, getSavingsRange, rankOffers } from './offers'
 import type { StorePrice } from '../types'
 
 function offer(overrides: Partial<StorePrice>): StorePrice {
@@ -128,5 +128,20 @@ describe('compareByRelevance', () => {
 
   it('among single-store products, puts dearer items before accessories', () => {
     expect([part, tv].sort(compareByRelevance)).toEqual([tv, part])
+  })
+})
+
+describe('getTopComparisons', () => {
+  const single = { id: 'a', prices: [offer({ store: 'Sirena', price: 100 })] }
+  const small = { id: 'b', prices: [offer({ store: 'Jumbo', price: 1000 }), offer({ store: 'Sirena', price: 1200 })] }
+  const big = { id: 'c', prices: [offer({ store: 'Jumbo', price: 30_000 }), offer({ store: 'Sirena', price: 39_000 })] }
+  const sameStore = { id: 'd', prices: [offer({ store: 'Sirena', price: 10 }), offer({ store: 'Sirena', price: 9_000 })] }
+
+  it('keeps only real comparisons, biggest saving first', () => {
+    expect(getTopComparisons([single, small, big, sameStore]).map(e => e.product.id)).toEqual(['c', 'b'])
+  })
+
+  it('reports the saving and the number of stores', () => {
+    expect(getTopComparisons([big])[0]).toMatchObject({ savings: 9_000, stores: 2 })
   })
 })

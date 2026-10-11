@@ -44,3 +44,14 @@ export function getPriceDropNotifications(products: Product[], alertedIds: Set<s
 
   return notifications.sort((a, b) => b.pct - a.pct)
 }
+
+// "Bajaron de precio": the whole catalog's real recent drops, biggest first.
+// Drops under minPct are noise (a peso of rounding, a shipping tweak).
+export function getTopPriceDrops(products: Product[], limit = 10, minPct = 3): PriceDropNotification[] {
+  const drops: PriceDropNotification[] = []
+  for (const product of products) {
+    const drop = getRecentPriceDrop(product)
+    if (drop && drop.pct >= minPct) drops.push({ product, ...drop })
+  }
+  return drops.sort((a, b) => b.pct - a.pct).slice(0, limit)
+}

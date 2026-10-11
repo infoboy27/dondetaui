@@ -419,8 +419,9 @@ export default function App() {
                   onSearch={() => navigate('/search')}
                   onProduct={handleProduct}
                   onCategory={handleCategory}
-                  onEquipa={() => navigate('/equipa')}
                   onNearby={() => navigate('/stores/nearby')}
+                  onStore={abbr => navigate(`/stores/${abbr}`)}
+                  onViewAll={() => navigate('/results?q=')}
                   onNotifications={() => navigate('/notifications')}
                   hasNotifications={hasNotifications}
                   favoriteIds={favoriteIds}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getPriceDropNotifications } from './notifications'
+import { getPriceDropNotifications, getTopPriceDrops } from './notifications'
 import type { Product } from '../types'
 
 function product(id: string, priceHistory: { date: string; price: number }[]): Product {
@@ -67,5 +67,17 @@ describe('getPriceDropNotifications', () => {
     const notifications = getPriceDropNotifications([smallDrop, bigDrop], new Set(['small', 'big']))
 
     expect(notifications.map(n => n.product.id)).toEqual(['big', 'small'])
+  })
+})
+
+describe('getTopPriceDrops', () => {
+  it('lists real drops across the catalog, biggest first, ignoring tiny ones', () => {
+    const products = [
+      product('small', [{ date: '2026-10-01', price: 1000 }, { date: '2026-10-02', price: 990 }]),
+      product('big', [{ date: '2026-10-01', price: 1000 }, { date: '2026-10-02', price: 700 }]),
+      product('mid', [{ date: '2026-10-01', price: 1000 }, { date: '2026-10-02', price: 900 }]),
+      product('up', [{ date: '2026-10-01', price: 1000 }, { date: '2026-10-02', price: 1100 }]),
+    ]
+    expect(getTopPriceDrops(products).map(d => d.product.id)).toEqual(['big', 'mid'])
   })
 })
