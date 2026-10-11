@@ -152,12 +152,21 @@ export class InstagramService {
         form(input.target === 'story' ? { image_url: imageUrl, media_type: 'STORIES' } : { image_url: imageUrl, caption: input.caption }),
       )
 
-      for (let i = 0; i < 10; i++) {
+      // Stories take noticeably longer to process than feed photos (~30-40 s
+      // measured); publishing before FINISHED fails with "The requested
+      // resource does not exist". Stay under nginx's 90 s /api timeout.
+      const deadline = Date.now() + (input.target === 'story' ? 75_000 : 45_000)
+      let finished = false
+      while (Date.now() < deadline) {
         const state = await graph<{ status_code?: string; status?: string }>(`/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`)
-        if (state.status_code === 'FINISHED') break
+        if (state.status_code === 'FINISHED') {
+          finished = true
+          break
+        }
         if (state.status_code === 'ERROR' || state.status_code === 'EXPIRED') throw new Error(`Instagram no pudo procesar la imagen (${state.status ?? state.status_code})`)
-        await new Promise(resolve => setTimeout(resolve, 2_000))
+        await new Promise(resolve => setTimeout(resolve, 3_000))
       }
+      if (!finished) throw new Error('Instagram todavía está procesando la imagen. Intenta publicar de nuevo en un minuto.')
 
       const media = await graph<{ id: string }>(`/${igUserId}/media_publish`, form({ creation_id: container.id }))
       const details = await graph<{ permalink?: string }>(`/${media.id}?fields=permalink&access_token=${encodeURIComponent(token)}`).catch(() => ({ permalink: undefined }))
