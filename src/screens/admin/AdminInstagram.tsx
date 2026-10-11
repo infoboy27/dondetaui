@@ -8,6 +8,7 @@ import { colors, fonts, radii } from '../../design/tokens'
 import { getTopPriceDrops } from '../../domain/notifications'
 import { getTopComparisons } from '../../domain/offers'
 import type { Product } from '../../types'
+import InstagramMetrics from './InstagramMetrics'
 import { CARD_HEIGHT, CARD_WIDTH, caption, drawCard, drawStory, ensureFonts, type CardKind } from './instagramCard'
 
 interface Item {
@@ -57,6 +58,7 @@ export default function AdminInstagram() {
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 0' }}>
         <ConnectionBanner status={status} />
         {canPublish && <AutopilotSwitch />}
+        {canPublish && <div style={{ marginTop: 16 }}><InstagramMetrics /></div>}
       </div>
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 16px 60px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 18 }}>
         {error && <div>No se pudo cargar el catálogo: {error}</div>}

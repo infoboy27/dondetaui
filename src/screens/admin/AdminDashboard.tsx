@@ -6,6 +6,7 @@ import { colors, fonts, radii, shadows } from '../../design/tokens'
 import type { User } from '../../types'
 import { setToken } from '../../auth/session'
 import { DailyBars, Empty, ShareBars, formatCount } from './charts'
+import InstagramMetrics from './InstagramMetrics'
 
 const PERIODS = [7, 30, 90] as const
 
@@ -109,6 +110,8 @@ export default function AdminDashboard({ user, onLogout }: { user: User; onLogou
                 <Empty text="GA4 no está conectado todavía. Agrega GA_PROPERTY_ID y GA_SERVICE_ACCOUNT_JSON al .env del servidor (ver .env.example)." />
               )}
             </Card>
+
+            <InstagramMetrics compact />
 
             <Card title="Clics enviados a tiendas">
               <div style={grid2}>

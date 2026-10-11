@@ -106,6 +106,47 @@ export interface InstagramPost {
   published_at: string | null
 }
 
+// GET /admin/instagram/insights -- apps/api/src/admin/instagram-insights.ts.
+export interface InstagramInsightsPeriod {
+  reach: number
+  views: number
+  engaged: number
+  interactions: number
+  linkTaps: number
+  follows: number | null
+  unfollows: number | null
+}
+
+export interface InstagramInsights {
+  generatedAt: string
+  account: { username: string; followers: number; follows: number; mediaCount: number }
+  week: InstagramInsightsPeriod
+  month: InstagramInsightsPeriod
+  reachByDay: Array<{ date: string; value: number }>
+  newFollowersByDay: Array<{ date: string; value: number }>
+  followersHistory: Array<{ date: string; value: number }>
+  cities: Array<{ label: string; value: number }>
+  ages: Array<{ label: string; value: number }>
+  genders: Array<{ label: string; value: number }>
+  posts: Array<{
+    id: string
+    permalink: string | null
+    timestamp: string
+    format: 'image' | 'carousel' | 'reel'
+    title: string
+    source: 'manual' | 'autopilot' | null
+    reach: number
+    views: number
+    likes: number
+    comments: number
+    saved: number
+    shares: number
+    interactions: number
+  }>
+  byFormat: Array<{ format: 'image' | 'carousel' | 'reel'; posts: number; avgReach: number; avgViews: number; avgInteractions: number }>
+  siteVisits: number | null
+}
+
 export interface InstagramAutopilot {
   enabled: boolean
   slots: { target: 'feed' | 'story'; hour: number }[]
@@ -117,6 +158,9 @@ export const adminApi = {
   },
   igSetAutopilot(enabled: boolean): Promise<InstagramAutopilot> {
     return apiFetch('/admin/instagram/autopilot', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) })
+  },
+  igInsights(): Promise<InstagramInsights> {
+    return apiFetch('/admin/instagram/insights')
   },
   igStatus(): Promise<InstagramStatus> {
     return apiFetch('/admin/instagram/status')
