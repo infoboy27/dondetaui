@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerModule } from '@nestjs/throttler'
+import { AdminModule } from './admin/admin.module'
 import { AlertsModule } from './alerts/alerts.module'
 import { AlertingThrottlerGuard } from './common/alerting-throttler.guard'
 import { AuthModule } from './auth/auth.module'
@@ -19,6 +20,7 @@ import { StoresModule } from './stores/stores.module'
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     DatabaseModule,
     AuthModule,
+    AdminModule,
     ProductsModule,
     StoresModule,
     AlertsModule,

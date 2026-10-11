@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { recordEarlyFailure } from './ingestion-runs'
 import { IngestionRepository } from './ingestion.repository'
 import { RetailerHtmlAdapter } from './retailer.adapter'
 import { RETAILER_CONFIGS, type RetailerKey } from './retailer.config'
@@ -27,6 +28,8 @@ const adapter = new RetailerHtmlAdapter(config)
 
 const sleep = (ms: number) => ms > 0 ? new Promise(resolve => setTimeout(resolve, ms)) : Promise.resolve()
 
+let runRecorded = false
+
 async function main() {
   const discovered = explicitUrls.length
     ? { productUrls: explicitUrls, pagesVisited: 0, pagesDiscovered: 0 }
@@ -42,6 +45,7 @@ async function main() {
     [`${config.slug}-html`, urls.length],
   )
   const runId = run.rows[0].id
+  runRecorded = true
   let ingested = 0
   let skipped = 0
 
@@ -78,5 +82,9 @@ async function main() {
 }
 
 main()
-  .catch(error => { console.error(error); process.exitCode = 1 })
+  .catch(async error => {
+    if (!runRecorded) await recordEarlyFailure(pool, `${config.slug}-html`, error)
+    console.error(error)
+    process.exitCode = 1
+  })
   .finally(async () => { await pool.end() })
