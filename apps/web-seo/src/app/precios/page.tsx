@@ -42,7 +42,8 @@ export default async function PricesIndexPage() {
       </div>
       <p style={{ marginTop: 24, fontFamily: fonts.body, fontSize: 14, color: colors.navy400 }}>
         También: <a href="/comparaciones" style={{ color: colors.primary }}>mayores ahorros entre tiendas</a> ·{' '}
-        <a href="/bajas-de-precio" style={{ color: colors.primary }}>bajas de precio de la semana</a>
+        <a href="/bajas-de-precio" style={{ color: colors.primary }}>bajas de precio de la semana</a> ·{' '}
+        <a href="/black-friday" style={{ color: colors.primary }}>Black Friday: ¿la oferta es real?</a>
       </p>
       <SiteFooter />
     </main>

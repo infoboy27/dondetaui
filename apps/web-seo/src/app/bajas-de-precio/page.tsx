@@ -4,6 +4,7 @@ import { monthYear, topDrops } from '../../lib/insights'
 import { SiteFooter, SiteHeader } from '../../lib/page'
 import { Breadcrumb, DropList, Section, h1Style, leadStyle, pageMain } from '../../lib/seoBlocks'
 import { COUNTRY_NAME, SITE_URL } from '../../lib/site'
+import { colors } from '../../lib/tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,8 @@ export default async function PriceDropsPage() {
       <h1 style={h1Style}>Bajaron de precio</h1>
       <p style={leadStyle}>
         Electrodomésticos cuyo precio publicado bajó en su última actualización, según el historial que DóndeTa registra en las tiendas
-        de {COUNTRY_NAME}. Ordenados por porcentaje de baja.
+        de {COUNTRY_NAME}. Ordenados por porcentaje de baja. ¿Buscas ofertas de temporada? Mira{' '}
+        <a href="/black-friday" style={{ color: colors.primary }}>cuáles son reales en Black Friday</a>.
       </p>
       {drops.length ? (
         <Section title={`${drops.length} bajas de precio`}>

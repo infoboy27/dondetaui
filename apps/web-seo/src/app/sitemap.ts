@@ -37,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/precios`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${SITE_URL}/comparaciones`, changeFrequency: 'daily', priority: 0.85 },
     { url: `${SITE_URL}/bajas-de-precio`, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${SITE_URL}/black-friday`, changeFrequency: 'daily', priority: 0.85 },
     ...PRODUCT_TYPES
       .filter(type => products.filter(p => matchesType(p, type)).length >= 3)
       .map(type => ({ url: `${SITE_URL}/precios/${type.slug}`, changeFrequency: 'daily' as const, priority: 0.85 })),

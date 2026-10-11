@@ -3,6 +3,7 @@ export const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
 export const MAIN_NAV = [
   { href: '/', label: 'Inicio' },
   { href: '/precios', label: 'Precios' },
+  { href: '/black-friday', label: 'Black Friday' },
   { href: '/metodologia', label: 'Metodología' },
   { href: '/guias', label: 'Guías' },
   { href: '/sobre-dondeta', label: 'Sobre DóndeTa' },

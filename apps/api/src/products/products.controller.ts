@@ -10,6 +10,12 @@ export class ProductsController {
     return this.products.list()
   }
 
+  // Public: the /black-friday page ("¿la oferta es real?").
+  @Get('price-check')
+  priceCheck() {
+    return this.products.priceCheck()
+  }
+
   @Get('search')
   search(@Query('q') query = '') {
     return this.products.search(query)
