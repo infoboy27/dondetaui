@@ -84,9 +84,49 @@ export interface RetailerReport {
   avgLossGap: number
 }
 
+export interface InstagramStatus {
+  configured: boolean
+  username?: string
+  tokenUpdatedAt?: string | null
+  error?: string
+}
+
+export interface InstagramPost {
+  id: string
+  product_id: string | null
+  kind: string
+  caption: string
+  status: 'pending' | 'published' | 'failed'
+  permalink: string | null
+  error: string | null
+  created_at: string
+  published_at: string | null
+}
+
 export const adminApi = {
+  igStatus(): Promise<InstagramStatus> {
+    return apiFetch('/admin/instagram/status')
+  },
+  igHistory(): Promise<InstagramPost[]> {
+    return apiFetch('/admin/instagram/posts')
+  },
+  igPublish(input: { productId: string; kind: 'comparison' | 'drop'; caption: string; imageBase64: string; force?: boolean }): Promise<{ id: string; status: string; permalink: string | null }> {
+    return apiFetch('/admin/instagram/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })
+  },
   me(): Promise<{ admin: boolean }> {
     return apiFetch('/admin/me')
+  },
+  mfaSetup(): Promise<{ secret: string; otpauthUrl: string }> {
+    return apiFetch('/admin/mfa/setup', { method: 'POST' })
+  },
+  mfaEnable(code: string): Promise<{ token: string }> {
+    return apiFetch('/admin/mfa/enable', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+  },
+  mfaVerify(code: string): Promise<{ token: string }> {
+    return apiFetch('/admin/mfa/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+  },
+  logoutAll(): Promise<{ token: string }> {
+    return apiFetch('/admin/mfa/logout-all', { method: 'POST' })
   },
   overview(days: number): Promise<AdminOverview> {
     return apiFetch(`/admin/overview?days=${days}`)

@@ -65,6 +65,11 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       GA_PROPERTY_ID: ${GA_PROPERTY_ID:-}
       GA_SERVICE_ACCOUNT_JSON: ${GA_SERVICE_ACCOUNT_JSON:-}
+      # Instagram publishing from /admin/instagram (long-lived token; the API
+      # refreshes it on its own) and the public base URL Instagram downloads
+      # the post image from.
+      IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
+      SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
     ports:
       - "127.0.0.1:${API_PORT:-3001}:3001"
     depends_on:
