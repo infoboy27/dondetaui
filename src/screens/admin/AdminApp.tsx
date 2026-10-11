@@ -9,6 +9,8 @@ import type { User } from '../../types'
 import AdminDashboard from './AdminDashboard'
 import AdminReport from './AdminReport'
 import AdminInstagram from './AdminInstagram'
+import AdminMfa from './AdminMfa'
+import { setToken } from '../../auth/session'
 
 interface Props {
   user: User | null
@@ -19,13 +21,14 @@ interface Props {
   onLogout: () => void
 }
 
-type Access = 'checking' | 'granted' | 'denied' | 'error'
+type Access = 'checking' | 'granted' | 'denied' | 'mfa_setup' | 'mfa_verify' | 'error'
 
 // /admin/*: the owner's portal -- metrics plus a printable proposal per store.
 // Rendered full-screen outside the phone frame / DesktopView. The API decides
 // who gets in (ADMIN_EMAILS); this only asks it.
 export default function AdminApp({ user, authLoading, authError, onLogin, onRegister, onLogout }: Props) {
   const [access, setAccess] = useState<Access>('checking')
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!user) return
@@ -33,9 +36,18 @@ export default function AdminApp({ user, authLoading, authError, onLogin, onRegi
     setAccess('checking')
     adminApi.me()
       .then(() => { if (!cancelled) setAccess('granted') })
-      .catch(error => { if (!cancelled) setAccess(error instanceof ApiError && error.status === 403 ? 'denied' : 'error') })
+      .catch(error => {
+        if (cancelled) return
+        if (error instanceof ApiError && error.status === 401) return onLogout() // expired 12 h admin session
+        if (error instanceof ApiError && error.status === 403) {
+          setAccess(error.message === 'mfa_setup_required' ? 'mfa_setup' : error.message === 'mfa_required' ? 'mfa_verify' : 'denied')
+          return
+        }
+        setAccess('error')
+      })
     return () => { cancelled = true }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, attempt])
 
   if (!appConfig.useApi) {
     return <Gate title="Portal de administrador">Este portal necesita la API en vivo (VITE_USE_API=true).</Gate>
@@ -52,6 +64,18 @@ export default function AdminApp({ user, authLoading, authError, onLogin, onRegi
   }
 
   if (access === 'checking') return <Gate title="Portal de administrador">Verificando acceso…</Gate>
+  if (access === 'mfa_setup' || access === 'mfa_verify') {
+    return (
+      <AdminMfa
+        mode={access === 'mfa_setup' ? 'setup' : 'verify'}
+        onLogout={onLogout}
+        onDone={token => {
+          setToken(token)
+          setAttempt(n => n + 1)
+        }}
+      />
+    )
+  }
   if (access !== 'granted') {
     return (
       <Gate title="Sin acceso">

@@ -1,12 +1,16 @@
 import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
+import type { NestExpressApplication } from '@nestjs/platform-express'
 import { ValidationPipe } from '@nestjs/common'
 import helmet from 'helmet'
 import { AppModule } from './app.module'
 import { AlertingExceptionFilter } from './common/alerting-exception.filter'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule)
+  // Instagram posts upload a ~0.5 MB JPEG from the admin portal; the 100 KB
+  // default would reject them.
+  app.useBodyParser('json', { limit: '6mb' })
 
   // Requests arrive through two proxy hops in production (Traefik, then the
   // `web` container's nginx, see deploy/nginx.conf's /api/ location) --

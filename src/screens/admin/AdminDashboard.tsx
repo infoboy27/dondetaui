@@ -4,9 +4,19 @@ import { adminApi, type AdminOverview } from '../../api/admin'
 import StoreLogo from '../../components/StoreLogo'
 import { colors, fonts, radii, shadows } from '../../design/tokens'
 import type { User } from '../../types'
+import { setToken } from '../../auth/session'
 import { DailyBars, Empty, ShareBars, formatCount } from './charts'
 
 const PERIODS = [7, 30, 90] as const
+
+// Non-blocking confirmation (no window.alert).
+function alertNote(text: string) {
+  const note = document.createElement('div')
+  note.textContent = text
+  Object.assign(note.style, { position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', background: '#0F1D2D', color: '#fff', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', zIndex: '1000' })
+  document.body.appendChild(note)
+  setTimeout(() => note.remove(), 3000)
+}
 
 export default function AdminDashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [days, setDays] = useState<number>(30)
@@ -45,6 +55,18 @@ export default function AdminDashboard({ user, onLogout }: { user: User; onLogou
             <Link to="/admin/instagram" style={{ color: colors.primary, fontWeight: 700 }}>📸 Instagram</Link>
             <a href="/" style={{ color: colors.navy400 }}>Ver sitio</a>
             <span>{user.email}</span>
+            <button
+              type="button"
+              title="Cierra el portal en cualquier otro navegador o dispositivo"
+              onClick={async () => {
+                const { token } = await adminApi.logoutAll()
+                setToken(token)
+                alertNote('Listo: se cerraron todas las demás sesiones del portal.')
+              }}
+              style={{ background: 'none', border: 'none', color: colors.navy400, cursor: 'pointer', fontSize: 13 }}
+            >
+              Cerrar otras sesiones
+            </button>
             <button type="button" onClick={onLogout} style={{ background: 'none', border: 'none', color: colors.primary, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Salir</button>
           </div>
         </div>
