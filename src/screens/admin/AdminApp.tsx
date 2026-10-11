@@ -8,6 +8,7 @@ import { colors, fonts, radii, shadows } from '../../design/tokens'
 import type { User } from '../../types'
 import AdminDashboard from './AdminDashboard'
 import AdminReport from './AdminReport'
+import AdminInstagram from './AdminInstagram'
 
 interface Props {
   user: User | null
@@ -67,6 +68,7 @@ export default function AdminApp({ user, authLoading, authError, onLogin, onRegi
   return (
     <Routes>
       <Route path="reporte/:slug" element={<AdminReport />} />
+      <Route path="instagram" element={<AdminInstagram />} />
       <Route path="*" element={<AdminDashboard user={user} onLogout={onLogout} />} />
     </Routes>
   )

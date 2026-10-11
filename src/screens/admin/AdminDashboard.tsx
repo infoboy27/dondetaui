@@ -42,6 +42,7 @@ export default function AdminDashboard({ user, onLogout }: { user: User; onLogou
             ))}
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center', fontSize: 13, color: colors.navy400 }}>
+            <Link to="/admin/instagram" style={{ color: colors.primary, fontWeight: 700 }}>📸 Instagram</Link>
             <a href="/" style={{ color: colors.navy400 }}>Ver sitio</a>
             <span>{user.email}</span>
             <button type="button" onClick={onLogout} style={{ background: 'none', border: 'none', color: colors.primary, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Salir</button>
