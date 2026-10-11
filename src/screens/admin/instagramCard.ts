@@ -216,3 +216,59 @@ export function caption(product: Product, kind: CardKind, site: string): string 
     tags,
   ].join('\n')
 }
+
+// 9:16 Story built from the feed card: the same 1080x1350 card centered on a
+// brand-green background, with the logo line on top and a call to action below.
+export const STORY_HEIGHT = 1920
+
+export function drawStory(story: HTMLCanvasElement, card: HTMLCanvasElement, kind: CardKind, site: string) {
+  story.width = CARD_WIDTH
+  story.height = STORY_HEIGHT
+  const ctx = story.getContext('2d')!
+  const grad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT)
+  grad.addColorStop(0, C.green)
+  grad.addColorStop(1, C.greenDark)
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, CARD_WIDTH, STORY_HEIGHT)
+
+  ctx.fillStyle = '#fff'
+  ctx.textAlign = 'center'
+  ctx.font = '700 64px Poppins'
+  ctx.fillText(kind.type === 'comparison' ? "¿Dónde 'ta más barato?" : '¡Bajó de precio!', CARD_WIDTH / 2, 180)
+  ctx.font = '500 36px "DM Sans"'
+  ctx.globalAlpha = 0.9
+  ctx.fillText('Comparamos precios de las tiendas de RD por ti', CARD_WIDTH / 2, 240)
+  ctx.globalAlpha = 1
+
+  // The card itself, slightly inset, with rounded corners and a shadow.
+  const inset = 40
+  const w = CARD_WIDTH - inset * 2
+  const h = w * (CARD_HEIGHT / CARD_WIDTH)
+  const x = inset
+  const y = 300
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,0.25)'
+  ctx.shadowBlur = 50
+  ctx.shadowOffsetY = 20
+  roundRect(ctx, x, y, w, h, 44)
+  ctx.fillStyle = '#fff'
+  ctx.fill()
+  ctx.restore()
+  ctx.save()
+  roundRect(ctx, x, y, w, h, 44)
+  ctx.clip()
+  ctx.drawImage(card, x, y, w, h)
+  ctx.restore()
+
+  // Call to action
+  const ctaY = y + h + 110
+  ctx.font = '700 46px Poppins'
+  const cta = `Búscalo en ${site}`
+  const ctaW = ctx.measureText(cta).width + 100
+  roundRect(ctx, (CARD_WIDTH - ctaW) / 2, ctaY - 66, ctaW, 100, 50)
+  ctx.fillStyle = '#fff'
+  ctx.fill()
+  ctx.fillStyle = C.greenDark
+  ctx.fillText(cta, CARD_WIDTH / 2, ctaY + 2)
+  ctx.textAlign = 'left'
+}

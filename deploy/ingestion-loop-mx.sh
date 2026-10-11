@@ -14,10 +14,20 @@ run() {
   fi
 }
 
+RETAILERS="elektra chedraui sears-mx"
+
 while true; do
-  run elektra node dist/ingestion/vtex-api.cli.js elektra
-  run chedraui node dist/ingestion/vtex-api.cli.js chedraui
-  run sears-mx node dist/ingestion/sears.cli.js
+  # Oldest data first (and close runs a restart cut off) -- deploys restart
+  # this loop, and a fixed order starved the retailers at the end of it.
+  ORDER=$(node dist/ingestion/ingestion-order.cli.js $RETAILERS 2>/dev/null) || ORDER=$RETAILERS
+  [ -n "$ORDER" ] || ORDER=$RETAILERS
+  for retailer in $ORDER; do
+    case $retailer in
+      elektra) run elektra node dist/ingestion/vtex-api.cli.js elektra ;;
+      chedraui) run chedraui node dist/ingestion/vtex-api.cli.js chedraui ;;
+      sears-mx) run sears-mx node dist/ingestion/sears.cli.js ;;
+    esac
+  done
 
   # Per-retailer summary; posts to Discord when a scraper broke or shrank.
   run report node dist/ingestion/ingestion-report.cli.js

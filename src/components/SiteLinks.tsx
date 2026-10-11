@@ -3,6 +3,9 @@
 // site info to be reachable from the home page; this keeps that a single
 // quiet line inside the existing footer instead of a separate landing page.
 const LINKS = [
+  { href: '/precios', label: 'Precios' },
+  { href: '/comparaciones', label: 'Comparaciones' },
+  { href: '/bajas-de-precio', label: 'Bajas de precio' },
   { href: '/guias', label: 'Guías' },
   { href: '/metodologia', label: 'Metodología' },
   { href: '/sobre-dondeta', label: 'Sobre DóndeTa' },

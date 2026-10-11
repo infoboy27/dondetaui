@@ -21,6 +21,7 @@ export interface InstagramPostRow {
   id: string
   product_id: string | null
   kind: string
+  target: string
   caption: string
   status: string
   permalink: string | null
@@ -101,7 +102,7 @@ export class InstagramService {
 
   async history(limit = 30): Promise<InstagramPostRow[]> {
     const result = await this.pool.query<InstagramPostRow>(
-      `select id::text, product_id::text, kind, caption, status, permalink, error, created_at, published_at
+      `select id::text, product_id::text, kind, target, caption, status, permalink, error, created_at, published_at
        from instagram_posts order by created_at desc limit $1`,
       [limit],
     )
@@ -113,7 +114,7 @@ export class InstagramService {
     return result.rows[0]?.image ?? null
   }
 
-  async publish(input: { productId: string | null; kind: 'comparison' | 'drop'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean }) {
+  async publish(input: { productId: string | null; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; jpeg: Buffer; publicBaseUrl: string; force?: boolean }) {
     const token = await this.accessToken()
     if (!token) throw new ServiceUnavailableException('Instagram no está conectado (falta IG_ACCESS_TOKEN)')
 
@@ -121,16 +122,18 @@ export class InstagramService {
     // most likely a double click.
     if (input.productId && !input.force) {
       const recent = await this.pool.query(
-        `select 1 from instagram_posts where product_id = $1 and kind = $2 and status = 'published'
+        `select 1 from instagram_posts where product_id = $1 and kind = $2 and target = $3 and status = 'published'
            and published_at > now() - interval '24 hours' limit 1`,
-        [input.productId, input.kind],
+        [input.productId, input.kind, input.target],
       )
-      if (recent.rows.length) throw new ConflictException('Este producto ya se publicó en las últimas 24 horas')
+      if (recent.rows.length) {
+        throw new ConflictException(input.target === 'story' ? 'Esta historia ya se publicó en las últimas 24 horas' : 'Este producto ya se publicó en las últimas 24 horas')
+      }
     }
 
     const inserted = await this.pool.query<{ id: string }>(
-      `insert into instagram_posts(product_id, kind, caption, image) values ($1, $2, $3, $4) returning id::text`,
-      [input.productId, input.kind, input.caption, input.jpeg],
+      `insert into instagram_posts(product_id, kind, target, caption, image) values ($1, $2, $3, $4, $5) returning id::text`,
+      [input.productId, input.kind, input.target, input.caption, input.jpeg],
     )
     const postId = inserted.rows[0].id
     const imageUrl = `${input.publicBaseUrl}/api/ig-media/${postId}.jpg`
@@ -143,7 +146,11 @@ export class InstagramService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ ...fields, access_token: token }),
       })
-      const container = await graph<{ id: string }>(`/${igUserId}/media`, form({ image_url: imageUrl, caption: input.caption }))
+      // Stories take no caption; the feed post carries the text.
+      const container = await graph<{ id: string }>(
+        `/${igUserId}/media`,
+        form(input.target === 'story' ? { image_url: imageUrl, media_type: 'STORIES' } : { image_url: imageUrl, caption: input.caption }),
+      )
 
       for (let i = 0; i < 10; i++) {
         const state = await graph<{ status_code?: string; status?: string }>(`/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`)

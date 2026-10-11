@@ -8,7 +8,7 @@ import { colors, fonts, radii } from '../../design/tokens'
 import { getTopPriceDrops } from '../../domain/notifications'
 import { getTopComparisons } from '../../domain/offers'
 import type { Product } from '../../types'
-import { CARD_HEIGHT, CARD_WIDTH, caption, drawCard, ensureFonts, type CardKind } from './instagramCard'
+import { CARD_HEIGHT, CARD_WIDTH, caption, drawCard, drawStory, ensureFonts, type CardKind } from './instagramCard'
 
 interface Item {
   product: Product
@@ -34,7 +34,7 @@ export default function AdminInstagram() {
   }, [])
   const canPublish = Boolean(status?.configured && status.username)
   const publishedToday = new Set(
-    history.filter(p => p.status === 'published' && p.published_at && Date.now() - Date.parse(p.published_at) < 86_400_000).map(p => `${p.kind}-${p.product_id}`),
+    history.filter(p => p.status === 'published' && p.published_at && Date.now() - Date.parse(p.published_at) < 86_400_000).map(p => `${p.target}-${p.kind}-${p.product_id}`),
   )
 
   const items = useMemo<Item[]>(() => {
@@ -66,7 +66,7 @@ export default function AdminInstagram() {
             key={`${item.kind.type}-${item.product.id}`}
             item={item}
             canPublish={canPublish}
-            alreadyPublished={publishedToday.has(`${item.kind.type}-${item.product.id}`)}
+            publishedToday={publishedToday}
             onPublished={refreshHistory}
           />
         ))}
@@ -129,37 +129,44 @@ function ConnectionBanner({ status }: { status: InstagramStatus | null }) {
   return <div style={{ ...base, background: colors.accentLight, color: colors.navy }}>Instagram no está conectado todavía: puedes descargar las imágenes y publicarlas a mano. Para publicar desde aquí falta <code>IG_ACCESS_TOKEN</code> en el servidor.</div>
 }
 
-function CardPreview({ item, canPublish, alreadyPublished, onPublished }: {
+function CardPreview({ item, canPublish, publishedToday, onPublished }: {
   item: Item
   canPublish: boolean
-  alreadyPublished: boolean
+  publishedToday: Set<string>
   onPublished: () => void
 }) {
+  const done = (target: 'feed' | 'story') => publishedToday.has(`${target}-${item.kind.type}-${item.product.id}`)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [ready, setReady] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [confirming, setConfirming] = useState(false)
+  const [confirming, setConfirming] = useState<'feed' | 'story' | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; text: string; link?: string | null } | null>(null)
 
-  const publish = async () => {
+  const storyCanvas = () => {
+    const story = document.createElement('canvas')
+    if (canvasRef.current) drawStory(story, canvasRef.current, item.kind, SITE)
+    return story
+  }
+
+  const publish = async (target: 'feed' | 'story') => {
     const canvas = canvasRef.current
     if (!canvas) return
     setPublishing(true)
     setResult(null)
     try {
-      // Instagram only takes JPEG for feed photos.
-      const imageBase64 = canvas.toDataURL('image/jpeg', 0.92)
+      // Instagram only takes JPEG.
+      const imageBase64 = (target === 'story' ? storyCanvas() : canvas).toDataURL('image/jpeg', 0.92)
       const kind = item.kind.type
-      const response = await adminApi.igPublish({ productId: item.product.id, kind, caption: text, imageBase64 })
-      setResult({ ok: true, text: '¡Publicado!', link: response.permalink })
+      const response = await adminApi.igPublish({ productId: item.product.id, kind, target, caption: text, imageBase64 })
+      setResult({ ok: true, text: target === 'story' ? '¡Historia publicada!' : '¡Publicado!', link: response.permalink })
       onPublished()
     } catch (err) {
       setResult({ ok: false, text: err instanceof Error ? err.message : String(err) })
       onPublished()
     } finally {
       setPublishing(false)
-      setConfirming(false)
+      setConfirming(null)
     }
   }
   const text = caption(item.product, item.kind, SITE)
@@ -176,13 +183,13 @@ function CardPreview({ item, canPublish, alreadyPublished, onPublished }: {
     return () => { cancelled = true }
   }, [item])
 
-  const download = () => {
+  const download = (target: 'feed' | 'story') => {
     const canvas = canvasRef.current
     if (!canvas) return
     const link = document.createElement('a')
     const slug = (item.product.slug || item.product.id).slice(0, 60)
-    link.download = `dondeta-${item.kind.type === 'comparison' ? 'comparacion' : 'baja'}-${slug}.png`
-    link.href = canvas.toDataURL('image/png')
+    link.download = `dondeta-${target === 'story' ? 'historia-' : ''}${item.kind.type === 'comparison' ? 'comparacion' : 'baja'}-${slug}.png`
+    link.href = (target === 'story' ? storyCanvas() : canvas).toDataURL('image/png')
     link.click()
   }
 
@@ -203,8 +210,11 @@ function CardPreview({ item, canPublish, alreadyPublished, onPublished }: {
         style={{ width: '100%', aspectRatio: `${CARD_WIDTH} / ${CARD_HEIGHT}`, borderRadius: radii.md, background: colors.background }}
       />
       <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={download} disabled={!ready} style={{ ...btn, background: colors.primary, color: '#fff', opacity: ready ? 1 : 0.5 }}>
-          Descargar PNG
+        <button type="button" onClick={() => download('feed')} disabled={!ready} style={{ ...btn, background: colors.primary, color: '#fff', opacity: ready ? 1 : 0.5 }}>
+          Descargar post
+        </button>
+        <button type="button" onClick={() => download('story')} disabled={!ready} style={{ ...btn, background: colors.primary, color: '#fff', opacity: ready ? 1 : 0.5 }}>
+          Descargar historia
         </button>
         <button type="button" onClick={copy} style={{ ...btn, background: colors.primaryLight, color: colors.primaryDark }}>
           {copied ? '¡Copiado!' : 'Copiar texto'}
@@ -213,23 +223,28 @@ function CardPreview({ item, canPublish, alreadyPublished, onPublished }: {
       {canPublish && (
         confirming ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
-            <span style={{ flex: 1 }}>¿Publicar ahora en Instagram?</span>
-            <button type="button" onClick={publish} disabled={publishing} style={{ ...btn, flex: 'none', background: colors.primary, color: '#fff' }}>
+            <span style={{ flex: 1 }}>{confirming === 'story' ? '¿Publicar como historia?' : '¿Publicar en el feed?'}</span>
+            <button type="button" onClick={() => publish(confirming)} disabled={publishing} style={{ ...btn, flex: 'none', background: colors.primary, color: '#fff' }}>
               {publishing ? 'Publicando…' : 'Sí, publicar'}
             </button>
-            <button type="button" onClick={() => setConfirming(false)} disabled={publishing} style={{ ...btn, flex: 'none', background: colors.background, color: colors.navy }}>
+            <button type="button" onClick={() => setConfirming(null)} disabled={publishing} style={{ ...btn, flex: 'none', background: colors.background, color: colors.navy }}>
               No
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            disabled={!ready || alreadyPublished}
-            style={{ ...btn, background: alreadyPublished ? colors.background : 'linear-gradient(90deg, #833AB4, #E1306C, #F77737)', color: alreadyPublished ? colors.navy400 : '#fff', opacity: ready ? 1 : 0.5 }}
-          >
-            {alreadyPublished ? 'Ya publicado hoy' : '📸 Publicar en Instagram'}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['feed', 'story'] as const).map(target => (
+              <button
+                key={target}
+                type="button"
+                onClick={() => setConfirming(target)}
+                disabled={!ready || done(target)}
+                style={{ ...btn, background: done(target) ? colors.background : 'linear-gradient(90deg, #833AB4, #E1306C, #F77737)', color: done(target) ? colors.navy400 : '#fff', opacity: ready ? 1 : 0.5 }}
+              >
+                {done(target) ? (target === 'story' ? 'Historia publicada hoy' : 'Publicado hoy') : target === 'story' ? '📱 Publicar historia' : '📸 Publicar post'}
+              </button>
+            ))}
+          </div>
         )
       )}
       {result && (
