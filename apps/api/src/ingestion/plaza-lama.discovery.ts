@@ -116,11 +116,18 @@ async function delay(ms: number) {
 // Plaza Lama's catalog is a Next.js app that renders client-side — a plain fetch()
 // only gets the pre-hydration shell (no product links at all). Render it with a real
 // browser page instead and read the DOM after it settles.
+//
+// Waits for product links to show up rather than for 'networkidle': the page
+// keeps analytics/ads connections open, and on the slower server that never
+// settled within the timeout, so every category page was skipped and the run
+// "found no product URLs" (it worked fine locally).
 async function renderHtml(page: Page, url: string): Promise<string> {
-  const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 })
+  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45_000 })
   if (response && !response.ok()) {
     throw new Error(`Plaza Lama discovery request failed (${response.status()}) for ${url}`)
   }
+  await page.waitForSelector('a[href*="/p/"]', { timeout: 25_000 }).catch(() => undefined)
+  await page.waitForTimeout(1_000)
   return page.content()
 }
 
@@ -149,6 +156,7 @@ export class PlazaLamaCatalogDiscovery {
     const requestDelayMs = Math.max(0, options.requestDelayMs ?? 500)
     const seeds = options.seedUrls?.length ? options.seedUrls : DEFAULT_SEEDS
     const productUrls = new Set<string>()
+    const errors: string[] = []
     let visited = 0
 
     for (const seed of seeds) {
@@ -164,10 +172,20 @@ export class PlazaLamaCatalogDiscovery {
             if (isLikelyProductUrl(link)) productUrls.add(link)
           }
         } catch (error) {
-          console.warn(`[plaza-lama] discovery skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
+          const message = error instanceof Error ? error.message : String(error)
+          if (errors.length < 3) errors.push(message)
+          console.warn(`[plaza-lama] discovery skipped ${url}: ${message}`)
         }
         await delay(requestDelayMs)
       }
+    }
+
+    if (!productUrls.size) {
+      const title = await this.page.title().catch(() => '')
+      throw new Error(
+        `Plaza Lama discovery found no product URLs after ${visited} pages` +
+        (errors.length ? `; errors: ${errors.join(' | ')}` : `; last page title: "${title}"`),
+      )
     }
 
     return {

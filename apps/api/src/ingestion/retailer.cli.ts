@@ -48,6 +48,7 @@ async function main() {
   runRecorded = true
   let ingested = 0
   let skipped = 0
+  const skipReasons: string[] = []
 
   try {
     for (const [index, url] of urls.entries()) {
@@ -58,6 +59,7 @@ async function main() {
         console.log(`[${config.slug}] ${ingested}/${urls.length} ${item.externalSku} ${item.name} ${formatPrice(item.price)}`)
       } catch (error) {
         skipped += 1
+        if (skipReasons.length < 3) skipReasons.push(error instanceof Error ? error.message : String(error))
         console.warn(`[${config.slug}] skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
       }
       if (index < urls.length - 1) await sleep(productDelayMs)
@@ -66,10 +68,13 @@ async function main() {
     const retailer = await pool.query<{ id: string }>('select id::text from retailers where slug = $1 limit 1', [config.slug])
     await pool.query(
       `update ingestion_runs
-       set retailer_id = $2, status = 'completed', items_ingested = $3, finished_at = now(),
-           error_message = case when $4::int > 0 then $4::text || ' candidates skipped' else null end
+       set retailer_id = $2, status = $5, items_ingested = $3, finished_at = now(),
+           error_message = case when $4::int > 0 then $4::text || ' candidates skipped. ' || $6 else null end
        where id = $1`,
-      [runId, retailer.rows[0]?.id ?? null, ingested, skipped],
+      // Nothing ingested is a failure even if every page loaded: it shows up
+      // in /api/health/ingestion with the first skip reasons instead of
+      // passing as "completed, 0 products".
+      [runId, retailer.rows[0]?.id ?? null, ingested, skipped, ingested > 0 ? 'completed' : 'failed', skipReasons.join(' | ').slice(0, 1_000)],
     )
     console.log(`[${config.slug}] completed ${ingested}/${urls.length}; skipped=${skipped}; discoveryPages=${discovered.pagesVisited}`)
   } catch (error) {
