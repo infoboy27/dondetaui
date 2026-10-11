@@ -85,10 +85,86 @@ export function extractLinks(html: string, baseUrl: string): string[] {
   return [...links]
 }
 
+// The storefront lists categories through its own Bloomreach search proxy; the
+// rendered listing only ever shows the first 12 products. Asking the proxy by
+// category id returns the whole category in one call. Línea blanca alone is only
+// ~50 products in the DR, so small appliances and TVs are included too.
+const SEARCH_API = `${PRICESMART_ORIGIN}/api/br_discovery/getProductsByKeyword`
+const API_CATEGORIES = ['M10D43', 'S20D23', 'E10D24015'] // Línea blanca, Electrodomésticos, Televisores
+const API_PAGE_SIZE = 200
+
+interface SearchDoc {
+  pid?: string
+  slug?: string
+  availability_DO?: string | boolean
+}
+
+export function productUrlFromDoc(doc: SearchDoc): string | null {
+  if (!doc.pid || !doc.slug) return null
+  return `${PRICESMART_ORIGIN}${PRODUCT_PREFIX}${encodeURIComponent(doc.slug)}/${encodeURIComponent(doc.pid)}`
+}
+
+async function searchCategory(category: string, start: number): Promise<{ numFound: number; docs: SearchDoc[] }> {
+  const response = await fetch(SEARCH_API, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'user-agent': 'DondeTaPriceIndexer/0.3 (+https://dondeta.app)' },
+    body: JSON.stringify([{
+      url: `${PRICESMART_ORIGIN}/es-do/`,
+      start,
+      q: category,
+      fq: [],
+      search_type: 'category',
+      rows: API_PAGE_SIZE,
+      account_id: '7024',
+      auth_key: 'ev7libhybjg5h1d1',
+      request_id: Date.now(),
+      domain_key: 'pricesmart_bloomreach_io_es',
+      fl: 'pid,slug,availability_DO',
+      view_id: 'DO',
+    }]),
+    signal: AbortSignal.timeout(20_000),
+  })
+  if (!response.ok) throw new Error(`PriceSmart search API failed (${response.status}) for ${category}`)
+  const body = await response.json() as { response?: { numFound?: number; docs?: SearchDoc[] } }
+  return { numFound: body.response?.numFound ?? 0, docs: body.response?.docs ?? [] }
+}
+
 export class PriceSmartCatalogDiscovery {
   constructor(private readonly page: Page) {}
 
   async discover(options: PriceSmartDiscoveryOptions = {}): Promise<PriceSmartDiscoveryResult> {
+    if (!options.seedUrls?.length) {
+      try {
+        const result = await this.discoverViaApi(options)
+        if (result.productUrls.length) return result
+        console.warn('[pricesmart] search API returned no products; falling back to rendered listing')
+      } catch (error) {
+        console.warn(`[pricesmart] search API failed, falling back to rendered listing: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    return this.discoverRendered(options)
+  }
+
+  private async discoverViaApi(options: PriceSmartDiscoveryOptions): Promise<PriceSmartDiscoveryResult> {
+    const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
+    const productUrls = new Set<string>()
+    let calls = 0
+    for (const category of API_CATEGORIES) {
+      for (let start = 0; productUrls.size < maxProducts; start += API_PAGE_SIZE) {
+        const { numFound, docs } = await searchCategory(category, start)
+        calls += 1
+        for (const doc of docs) {
+          if (String(doc.availability_DO) === 'false') continue
+          const url = productUrlFromDoc(doc)
+          if (url) productUrls.add(url)
+        }
+        if (!docs.length || start + API_PAGE_SIZE >= numFound) break
+      }
+    }
+    return { productUrls: [...productUrls].slice(0, maxProducts), categoryPagesVisited: calls, categoryPagesDiscovered: API_CATEGORIES.length }
+  }
+
+  private async discoverRendered(options: PriceSmartDiscoveryOptions): Promise<PriceSmartDiscoveryResult> {
     const maxCategoryPages = Math.max(1, options.maxCategoryPages ?? 150)
     const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
     const requestDelayMs = Math.max(0, options.requestDelayMs ?? 500)

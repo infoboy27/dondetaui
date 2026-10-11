@@ -1,22 +1,6 @@
 import type { Page } from 'playwright'
 import type { NormalizedRetailerItem } from './ingestion.types'
-
-const KNOWN_BRANDS = [
-  'Samsung',
-  'LG',
-  'Tecnomaster',
-  'Frigidaire',
-  'Daiwa',
-  'Sharp',
-  'Drija',
-  'Dimensions',
-  'Sensibo',
-  'Whirlpool',
-  'Mabe',
-  'Oster',
-  'Black+Decker',
-  'Hamilton Beach',
-]
+import { brandFromName } from './brands'
 
 function decodeHtml(value: string): string {
   return value
@@ -133,8 +117,7 @@ function extractBrand(name: string, html: string): string {
   ])
   if (explicit && explicit.length <= 40) return explicit.trim()
 
-  const known = KNOWN_BRANDS.find(brand => new RegExp(`\\b${brand.replace('+', '\\+')}\\b`, 'i').test(name))
-  return known ?? 'Desconocida'
+  return brandFromName(name) ?? 'Desconocida'
 }
 
 function extractModel(name: string, html: string, ean?: string): string {

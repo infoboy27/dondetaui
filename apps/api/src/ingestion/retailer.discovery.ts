@@ -93,6 +93,7 @@ export class RetailerCatalogDiscovery {
   constructor(private readonly config: RetailerConfig) {}
 
   async discover(options: DiscoveryOptions = {}): Promise<DiscoveryResult> {
+    if (this.config.pagination) return this.discoverPaginated(this.config.pagination, options)
     const maxPages = Math.max(1, options.maxPages ?? 150)
     const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
     const requestDelayMs = Math.max(0, options.requestDelayMs ?? 500)
@@ -126,5 +127,54 @@ export class RetailerCatalogDiscovery {
     }
 
     return { productUrls: [...products], pagesVisited: visited.size, pagesDiscovered: queued.size }
+  }
+
+  private async discoverPaginated(
+    pagination: NonNullable<RetailerConfig['pagination']>,
+    options: DiscoveryOptions,
+  ): Promise<DiscoveryResult> {
+    const maxPages = Math.max(1, options.maxPages ?? 300)
+    const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
+    const requestDelayMs = Math.max(0, options.requestDelayMs ?? 500)
+    // Keyed by the last path segment (<slug>-<sku>): the same product is linked
+    // both bare and under its category path depending on the listing page.
+    const products = new Map<string, string>()
+    let visited = 0
+
+    for (const seed of this.config.seedUrls) {
+      // Without a reported total, keep going until a page adds nothing new.
+      let pages = pagination.totalPattern ? 1 : pagination.maxPagesPerSeed
+      for (let n = 1; n <= pages; n++) {
+        if (visited >= maxPages || products.size >= maxProducts) break
+        const url = new URL(seed)
+        if (n > 1) url.searchParams.set(pagination.param, String(n))
+        visited += 1
+        try {
+          const html = await fetchHtml(url.toString(), this.config)
+          let onPage = 0
+          let added = 0
+          for (const link of extractRetailerLinks(html, url.toString(), this.config)) {
+            if (!isLikelyRetailerProductUrl(link, this.config)) continue
+            onPage += 1
+            const key = pathname(link).split('/').filter(Boolean).at(-1) ?? link
+            if (!products.has(key)) {
+              products.set(key, link)
+              added += 1
+            }
+          }
+          if (n === 1 && onPage > 0 && pagination.totalPattern) {
+            const totals = [...html.matchAll(pagination.totalPattern)].map(m => Number(m[1])).filter(Number.isFinite)
+            const total = totals.length ? Math.max(...totals) : onPage
+            pages = Math.min(pagination.maxPagesPerSeed, Math.ceil(total / onPage))
+          }
+          if (onPage === 0 || (!pagination.totalPattern && added === 0)) break
+        } catch (error) {
+          console.warn(`[${this.config.slug}] discovery skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
+        }
+        await sleep(requestDelayMs)
+      }
+    }
+
+    return { productUrls: [...products.values()].slice(0, maxProducts), pagesVisited: visited, pagesDiscovered: visited }
   }
 }

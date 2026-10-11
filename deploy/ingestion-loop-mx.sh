@@ -19,6 +19,9 @@ while true; do
   run chedraui node dist/ingestion/vtex-api.cli.js chedraui
   run sears-mx node dist/ingestion/sears.cli.js
 
+  # Per-retailer summary; posts to Discord when a scraper broke or shrank.
+  run report node dist/ingestion/ingestion-report.cli.js
+
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
 done

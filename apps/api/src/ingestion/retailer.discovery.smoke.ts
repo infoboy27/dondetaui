@@ -42,6 +42,10 @@ assert(isCrawlUrl('https://jumbo.com.do/electro-hogar?p=2', jumbo))
 assert(isLikelyRetailerProductUrl('https://jumbo.com.do/freidora-de-aire-black-decker-hf5005b-3316834', jumbo))
 assert(isLikelyRetailerProductUrl('https://jumbo.com.do//freidora-de-aire-black-decker-hf5005b-3316834', jumbo))
 assert(!isCrawlUrl('https://jumbo.com.do/supermercado/frutas-y-vegetales', jumbo))
+// Page 2+ of a listing links products under their category path.
+assert(isLikelyRetailerProductUrl('https://jumbo.com.do/electro-hogar/lavado-y-secado/lavadora-whirlpool-automatica-28-kg-top-load-7mwtw8127lw-3331748', jumbo))
+assert(isLikelyRetailerProductUrl('https://jumbo.com.do/tv-y-tecnologia/televisores/televisor-58-pulgadas-aiwa-qled-4k-aw58b2q-3364041', jumbo))
+assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/electro-hogar/lavado-y-secado/lavadoras', jumbo))
 // Deeply nested nav/filter paths whose last segment coincidentally looks SKU-like too
 // (short numbers, product-line codes) must not be mistaken for real product pages.
 assert(!isLikelyRetailerProductUrl('https://jumbo.com.do/hogar/cocina-sl-5652', jumbo))

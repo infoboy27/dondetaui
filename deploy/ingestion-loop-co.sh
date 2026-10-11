@@ -20,6 +20,9 @@ while true; do
   run ktronix node dist/ingestion/algolia-api.cli.js ktronix
   run falabella-co node dist/ingestion/falabella.cli.js falabella-co
 
+  # Per-retailer summary; posts to Discord when a scraper broke or shrank.
+  run report node dist/ingestion/ingestion-report.cli.js
+
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"
   sleep "$INTERVAL_SECONDS"
 done

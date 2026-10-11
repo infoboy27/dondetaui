@@ -7,7 +7,19 @@ const PLAZA_LAMA_ORIGIN = 'https://plazalama.com.do'
 // ingested. Scope enforced again in isCategoryUrl below, in case a category page's
 // own nav links elsewhere too.
 const ELECTRODOMESTICOS_PREFIX = '/ca/electrodomesticos'
-const DEFAULT_SEEDS = [`${PLAZA_LAMA_ORIGIN}${ELECTRODOMESTICOS_PREFIX}/4`]
+// The appliance subcategories (Tecnología / Equipos Comerciales left out on
+// purpose). Each one is paginated with ?currentPage=N -- the page count comes
+// from the antd pager ("1/3"); ?page=N is silently ignored by the site.
+const DEFAULT_SEEDS = [
+  'lavado/4/4-7',
+  'televisores-y-video/4/4-11',
+  'refrigeracion/4/4-9',
+  'climatizacion/4/4-4',
+  'cocina/4/4-5',
+  'pequenos-electrodomesticos/4/4-8',
+  'audio/4/4-3',
+].map(path => `${PLAZA_LAMA_ORIGIN}${ELECTRODOMESTICOS_PREFIX}/${path}`)
+const MAX_PAGES_PER_CATEGORY = 40
 
 export interface PlazaLamaDiscoveryOptions {
   seedUrls?: string[]
@@ -112,50 +124,56 @@ async function renderHtml(page: Page, url: string): Promise<string> {
   return page.content()
 }
 
+function pageUrl(categoryUrl: string, page: number): string {
+  const url = new URL(categoryUrl)
+  if (page > 1) url.searchParams.set('currentPage', String(page))
+  else url.searchParams.delete('currentPage')
+  return url.toString()
+}
+
 export class PlazaLamaCatalogDiscovery {
   constructor(private readonly page: Page) {}
+
+  // Total pages from the antd "simple" pager, whose title reads "1/3".
+  private async pageCount(): Promise<number> {
+    const title = await this.page
+      .$eval('.ant-pagination-simple-pager', el => el.getAttribute('title'))
+      .catch(() => null)
+    const total = Number(title?.split('/')[1])
+    return Number.isFinite(total) && total > 0 ? Math.min(total, MAX_PAGES_PER_CATEGORY) : 1
+  }
 
   async discover(options: PlazaLamaDiscoveryOptions = {}): Promise<PlazaLamaDiscoveryResult> {
     const maxCategoryPages = Math.max(1, options.maxCategoryPages ?? 150)
     const maxProducts = Math.max(1, options.maxProducts ?? 5_000)
     const requestDelayMs = Math.max(0, options.requestDelayMs ?? 500)
-    const queue = [...(options.seedUrls?.length ? options.seedUrls : DEFAULT_SEEDS)]
-    const queued = new Set(queue)
-    const visited = new Set<string>()
+    const seeds = options.seedUrls?.length ? options.seedUrls : DEFAULT_SEEDS
     const productUrls = new Set<string>()
+    let visited = 0
 
-    while (queue.length && visited.size < maxCategoryPages && productUrls.size < maxProducts) {
-      const url = queue.shift()!
-      if (visited.has(url)) continue
-      visited.add(url)
-
-      try {
-        const html = await renderHtml(this.page, url)
-        for (const link of extractLinks(html, url)) {
-          if (isLikelyProductUrl(link)) {
-            productUrls.add(link)
-            if (productUrls.size >= maxProducts) break
-            continue
+    for (const seed of seeds) {
+      let pages = 1
+      for (let n = 1; n <= pages; n++) {
+        if (visited >= maxCategoryPages || productUrls.size >= maxProducts) break
+        const url = pageUrl(seed, n)
+        visited += 1
+        try {
+          const html = await renderHtml(this.page, url)
+          if (n === 1) pages = await this.pageCount()
+          for (const link of extractLinks(html, url)) {
+            if (isLikelyProductUrl(link)) productUrls.add(link)
           }
-
-          if (isCategoryUrl(link) && !visited.has(link) && !queued.has(link)) {
-            queue.push(link)
-            queued.add(link)
-          }
+        } catch (error) {
+          console.warn(`[plaza-lama] discovery skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
         }
-      } catch (error) {
-        console.warn(`[plaza-lama] discovery skipped ${url}: ${error instanceof Error ? error.message : String(error)}`)
-      }
-
-      if (queue.length && productUrls.size < maxProducts) {
         await delay(requestDelayMs)
       }
     }
 
     return {
-      productUrls: [...productUrls],
-      categoryPagesVisited: visited.size,
-      categoryPagesDiscovered: queued.size,
+      productUrls: [...productUrls].slice(0, maxProducts),
+      categoryPagesVisited: visited,
+      categoryPagesDiscovered: visited,
     }
   }
 }
