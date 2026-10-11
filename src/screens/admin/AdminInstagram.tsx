@@ -59,9 +59,17 @@ async function loadProductImage(productId: string): Promise<HTMLImageElement | n
       headers: { Authorization: `Bearer ${getToken() ?? ''}` },
     })
     if (!response.ok) return null
-    const url = URL.createObjectURL(await response.blob())
+    // A data: URL, not URL.createObjectURL: the site's CSP allows data: images
+    // but not blob:, so blob-backed photos were silently blocked (blank cards).
+    const blob = await response.blob()
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(String(reader.result))
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(blob)
+    })
     const img = new Image()
-    img.src = url
+    img.src = dataUrl
     await img.decode()
     return img
   } catch {

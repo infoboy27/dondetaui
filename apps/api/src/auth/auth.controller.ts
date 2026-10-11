@@ -3,6 +3,8 @@ import { Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { LoginDto, RegisterDto } from './auth.types'
 import { JwtAuthGuard, type AuthenticatedRequest } from './jwt-auth.guard'
+import { adminEmails } from '../admin/admin.guard'
+import { sendDiscordAlert } from '../common/discord-webhook'
 
 // Tighter than the app-wide default: these endpoints are the brute-force
 // surface (password guessing, account enumeration via registration).
@@ -20,8 +22,19 @@ export class AuthController {
 
   @Throttle(AUTH_THROTTLE)
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto)
+  async login(@Body() dto: LoginDto, @Req() req: { ip?: string; headers: Record<string, string | string[] | undefined> }) {
+    // Every sign-in attempt on an admin account -- successful or not -- is
+    // posted to Discord, so an unexpected one is noticed right away.
+    const isAdmin = adminEmails().has(dto.email.trim().toLowerCase())
+    const where = `IP ${req.ip ?? '?'} · ${String(req.headers['user-agent'] ?? '').slice(0, 120)}`
+    try {
+      const result = await this.auth.login(dto)
+      if (isAdmin) sendDiscordAlert(process.env.DISCORD_WEBHOOK_ALERTS, `🔐 Inicio de sesión en el portal admin (${dto.email}) desde ${where}`)
+      return result
+    } catch (error) {
+      if (isAdmin) sendDiscordAlert(process.env.DISCORD_WEBHOOK_ALERTS, `⚠️ Intento fallido de inicio de sesión admin (${dto.email}) desde ${where}`)
+      throw error
+    }
   }
 
   @UseGuards(JwtAuthGuard)
