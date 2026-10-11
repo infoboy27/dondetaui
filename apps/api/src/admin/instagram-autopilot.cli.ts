@@ -234,6 +234,9 @@ async function publishSlot(instagram: InstagramService, target: Target): Promise
 
 async function main() {
   const instagram = new InstagramService(pool)
+  // Daily follower count for the /admin growth chart -- even with the
+  // autopilot off.
+  await instagram.snapshotAccount().catch(error => console.warn('[ig-autopilot] follower snapshot failed:', error instanceof Error ? error.message : error))
   const { enabled } = await instagram.autopilot()
   if (!enabled) return
   if (!/^https:\/\//.test(siteUrl)) throw new Error('SITE_URL (https) is required')

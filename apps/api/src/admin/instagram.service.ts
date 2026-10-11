@@ -1,6 +1,8 @@
 import { ConflictException, Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
+import { instagramSessions } from './google-analytics'
+import { breakdown, byFormat, mediaFormat, series, totals, type InstagramInsights, type MediaRow, type PostStats } from './instagram-insights'
 
 // Publishing through the Instagram API with Instagram Login (graph.instagram.com):
 // works for Creator and Business accounts, no Facebook Page needed.
@@ -136,6 +138,113 @@ export class InstagramService {
   async setAutopilot(enabled: boolean) {
     await this.saveSetting('ig_autopilot', enabled ? 'on' : 'off')
     return this.autopilot()
+  }
+
+  // One row per day with the follower count, so /admin can chart growth
+  // (Instagram itself only reports daily new followers). Called from the
+  // autopilot loop and whenever the insights are loaded; a no-op once today's
+  // row exists.
+  async snapshotAccount(): Promise<void> {
+    const today = await this.pool.query(`select 1 from instagram_account_daily where day = (now() at time zone 'America/Santo_Domingo')::date`)
+    if (today.rows.length) return
+    const token = await this.accessToken()
+    if (!token) return
+    const me = await graph<{ followers_count?: number; media_count?: number }>(`/me?fields=followers_count,media_count&access_token=${encodeURIComponent(token)}`)
+    await this.pool.query(
+      `insert into instagram_account_daily(day, followers, media_count)
+       values ((now() at time zone 'America/Santo_Domingo')::date, $1, $2)
+       on conflict (day) do nothing`,
+      [me.followers_count ?? 0, me.media_count ?? 0],
+    )
+  }
+
+  // ~20 Graph calls per load (account, insights, one per recent post), well
+  // inside the 200/hour limit -- but cached so reloading the portal is free.
+  private insightsCache: { at: number; value: Promise<InstagramInsights> } | null = null
+
+  insights(): Promise<InstagramInsights> {
+    if (!this.insightsCache || Date.now() - this.insightsCache.at > 15 * 60_000) {
+      const value = this.loadInsights()
+      value.catch(() => { this.insightsCache = null })
+      this.insightsCache = { at: Date.now(), value }
+    }
+    return this.insightsCache.value
+  }
+
+  private async loadInsights(): Promise<InstagramInsights> {
+    const token = await this.accessToken()
+    if (!token) throw new ServiceUnavailableException('Instagram no está conectado (falta IG_ACCESS_TOKEN)')
+    const get = <T>(path: string) => graph<T>(`${path}${path.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`)
+    // A metric Instagram won't give (too few followers, new account) just
+    // comes back empty instead of failing the whole page.
+    const maybe = <T>(path: string) => get<{ data: T[] }>(path).then(r => r.data).catch(() => undefined)
+
+    await this.snapshotAccount().catch(() => undefined)
+    const now = Math.floor(Date.now() / 1000)
+    const ago = (days: number) => now - days * 86_400
+    const totalsFor = (days: number) => `/me/insights?metric=reach,views,accounts_engaged,total_interactions,profile_links_taps&period=day&metric_type=total_value&since=${ago(days)}&until=${now}`
+    const followsFor = (days: number) => `/me/insights?metric=follows_and_unfollows&period=day&metric_type=total_value&breakdown=follow_type&since=${ago(days)}&until=${now}`
+    const demographics = (by: string) => `/me/insights?metric=follower_demographics&period=lifetime&metric_type=total_value&breakdown=${by}&timeframe=this_month`
+
+    type Metric = Parameters<typeof totals>[0][number]
+    const [account, week, weekFollows, month, monthFollows, reachSeries, followerSeries, cities, ages, genders, media, history, ours, siteVisits] = await Promise.all([
+      get<{ username: string; followers_count?: number; follows_count?: number; media_count?: number }>('/me?fields=username,followers_count,follows_count,media_count'),
+      maybe<Metric>(totalsFor(7)),
+      maybe<Metric>(followsFor(7)),
+      maybe<Metric>(totalsFor(28)),
+      maybe<Metric>(followsFor(28)),
+      maybe<{ name: string; values?: Array<{ value: number; end_time?: string }> }>(`/me/insights?metric=reach&period=day&since=${ago(28)}&until=${now}`),
+      maybe<{ name: string; values?: Array<{ value: number; end_time?: string }> }>(`/me/insights?metric=follower_count&period=day&since=${ago(29)}&until=${now}`),
+      maybe<Metric>(demographics('city')),
+      maybe<Metric>(demographics('age')),
+      maybe<Metric>(demographics('gender')),
+      get<{ data: MediaRow[] }>('/me/media?fields=id,media_type,media_product_type,timestamp,permalink,caption,like_count,comments_count&limit=24').then(r => r.data),
+      this.pool.query<{ day: string; followers: number }>(`select day::text, followers from instagram_account_daily where day > current_date - 90 order by day`),
+      this.pool.query<{ ig_media_id: string; source: 'manual' | 'autopilot' }>(`select ig_media_id, source from instagram_posts where ig_media_id is not null`),
+      instagramSessions(28).catch(() => null),
+    ])
+
+    const sourceByMedia = new Map(ours.rows.map(r => [r.ig_media_id, r.source]))
+    const posts: PostStats[] = await Promise.all(media.map(async item => {
+      type PostMetric = { name: string; values?: Array<{ value: number }> }
+      const metrics = await maybe<PostMetric>(`/${item.id}/insights?metric=reach,views,saved,shares,total_interactions`)
+        ?? await maybe<PostMetric>(`/${item.id}/insights?metric=reach`)
+        ?? []
+      const value = (name: string) => metrics.find(m => m.name === name)?.values?.[0]?.value ?? 0
+      return {
+        id: item.id,
+        permalink: item.permalink ?? null,
+        timestamp: item.timestamp,
+        format: mediaFormat(item),
+        title: (item.caption ?? '').split('\n')[0].slice(0, 120),
+        source: sourceByMedia.get(item.id) ?? null,
+        reach: value('reach'),
+        views: value('views'),
+        likes: item.like_count ?? 0,
+        comments: item.comments_count ?? 0,
+        saved: value('saved'),
+        shares: value('shares'),
+        interactions: value('total_interactions'),
+      }
+    }))
+
+    const genderLabel = (key: string) => (key === 'M' ? 'Hombres' : key === 'F' ? 'Mujeres' : 'Sin especificar')
+    const cityLabel = (key: string) => key.split(',')[0]
+    return {
+      generatedAt: new Date().toISOString(),
+      account: { username: account.username, followers: account.followers_count ?? 0, follows: account.follows_count ?? 0, mediaCount: account.media_count ?? 0 },
+      week: totals(week ?? [], weekFollows),
+      month: totals(month ?? [], monthFollows),
+      reachByDay: series(reachSeries),
+      newFollowersByDay: series(followerSeries),
+      followersHistory: history.rows.map(r => ({ date: r.day, value: r.followers })),
+      cities: breakdown(cities, 8, cityLabel),
+      ages: breakdown(ages, 8).sort((a, b) => a.label.localeCompare(b.label)),
+      genders: breakdown(genders, 3, genderLabel),
+      posts,
+      byFormat: byFormat(posts),
+      siteVisits,
+    }
   }
 
   async image(id: string): Promise<Buffer | null> {

@@ -15,6 +15,12 @@ export class InstagramAdminController {
     return this.instagram.status()
   }
 
+  // Account and post metrics from the Instagram insights API (cached 15 min).
+  @Get('insights')
+  insights() {
+    return this.instagram.insights()
+  }
+
   @Get('posts')
   history() {
     return this.instagram.history()

@@ -83,6 +83,16 @@ async function runReport(token: string, days: number, dimensions: string[], metr
 const num = (row: ReportRow, index: number) => Number(row.metricValues?.[index]?.value ?? 0)
 const dim = (row: ReportRow, index = 0) => row.dimensionValues?.[index]?.value ?? ''
 
+// Sessions that came from Instagram (bio link, stories, l.instagram.com
+// redirects, utm_source=instagram), for the Instagram metrics in /admin.
+// null when GA4 isn't configured.
+export async function instagramSessions(days: number): Promise<number | null> {
+  const account = serviceAccount()
+  if (!account || !process.env.GA_PROPERTY_ID) return null
+  const rows = await runReport(await accessToken(account), days, ['sessionSource'], ['sessions'], 200)
+  return rows.filter(row => /instagram|^ig$/i.test(dim(row))).reduce((sum, row) => sum + num(row, 0), 0)
+}
+
 const cache = new Map<number, { at: number; value: AnalyticsSummary }>()
 const CACHE_MS = 10 * 60_000
 
