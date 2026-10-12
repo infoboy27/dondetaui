@@ -11,6 +11,7 @@ import { getTopPriceDrops } from '../domain/notifications'
 import { formatPrice } from '../domain/currency'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import DiscountCode from '../components/DiscountCode'
+import EnebaBadge from '../components/EnebaBadge'
 import { gamingKind, gamingShowcase } from '../domain/gaming'
 import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
@@ -271,7 +272,8 @@ export default function HomeScreen({
       {/* Gaming: Eneba top-ups, subscriptions and PC keys (one store, so no comparison) */}
       {gamingDeals.length > 0 && (
         <Section title="🎮 Gaming" subtitle="Recargas y juegos digitales · Entrega inmediata" action="Ver todo" onAction={() => onCategory('gaming')}>
-          <div style={{ padding: '0 20px 12px' }}>
+          <div style={{ padding: '0 20px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div><EnebaBadge /></div>
             <DiscountCode compact />
           </div>
           <HorizontalRow>

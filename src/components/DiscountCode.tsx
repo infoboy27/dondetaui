@@ -3,8 +3,8 @@ import { colors, fonts, radii } from '../design/tokens'
 import { ENEBA_DISCOUNT_CODE } from '../domain/gaming'
 import { track } from '../analytics'
 
-// The Eneba affiliate code (5% off). Text only: Eneba's terms require their
-// written approval before their logo or brand artwork appears anywhere.
+// The Eneba affiliate code (5% off). Their logo, where it appears, is
+// EnebaBadge (approved by Eneba); new brand placements need their approval.
 export default function DiscountCode({ compact = false }: { compact?: boolean }) {
   const [copied, setCopied] = useState(false)
 

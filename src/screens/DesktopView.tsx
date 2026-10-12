@@ -24,6 +24,7 @@ import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
 import StoreLogo from '../components/StoreLogo'
 import SectionHeader from '../components/SectionHeader'
+import EnebaBadge from '../components/EnebaBadge'
 import { matchesSectionFilter } from '../domain/sections'
 import type { Product, User } from '../types'
 
@@ -1215,6 +1216,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
             <HomeStrip
               title="🎮 Gaming"
               subtitle={`Recargas y juegos digitales · 5% de descuento en Eneba con el código ${ENEBA_DISCOUNT_CODE.toUpperCase()}`}
+              aside={<EnebaBadge height={22} />}
             >
               {gamingDeals.map(product => (
                 <DealCard
@@ -1445,14 +1447,17 @@ function openProductPage(product: Product) {
   window.location.href = `/product/${encodeURIComponent(product.slug || product.id)}`
 }
 
-function HomeStrip({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function HomeStrip({ title, subtitle, aside, children }: { title: string; subtitle: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 24 }}>
-      <div style={{ marginBottom: 12 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D', margin: 0, letterSpacing: '-0.02em' }}>
-          {title}
-        </h2>
-        <div style={{ fontSize: 13, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{subtitle}</div>
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D', margin: 0, letterSpacing: '-0.02em' }}>
+            {title}
+          </h2>
+          <div style={{ fontSize: 13, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{subtitle}</div>
+        </div>
+        {aside}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 14 }}>
         {children}

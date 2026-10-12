@@ -4,6 +4,7 @@ import { GAMING_CATEGORY } from '../domain/gaming'
 import { SECTION_SUBTITLES, sectionFilters } from '../domain/sections'
 import type { Product } from '../types'
 import DiscountCode from './DiscountCode'
+import EnebaBadge from './EnebaBadge'
 
 interface Props {
   category: string
@@ -47,7 +48,12 @@ export default function SectionHeader({ category, products, selected, onSelect }
         </div>
       </div>
 
-      {category === GAMING_CATEGORY && <DiscountCode compact />}
+      {category === GAMING_CATEGORY && (
+        <>
+          <div><EnebaBadge /></div>
+          <DiscountCode compact />
+        </>
+      )}
 
       {filters.length > 1 && (
         <div role="group" aria-label="Filtrar sección" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
