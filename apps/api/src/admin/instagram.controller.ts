@@ -1,6 +1,7 @@
 import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Res, UseGuards } from '@nestjs/common'
 import { AdminGuard } from './admin.guard'
 import { InstagramService, type MediaFile } from './instagram.service'
+import { parseCustomPost, type CustomPost } from './instagram-custom'
 
 const MAX_CAPTION = 2_200 // Instagram's own limit
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // Instagram's limit for feed images
@@ -61,20 +62,13 @@ export class InstagramAdminController {
   // nginx's 90 s /api timeout. The history list shows how it went.
   @Post('custom')
   publishCustom(@Body() body: { target?: string; caption?: string; imagesBase64?: unknown }) {
-    const target = body.target === 'story' ? 'story' : 'feed'
-    const caption = String(body.caption ?? '').trim()
-    if (target === 'feed' && (!caption || caption.length > MAX_CAPTION)) {
-      throw new BadRequestException('El texto debe tener entre 1 y 2,200 caracteres')
+    let post: CustomPost
+    try {
+      post = parseCustomPost(body)
+    } catch (error) {
+      throw new BadRequestException(error instanceof Error ? error.message : String(error))
     }
-    const images = Array.isArray(body.imagesBase64) ? body.imagesBase64 : []
-    const max = target === 'story' ? 1 : 10
-    if (images.length < 1 || images.length > max) {
-      throw new BadRequestException(target === 'story' ? 'Una historia lleva exactamente una imagen' : 'Un post lleva de 1 a 10 imágenes')
-    }
-    const jpegs = images.map(image => Buffer.from(String(image).replace(/^data:image\/jpeg;base64,/, ''), 'base64'))
-    if (jpegs.some(jpeg => jpeg.length < 1_000 || jpeg.length > MAX_IMAGE_BYTES || jpeg[0] !== 0xff || jpeg[1] !== 0xd8)) {
-      throw new BadRequestException('Cada imagen debe ser un JPEG de menos de 8 MB')
-    }
+    const { target, caption, jpegs } = post
     const publicBaseUrl = (process.env.SITE_URL ?? '').replace(/\/+$/, '')
     if (!/^https:\/\//.test(publicBaseUrl)) throw new BadRequestException('SITE_URL (https) no está configurado en la API')
 
