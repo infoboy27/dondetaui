@@ -23,6 +23,8 @@ import { useSearchHistory } from '../hooks/useSearchHistory'
 import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
 import StoreLogo from '../components/StoreLogo'
+import SectionHeader from '../components/SectionHeader'
+import { matchesSectionFilter } from '../domain/sections'
 import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
@@ -46,6 +48,8 @@ interface Props {
   user: User | null
   onLogout: () => void
 }
+
+const PRICE_SLIDER_MAX = 100_000
 
 const NAV_LINKS: { key: DesktopScreen; label: string }[] = [
   { key: 'categories', label: 'Categorías' },
@@ -454,10 +458,11 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const [stockOnly, setStockOnly] = useState(false)
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
   const [minPrice, setMinPrice] = useState(0)
-  const [maxPrice, setMaxPrice] = useState(100000)
+  const [maxPrice, setMaxPrice] = useState(PRICE_SLIDER_MAX)
   const [sortBy, setSortBy] = useState<SortKey>('relevance')
   const [screen, setScreen] = useState<DesktopScreen>('results')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [sectionFilter, setSectionFilter] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const { products, loading, error, retry } = useCatalogProducts(query)
   const freshness = useCatalogFreshness()
@@ -491,7 +496,20 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategory(prev => (prev === categoryId ? null : categoryId))
+    setSectionFilter(null)
   }
+
+  // A curated section (Electrodomésticos, Gaming...) gets its own header with
+  // quick filters; a "Tipo de artículo" pick from the sidebar doesn't.
+  const sectionCategory = selectedCategory && CATEGORIES.some(cat => cat.id === selectedCategory) ? selectedCategory : null
+  const categoryCounts = useMemo(
+    () => Object.fromEntries(CATEGORIES.map(cat => [cat.id, products.filter(p => matchesCategory(p, cat.id)).length])) as Record<string, number>,
+    [products],
+  )
+  const sectionProducts = useMemo(
+    () => (sectionCategory ? products.filter(p => matchesCategory(p, sectionCategory)) : []),
+    [products, sectionCategory],
+  )
 
   // Grouped by what the product is: retailer categories repeat each other
   // (Neveras / Refrigeradores, Televisores / Televisión...).
@@ -507,6 +525,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
 
   const goToCategory = (categoryId: string) => {
     setSelectedCategory(categoryId)
+    setSectionFilter(null)
     setScreen('results')
   }
 
@@ -521,8 +540,11 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
         selectedStores.length === 0 ||
         p.prices.some(price => selectedStores.includes(price.store))
       const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
-      const inPriceRange = total >= minPrice && total <= maxPrice
-      const inCategory = !selectedCategory || (matchesTypeFilter(p, selectedCategory) ?? matchesCategory(p, selectedCategory))
+      // The slider's top end means "no limit": as a hard RD$100,000 cap it
+      // silently hid every big fridge and TV from the default listing.
+      const inPriceRange = total >= minPrice && (maxPrice >= PRICE_SLIDER_MAX || total <= maxPrice)
+      const inCategory = (!selectedCategory || (matchesTypeFilter(p, selectedCategory) ?? matchesCategory(p, selectedCategory)))
+        && matchesSectionFilter(p, sectionCategory ? sectionFilter : null)
       // p.discount is never set for real ingested products (see
       // getRecentPriceDrop's comment) -- fall back to an actual observed
       // price drop so "Ofertas" isn't permanently empty for real data.
@@ -542,7 +564,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
       return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
     })
     return sorted
-  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, screen, alertedIds, stockOnly, freeShippingOnly])
+  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, sectionCategory, sectionFilter, screen, alertedIds, stockOnly, freeShippingOnly])
 
   // The biggest saving between stores among what's on screen; no banner at
   // all when nothing is sold in more than one store (it used to crown the
@@ -559,10 +581,16 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   }, [visibleProducts])
 
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(visibleProducts)
+  // Stores in what's listed, not the whole catalog (Eneba isn't in "Electrodomésticos").
+  const visibleStoreCount = useMemo(
+    () => new Set(visibleProducts.flatMap(p => p.prices.map(offer => offer.store))).size,
+    [visibleProducts],
+  )
 
   const screenTitle = screen === 'deals' ? 'Ofertas destacadas'
     : screen === 'alerts' ? 'Mis alertas'
     : query.trim() ? `Resultados para "${query}"`
+    : sectionCategory ? 'Productos'
     : 'Todos los productos'
 
   return (
@@ -696,6 +724,27 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                 </button>
               )
             })}
+            {/* Gaming has its own entry: it's a different kind of section (Eneba,
+                digital delivery) that people look for by name. */}
+            <button
+              type="button"
+              onClick={() => goToCategory('gaming')}
+              style={{
+                background: selectedCategory === 'gaming' && screen === 'results' ? '#F3E8FF' : 'none',
+                border: 'none', cursor: 'pointer',
+                padding: '8px 12px', minHeight: 44, borderRadius: 8,
+                fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#6D28D9',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              🎮 Gaming
+              <span style={{
+                fontSize: 9, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#fff',
+                background: '#8B5CF6', borderRadius: 999, padding: '2px 6px', letterSpacing: '0.03em',
+              }}>
+                NUEVO
+              </span>
+            </button>
           </nav>
 
           {/* Right actions */}
@@ -831,11 +880,18 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                   textAlign: 'left', minHeight: 44,
                 }}>
                   <span style={{ fontSize: 28 }}>{cat.emoji}</span>
-                  <span style={{
-                    fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
-                    color: '#0F1D2D',
-                  }}>
-                    {cat.label}
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{
+                      fontSize: 15, fontWeight: 700, fontFamily: "'Poppins', sans-serif",
+                      color: '#0F1D2D',
+                    }}>
+                      {cat.label}
+                    </span>
+                    {categoryCounts[cat.id] > 0 && (
+                      <span style={{ fontSize: 12, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif" }}>
+                        {categoryCounts[cat.id].toLocaleString('es-DO')} productos
+                      </span>
+                    )}
                   </span>
                 </button>
               ))}
@@ -1019,12 +1075,12 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                     Hasta
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
-                    {formatPrice(maxPrice)}
+                    {maxPrice >= PRICE_SLIDER_MAX ? 'Sin límite' : formatPrice(maxPrice)}
                   </div>
                 </div>
               </div>
               <input
-                type="range" min={0} max={100000} step={500}
+                type="range" min={0} max={PRICE_SLIDER_MAX} step={500}
                 value={maxPrice}
                 onChange={e => setMaxPrice(Number(e.target.value))}
                 style={{ width: '100%', accentColor: '#00B894' }}
@@ -1148,6 +1204,11 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               ))}
             </HomeStrip>
           )}
+          {screen === 'results' && sectionCategory && sectionProducts.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <SectionHeader category={sectionCategory} products={sectionProducts} selected={sectionFilter} onSelect={setSectionFilter} />
+            </div>
+          )}
           {/* Results header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div>
@@ -1163,7 +1224,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                 fontFamily: "'DM Sans', sans-serif",
                 margin: '4px 0 0',
               }}>
-                {visibleProducts.length} productos comparados en {availableStores.length} tiendas
+                {visibleProducts.length} productos comparados en {visibleStoreCount} {visibleStoreCount === 1 ? 'tienda' : 'tiendas'}
                 {freshness && ` · ${freshness}`}
               </p>
             </div>

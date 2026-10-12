@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatPrice } from '../domain/currency'
 import { rankOffers } from '../domain/offers'
+import { isGaming } from '../domain/gaming'
 import { colors, fonts, radii } from '../design/tokens'
 import type { Product } from '../types'
 import { CheckIcon, ChevronDown, HeartIcon } from './Icons'
@@ -61,7 +62,7 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
               marginBottom: 2,
             }}
           >
-            {product.brand} · {product.model}
+            {product.brand} · {isGaming(product) ? 'Código digital' : product.model}
           </div>
           <div
             style={{
@@ -121,7 +122,7 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
 
       <div style={{ borderTop: `1px solid ${colors.background}` }}>
         {displayPrices.map((offer, index) => (
-          <StoreOfferRow key={`${offer.store}-${offer.storeId ?? 'default'}`} offer={offer} isBest={index === 0} savings={savings} />
+          <StoreOfferRow key={`${offer.store}-${offer.storeId ?? 'default'}`} offer={offer} isBest={index === 0 && rankedOffers.length > 1} savings={savings} />
         ))}
       </div>
 
