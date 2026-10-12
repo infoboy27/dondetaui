@@ -40,6 +40,10 @@ Ya configurado para iOS:
 - `ITSAppUsesNonExemptEncryption=false`, así App Store Connect no pregunta por cifrado en cada build.
 - Ubicación solo "mientras se usa la app", sin ubicación en segundo plano.
 - Textos de los permisos de cámara y ubicación.
+- Ciclo de vida por escenas (UIScene), obligatorio desde iOS 27: sin él la app
+  se cierra al abrir. Lo activa `plugins/withSceneLifecycle.js` en cada prebuild
+  (no editar `ios/` a mano: se regenera). Quitarlo cuando la plantilla de Expo
+  ya lo traiga.
 - Solo iPhone (`supportsTablet: false`). Así no hacen falta capturas de iPad para publicar; se puede activar más adelante.
 
 Para la ficha de App Store hacen falta capturas de 6.7" y 6.5", el texto de la ficha, la URL de privacidad (`https://dondeta.com.do/privacy`) y una cuenta de prueba para la revisión de Apple, porque la app tiene inicio de sesión.
