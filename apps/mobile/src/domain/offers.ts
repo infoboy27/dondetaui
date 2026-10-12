@@ -1,4 +1,5 @@
 import type { StorePrice } from '../types'
+import { GAMING_CATEGORY, compareGaming } from './gaming'
 
 function parseShippingCost(label: string): number {
   const normalized = label.trim().toLowerCase()
@@ -62,7 +63,13 @@ export function getSavingsRange(offers: StorePrice[]): number {
 // Default listing order: real comparisons first (more distinct stores), then
 // by how much the cheapest store saves over the priciest, then dearer items
 // first -- so a fridge sold in three stores leads, not a RD$115 blender part.
-export function compareByRelevance(a: { prices: StorePrice[] }, b: { prices: StorePrice[] }): number {
+export function compareByRelevance(
+  a: { prices: StorePrice[]; name?: string; categoryId?: string },
+  b: { prices: StorePrice[]; name?: string; categoryId?: string },
+): number {
+  if (a.categoryId === GAMING_CATEGORY && b.categoryId === GAMING_CATEGORY) {
+    return compareGaming({ name: a.name ?? '', prices: a.prices }, { name: b.name ?? '', prices: b.prices })
+  }
   const stores = (offers: StorePrice[]) => new Set(offers.map(offer => offer.store)).size
   const byStores = stores(b.prices) - stores(a.prices)
   if (byStores) return byStores

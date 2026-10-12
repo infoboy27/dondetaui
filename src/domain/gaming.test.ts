@@ -3,8 +3,8 @@ import { gamingKind, gamingShowcase, isGaming } from './gaming'
 import { compareByRelevance } from './offers'
 import type { Product } from '../types'
 
-const product = (name: string, price: number, categoryId = 'gaming'): Product => ({
-  id: name, name, categoryId, prices: [{ store: 'Eneba', price }],
+const product = (name: string, price: number, categoryId = 'gaming', available = true): Product => ({
+  id: name, name, categoryId, prices: [{ store: 'Eneba', price, available }],
 } as unknown as Product)
 
 describe('gaming', () => {
@@ -52,5 +52,14 @@ describe('gaming', () => {
       'Mobile Legends 12,000 diamantes',
       'Hogwarts Legacy (PC, Steam)',
     ])
+  })
+
+  it('keeps out-of-stock items out of the showcase and last in the listing', () => {
+    const gone = product('Free Fire 100 diamantes', 77, 'gaming', false)
+    const robux = product('Roblox 800 Robux', 556)
+    const game = product('Hogwarts Legacy (PC, Steam)', 338)
+    expect(gamingShowcase([gone, robux, game]).map(p => p.name)).toEqual(['Roblox 800 Robux', 'Hogwarts Legacy (PC, Steam)'])
+    expect([gone, game, robux].sort(compareByRelevance).map(p => p.name))
+      .toEqual(['Roblox 800 Robux', 'Hogwarts Legacy (PC, Steam)', 'Free Fire 100 diamantes'])
   })
 })

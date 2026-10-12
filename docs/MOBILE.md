@@ -53,6 +53,15 @@ Para la ficha de App Store hacen falta capturas de 6.7" y 6.5", el texto de la f
 - Compilar Android localmente en Windows falla por el límite de 260
   caracteres en rutas (react-native-worklets); usar EAS o una Mac/Linux.
 
+## Gaming (Eneba)
+
+- Portada: bloque 🎮 Gaming con el sello "En alianza con Eneba", el código DONDETA (botón Copiar, `expo-clipboard`) y el escaparate de recargas y juegos.
+- `app/gaming.tsx`: la sección completa, con filtros Recargas / Suscripciones / Juegos PC; los datos vienen de `/api/products/highlights` → `gaming`.
+- Ficha de producto: "Código digital", el código DONDETA y las notas de entrega digital.
+- El botón "Ver oferta" pasa por `/api/go` (clic registrado) y el enlace conserva `af_id=dondeta`.
+- La lógica está en `src/domain/gaming.ts` y es copia de la de la web: hay que mantener las dos iguales. Sus tests (`gaming.test.ts`) corren con el `pnpm test` de la raíz.
+- El logo de Eneba está en `assets/partners/eneba.png`, aprobado por Eneba. Usarlo en otro sitio requiere su aprobación otra vez.
+
 ## Checks
 
 ```bash
@@ -64,8 +73,6 @@ npx expo export --platform android
 
 ## Pendientes de la app
 
-- **Gaming / Eneba:** la app no tiene todavía la sección ni el código DONDETA.
-  - Aun así, los productos de Gaming llegan por la API y ya se ven en búsquedas.
-- **Paridad con la web:** la navegación por secciones y el filtro de tipos de artículo aún no están en la app.
+- **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
 - **Anuncios:** se quitó AdMob, que solo mostraba anuncios de prueba y rompía el build de release.
 - **`android/` en la raíz:** es el intento viejo con Capacitor; la app oficial es `apps/mobile`.

@@ -11,6 +11,9 @@ import PaginationControls from '../../src/components/PaginationControls'
 import { usePagination } from '../../src/hooks/usePagination'
 import { compareByRelevance, getTopComparisons } from '../../src/domain/offers'
 import { getTopPriceDrops } from '../../src/domain/notifications'
+import { gamingKind, gamingShowcase } from '../../src/domain/gaming'
+import DiscountCode from '../../src/components/DiscountCode'
+import EnebaBadge from '../../src/components/EnebaBadge'
 import { formatPrice } from '../../src/domain/currency'
 import { colors, radii, spacing } from '../../src/design/tokens'
 import { fonts } from '../../src/design/fonts'
@@ -26,6 +29,7 @@ export default function HomeScreen() {
   const sorted = useMemo(() => [...products].sort(compareByRelevance), [products])
   const comparisons = useMemo(() => getTopComparisons(products, 10), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 10), [products])
+  const gaming = useMemo(() => gamingShowcase(products), [products])
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(sorted)
 
   const load = async () => {
@@ -127,6 +131,33 @@ export default function HomeScreen() {
                 </ScrollView>
               </View>
             )}
+            {gaming.length > 0 && (
+              <View style={styles.dealSection}>
+                <View style={styles.sectionHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sectionTitle}>🎮 Gaming</Text>
+                    <Text style={styles.sectionSubtitle}>Recargas y juegos digitales · Entrega inmediata</Text>
+                  </View>
+                  <Pressable onPress={() => router.push('/gaming')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Ver todo Gaming">
+                    <Text style={styles.seeAll}>Ver todo</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.gamingIntro}>
+                  <EnebaBadge />
+                  <DiscountCode compact />
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dealRow} style={styles.dealScroll}>
+                  {gaming.map(product => (
+                    <DealCard
+                      key={product.id}
+                      product={product}
+                      highlight={{ label: gamingKind(product) }}
+                      onPress={() => openProduct(product)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Todos los productos</Text>
               <Text style={styles.count}>{products.length}</Text>
@@ -166,6 +197,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
   sectionSubtitle: { fontSize: 12, fontFamily: fonts.body.regular, color: colors.navy400, marginTop: 2 },
   dealSection: { marginBottom: spacing.xl },
+  seeAll: { color: colors.primary, fontFamily: fonts.body.bold, fontSize: 13 },
+  gamingIntro: { gap: spacing.sm, marginTop: spacing.sm },
   // Bleed the row to the screen edges so cards scroll under the page padding.
   dealScroll: { marginHorizontal: -spacing.xl, marginTop: spacing.md },
   dealRow: { gap: spacing.md, paddingHorizontal: spacing.xl, paddingBottom: spacing.xs },

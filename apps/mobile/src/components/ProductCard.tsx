@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import type { Product } from '../types'
 import { getBestOffer } from '../domain/offers'
+import { isGaming } from '../domain/gaming'
 import { formatPrice } from '../domain/currency'
 import { colors, radii, spacing } from '../design/tokens'
 import { fonts } from '../design/fonts'
@@ -46,11 +47,11 @@ export default function ProductCard({ product, onPress }: { product: Product; on
           </View>
         </View>
         <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
-        <Text style={styles.subtitle}>{product.model || product.subtitle}</Text>
+        <Text style={styles.subtitle}>{isGaming(product) ? product.subtitle : product.model || product.subtitle}</Text>
         {offer ? (
           <View style={{ marginTop: spacing.sm }}>
             <Text style={styles.price}>{formatPrice(offer.price)}</Text>
-            <Text style={styles.store}>Más barato en {offer.store}</Text>
+            <Text style={styles.store}>{new Set(product.prices.map(p => p.store)).size > 1 ? 'Más barato en' : 'Disponible en'} {offer.store}</Text>
           </View>
         ) : (
           <Text style={styles.muted}>Sin ofertas disponibles</Text>
