@@ -67,7 +67,8 @@
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "./plugins/withSceneLifecycle"
     ],
     "extra": {
       "router": {},
