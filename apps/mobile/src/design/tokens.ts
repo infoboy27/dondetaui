@@ -21,6 +21,12 @@ export const colors = {
   success: '#00B894',
   warning: '#FF9F1C',
   error: '#FF3B3B',
+  // iOS-style fills and separators (system tertiary fill / separator, tinted navy).
+  fill: 'rgba(15,29,45,0.06)',
+  fillStrong: 'rgba(15,29,45,0.1)',
+  separator: 'rgba(15,29,45,0.12)',
+  secondaryLabel: '#5B6B7C',
+  tertiaryLabel: '#8D9AA8',
 } as const
 
 export const radii = {

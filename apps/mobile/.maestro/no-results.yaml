@@ -1,0 +1,11 @@
+appId: com.jfmcss.dondeta
+name: Search with no results explains the catalog
+---
+- runFlow: common/open.yaml
+- tapOn: "Buscar"
+- tapOn: "Productos, marcas o modelos"
+- inputText: "iphone"
+- extendedWaitUntil:
+    visible: "Sin resultados para “iphone”"
+    timeout: 15000
+- takeScreenshot: 07-search-empty

@@ -1,0 +1,13 @@
+# Opens the dev build on the local Metro server and waits for the home screen.
+appId: com.jfmcss.dondeta
+---
+- stopApp
+- openLink: "exp+dondeta://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+- extendedWaitUntil:
+    visible: "Comparaciones del día"
+    timeout: 90000
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"

@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { FlatList, StyleSheet, Text, View } from 'react-native'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { storesApi, type Store, type StoreBranch } from '../../src/api/stores'
+import { friendlyError } from '../../src/api/errors'
+import { openInApp } from '../../src/domain/links'
 import ProductCard from '../../src/components/ProductCard'
 import StoreLogo from '../../src/components/StoreLogo'
 import StoreBranchRow from '../../src/components/StoreBranchRow'
+import Button from '../../src/components/ui/Button'
+import EmptyState from '../../src/components/ui/EmptyState'
+import SectionHeader from '../../src/components/ui/SectionHeader'
+import { ProductRowSkeleton } from '../../src/components/ui/Skeleton'
 import { colors, radii, spacing } from '../../src/design/tokens'
-import { fonts } from '../../src/design/fonts'
+import { type } from '../../src/design/type'
+
+// How many branches show before "Ver todas".
+const BRANCH_PREVIEW = 3
 
 export default function StoreDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -16,8 +24,10 @@ export default function StoreDetailScreen() {
   const [store, setStore] = useState<Store | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [branches, setBranches] = useState<StoreBranch[]>([])
+  const [allBranches, setAllBranches] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -32,95 +42,91 @@ export default function StoreDetailScreen() {
         }
       })
       .catch(e => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'No se pudo cargar la tienda')
+        if (!cancelled) setError(friendlyError(e, 'No pudimos cargar esta tienda.'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [slug])
+  }, [slug, attempt])
 
   const openProduct = (product: Product) => {
     router.push(`/product/${encodeURIComponent(product.slug ?? product.id)}`)
   }
 
-  if (loading) {
+  if (error) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </SafeAreaView>
+      <View style={[styles.screen, styles.center]}>
+        <Stack.Screen options={{ title: 'Tienda' }} />
+        <EmptyState icon="storefront" title="No se pudo abrir la tienda" message={error} actionTitle="Reintentar" onAction={() => setAttempt(n => n + 1)} />
+      </View>
     )
   }
 
-  if (error || !store) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.errorText}>{error ?? 'No pudimos encontrar esta tienda'}</Text>
-        <Pressable onPress={() => router.back()} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Volver</Text>
-        </Pressable>
-      </SafeAreaView>
-    )
-  }
+  const shownBranches = allBranches ? branches : branches.slice(0, BRANCH_PREVIEW)
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹</Text>
-        </Pressable>
-      </View>
+    <>
+      <Stack.Screen options={{ title: store?.name ?? '' }} />
+      <FlatList
+        data={loading ? [] : products}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <ProductCard product={item} onPress={() => openProduct(item)} />}
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        initialNumToRender={8}
+        ListHeaderComponent={
+          store ? (
+            <View>
+              <View style={styles.hero}>
+                <StoreLogo abbr={store.abbr} color={store.color} size={60} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[type.subheadline, styles.muted]}>
+                    {store.productCount.toLocaleString('es-DO')} productos{branches.length ? ` · ${branches.length} sucursales` : ''}
+                  </Text>
+                </View>
+              </View>
+              {!!store.websiteUrl && (
+                <Button title="Visitar la tienda en línea" icon="arrowUpRight" variant="tinted" onPress={() => openInApp(store.websiteUrl!)} style={styles.website} />
+              )}
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
-          <StoreLogo abbr={store.abbr} color={store.color} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.storeName}>{store.name}</Text>
-            <Text style={styles.storeCount}>{store.productCount} productos</Text>
-          </View>
-        </View>
+              {branches.length > 0 && (
+                <View style={styles.section}>
+                  <SectionHeader
+                    title="Sucursales"
+                    actionTitle={branches.length > BRANCH_PREVIEW ? (allBranches ? 'Ver menos' : `Ver todas (${branches.length})`) : undefined}
+                    onAction={() => setAllBranches(v => !v)}
+                  />
+                  <View style={styles.list}>
+                    {shownBranches.map((branch, index) => (
+                      <StoreBranchRow key={branch.id} branch={branch} divider={index < shownBranches.length - 1} />
+                    ))}
+                  </View>
+                </View>
+              )}
 
-        {store.websiteUrl && (
-          <Pressable onPress={() => void Linking.openURL(store.websiteUrl!)} style={styles.websiteButton}>
-            <Text style={styles.websiteButtonText}>Ir a la tienda ↗</Text>
-          </Pressable>
-        )}
-
-        {branches.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Sucursales ({branches.length})</Text>
-            {branches.map(branch => <StoreBranchRow key={branch.id} branch={branch} />)}
-          </>
-        )}
-
-        <Text style={styles.sectionTitle}>Ofertas actuales</Text>
-        {products.length ? (
-          products.map(product => (
-            <ProductCard key={product.id} product={product} onPress={() => openProduct(product)} />
-          ))
-        ) : (
-          <Text style={styles.empty}>Todavía no tenemos productos de esta tienda.</Text>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+              <SectionHeader title="Ofertas actuales" count={products.length || undefined} />
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          loading
+            ? <View><ProductRowSkeleton /><ProductRowSkeleton /><ProductRowSkeleton /></View>
+            : <EmptyState icon="shippingbox" title="Sin productos todavía" message="Aún no tenemos precios de esta tienda." />
+        }
+      />
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, gap: spacing.md },
-  header: { height: 56, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border },
-  back: { width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, lineHeight: 28, color: colors.navy },
-  content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.lg },
-  storeName: { fontSize: 22, fontFamily: fonts.display.black, color: colors.navy },
-  storeCount: { fontFamily: fonts.body.regular, color: colors.navy400, fontSize: 12, marginTop: spacing.xs },
-  websiteButton: { backgroundColor: colors.primary, borderRadius: radii.md, paddingVertical: spacing.md, alignItems: 'center', marginBottom: spacing.xl },
-  websiteButtonText: { color: '#fff', fontFamily: fonts.display.bold, fontSize: 14 },
-  sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy, marginBottom: spacing.md },
-  empty: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
-  errorText: { color: '#BE123C', fontFamily: fonts.body.bold },
-  backLink: { marginTop: spacing.md },
-  backLinkText: { color: colors.primary, fontFamily: fonts.body.bold },
+  screen: { flex: 1, backgroundColor: colors.background },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.page },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.xs, marginBottom: spacing.lg },
+  muted: { color: colors.secondaryLabel },
+  website: { marginBottom: spacing.xxl },
+  section: { marginBottom: spacing.xxl },
+  list: { backgroundColor: colors.card, borderRadius: radii.lg, borderCurve: 'continuous', overflow: 'hidden' },
 })

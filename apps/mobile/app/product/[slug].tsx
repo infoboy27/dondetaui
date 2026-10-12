@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { ScrollView, Share, StyleSheet, Text, View } from 'react-native'
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
+import { friendlyError } from '../../src/api/errors'
 import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offers'
 import { isGaming } from '../../src/domain/gaming'
+import { offerUrl, openInApp, productWebUrl } from '../../src/domain/links'
 import DiscountCode from '../../src/components/DiscountCode'
 import { formatPrice } from '../../src/domain/currency'
-import { appConfig } from '../../src/config/env'
 import { colors, radii, spacing } from '../../src/design/tokens'
-import { fonts } from '../../src/design/fonts'
-import { shadows } from '../../src/design/shadows'
+import { type } from '../../src/design/type'
+import { haptics } from '../../src/design/haptics'
 import ProductImage from '../../src/components/ProductImage'
 import ProductReviews from '../../src/components/ProductReviews'
+import StoreLogo from '../../src/components/StoreLogo'
+import Icon, { type IconName } from '../../src/components/Icon'
+import Button from '../../src/components/ui/Button'
+import EmptyState from '../../src/components/ui/EmptyState'
+import Touchable from '../../src/components/ui/Touchable'
+import { Skeleton } from '../../src/components/ui/Skeleton'
 import { useAppState } from '../../src/state/AppStateContext'
 import { STORE_SLUGS } from '../../src/data/storeSlugs'
 
@@ -24,6 +30,7 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -40,7 +47,7 @@ export default function ProductDetailScreen() {
         }
         if (!cancelled) setProduct(result)
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'No se pudo cargar el producto')
+        if (!cancelled) setError(friendlyError(e, 'No encontramos este producto. Puede que ya no esté disponible.'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -50,24 +57,35 @@ export default function ProductDetailScreen() {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [slug, attempt])
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </SafeAreaView>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.screen} contentContainerStyle={styles.content}>
+        <Skeleton width="100%" height={260} radius={radii.xxl} />
+        <View style={{ gap: spacing.sm, marginTop: spacing.xl }}>
+          <Skeleton width="30%" height={12} />
+          <Skeleton width="95%" height={22} />
+          <Skeleton width="70%" height={22} />
+        </View>
+        <Skeleton width="100%" height={120} radius={radii.xl} style={{ marginTop: spacing.xl }} />
+      </ScrollView>
     )
   }
 
   if (error || !product) {
     return (
-      <SafeAreaView style={styles.center}>
-        <Text style={styles.errorText}>{error ?? 'Producto no encontrado'}</Text>
-        <Pressable onPress={() => router.back()} style={styles.backLink}>
-          <Text style={styles.backLinkText}>Volver</Text>
-        </Pressable>
-      </SafeAreaView>
+      <View style={[styles.screen, styles.center]}>
+        <EmptyState
+          icon="shippingbox"
+          title="No se pudo abrir el producto"
+          message={error ?? undefined}
+          actionTitle="Reintentar"
+          onAction={() => setAttempt(n => n + 1)}
+          secondaryTitle="Volver"
+          onSecondary={() => router.back()}
+        />
+      </View>
     )
   }
 
@@ -76,137 +94,205 @@ export default function ProductDetailScreen() {
   const savings = getSavingsRange(product.prices)
   const gaming = isGaming(product)
   const singleStore = new Set(product.prices.map(offer => offer.store)).size === 1
+  const isFavorite = favoriteIds.has(product.id)
+  const isAlerted = alertedIds.has(product.id)
+  const cheapestUrl = cheapest ? offerUrl(product, cheapest) : null
+
+  const share = () => {
+    void Share.share({
+      message: cheapest
+        ? `${product.name} desde ${formatPrice(cheapest.price)} en DóndeTa`
+        : `${product.name} en DóndeTa`,
+      url: productWebUrl(product),
+    }).catch(() => {})
+  }
+
+  const onToggleAlert = () => {
+    if (!toggleAlert(product.id)) {
+      router.navigate('/profile')
+      return
+    }
+    haptics.success()
+  }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹</Text>
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={() => { if (!toggleAlert(product.id)) router.push('/(tabs)/profile') }}
-          style={styles.back}
-          accessibilityRole="button"
-          accessibilityLabel={alertedIds.has(product.id) ? `Quitar alerta de ${product.name}` : `Crear alerta para ${product.name}`}
-        >
-          <Text style={[styles.bell, alertedIds.has(product.id) && styles.bellActive]}>🔔</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => toggleFavorite(product.id)}
-          style={styles.back}
-          accessibilityRole="button"
-          accessibilityLabel={favoriteIds.has(product.id) ? `Quitar ${product.name} de favoritos` : `Agregar ${product.name} a favoritos`}
-        >
-          <Text style={[styles.heart, favoriteIds.has(product.id) && styles.heartActive]}>
-            {favoriteIds.has(product.id) ? '♥' : '♡'}
-          </Text>
-        </Pressable>
-      </View>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.top}>
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <HeaderButton icon="share" label="Compartir" onPress={share} />
+              <HeaderButton
+                icon={isAlerted ? 'bellFill' : 'bell'}
+                label={isAlerted ? 'Quitar alerta de precio' : 'Avisarme si baja de precio'}
+                active={isAlerted}
+                onPress={onToggleAlert}
+              />
+              <HeaderButton
+                icon={isFavorite ? 'heartFill' : 'heart'}
+                label={isFavorite ? 'Quitar de guardados' : 'Guardar'}
+                active={isFavorite}
+                activeColor={colors.accent}
+                onPress={() => {
+                  haptics.selection()
+                  toggleFavorite(product.id)
+                }}
+              />
+            </View>
+          ),
+        }}
+      />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.screen} contentContainerStyle={styles.content}>
+        <View style={styles.imageCard}>
           <ProductImage uri={product.image} style={styles.image} />
-          <Text style={styles.brand}>{product.brand}</Text>
-          <Text style={styles.title}>{product.name}</Text>
+        </View>
+
+        <View style={styles.titleBlock}>
+          {!!product.brand && <Text style={[type.footnoteEmphasized, styles.brand]}>{product.brand}</Text>}
+          <Text style={[type.title2, styles.title]} accessibilityRole="header">{product.name}</Text>
           {gaming
-            ? <Text style={styles.subtitle}>Código digital</Text>
-            : !!product.model && <Text style={styles.subtitle}>{product.model}</Text>}
+            ? <Text style={[type.subheadline, styles.subtitle]}>Código digital · Entrega inmediata</Text>
+            : !!product.model && <Text style={[type.subheadline, styles.subtitle]}>Modelo {product.model}</Text>}
         </View>
 
         {cheapest && (
-          <View style={styles.bestBox}>
-            <Text style={styles.bestLabel}>{singleStore ? 'PRECIO' : 'MEJOR PRECIO'}</Text>
-            <Text style={styles.bestPrice}>{formatPrice(cheapest.price)}</Text>
-            <Text style={styles.bestStore}>{cheapest.store} · {gaming ? 'Entrega inmediata' : cheapest.shipping}</Text>
-            {savings > 0 && <Text style={styles.savings}>Ahorras hasta {formatPrice(savings)}</Text>}
+          <View style={styles.bestCard}>
+            <View style={styles.bestTop}>
+              <View style={{ flex: 1 }}>
+                <Text style={[type.caption2, styles.bestLabel]}>{singleStore ? 'PRECIO' : 'MEJOR PRECIO'}</Text>
+                <Text style={[type.price(34, 'bold'), styles.bestPrice]} adjustsFontSizeToFit numberOfLines={1}>{formatPrice(cheapest.price)}</Text>
+                <Text style={[type.subheadline, styles.bestStore]}>
+                  en {cheapest.store} · {gaming ? 'entrega inmediata' : cheapest.shipping}
+                </Text>
+              </View>
+              <StoreLogo abbr={cheapest.abbr} color={cheapest.color} size={48} />
+            </View>
+            {savings > 0 && (
+              <View style={styles.savings}>
+                <Icon name="tag" size={13} color={colors.accent} />
+                <Text style={[type.footnoteEmphasized, styles.savingsText]}>Ahorras hasta {formatPrice(savings)} frente a otras tiendas</Text>
+              </View>
+            )}
+            {cheapestUrl && (
+              <Button title={`Ver en ${cheapest.store}`} icon="arrowUpRight" onPress={() => openInApp(cheapestUrl)} style={{ marginTop: spacing.md }} />
+            )}
           </View>
         )}
 
         {gaming && (
           <View style={styles.gamingBox}>
             <DiscountCode />
-            <Text style={styles.gamingNote}>• Producto digital: el código llega a tu correo al instante.</Text>
-            <Text style={styles.gamingNote}>• Región global: se activa desde tu país.</Text>
-            <Text style={styles.gamingNote}>• La compra se hace en Eneba; DóndeTa no vende ni cobra.</Text>
+            <Note icon="bolt" text="Producto digital: el código llega a tu correo al instante." />
+            <Note icon="checkmarkCircle" text="Región global: se activa desde tu país." />
+            <Note icon="storefront" text="La compra se hace en Eneba; DóndeTa no vende ni cobra." />
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>{singleStore ? 'Disponible en' : 'Comparación de tiendas'}</Text>
-        {offers.map((offer, index) => {
-          const storeSlug = STORE_SLUGS[offer.abbr]
-          const Info = storeSlug ? Pressable : View
-          return (
-            <View key={`${offer.store}-${index}`} style={styles.offerRow}>
-              <Info
-                style={styles.offerInfo}
-                {...(storeSlug ? { onPress: () => router.push(`/store/${storeSlug}`) } : {})}
-              >
-                <View style={[styles.storeBadge, { backgroundColor: offer.color || colors.primary }]}>
-                  <Text style={styles.storeBadgeText}>{offer.abbr}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.offerStore}>{offer.store}</Text>
-                  <Text style={styles.offerMeta}>{offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}</Text>
-                </View>
-              </Info>
-              <View style={styles.offerRight}>
-                <Text style={styles.offerPrice}>{formatPrice(offer.price)}</Text>
-                {!!offer.url && (
-                  <Pressable
-                    onPress={() => Linking.openURL(offer.retailerId ? `${appConfig.apiBaseUrl}/go/${product.id}/${offer.retailerId}?src=app` : offer.url!)}
-                    style={styles.offerLink}
-                    accessibilityRole="link"
-                    accessibilityLabel={`Ver oferta en la página de ${offer.store}`}
+        <Text style={[type.title3, styles.sectionTitle]}>{singleStore ? 'Disponible en' : `Precios en ${offers.length} tiendas`}</Text>
+        <View style={styles.offers}>
+          {offers.map((offer, index) => {
+            const url = offerUrl(product, offer)
+            const storeSlug = STORE_SLUGS[offer.abbr]
+            const isBest = index === 0 && !singleStore
+            return (
+              <View key={`${offer.store}-${index}`}>
+                <Touchable
+                  onPress={() => url && openInApp(url)}
+                  disabled={!url}
+                  style={styles.offerRow}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}. Ver oferta`}
+                >
+                  <Touchable
+                    onPress={() => storeSlug && router.push(`/store/${storeSlug}`)}
+                    disabled={!storeSlug}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Ver tienda ${offer.store}`}
                   >
-                    <Text style={styles.offerLinkText}>Ver oferta ↗</Text>
-                  </Pressable>
-                )}
+                    <StoreLogo abbr={offer.abbr} color={offer.color || colors.primary} size={40} />
+                  </Touchable>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.offerNameRow}>
+                      <Text style={[type.headline, styles.offerStore]} numberOfLines={1}>{offer.store}</Text>
+                      {isBest && <Text style={[type.caption2, styles.bestTag]}>MÁS BARATO</Text>}
+                    </View>
+                    <Text style={[type.footnote, offer.available ? styles.offerMeta : styles.offerUnavailable]} numberOfLines={1}>
+                      {offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}
+                    </Text>
+                  </View>
+                  <View style={styles.offerRight}>
+                    <Text style={[type.price(17, 'semibold'), isBest ? styles.offerPriceBest : styles.offerPrice]}>{formatPrice(offer.price)}</Text>
+                    {!!url && <Icon name="arrowUpRight" size={12} color={colors.tertiaryLabel} weight="semibold" />}
+                  </View>
+                </Touchable>
+                {index < offers.length - 1 && <View style={styles.separator} />}
               </View>
-            </View>
-          )
-        })}
+            )
+          })}
+        </View>
 
         <ProductReviews productId={product.id} />
       </ScrollView>
-    </SafeAreaView>
+    </>
+  )
+}
+
+function HeaderButton({ icon, label, onPress, active = false, activeColor = colors.primary }: {
+  icon: IconName
+  label: string
+  onPress: () => void
+  active?: boolean
+  activeColor?: string
+}) {
+  return (
+    <Touchable onPress={onPress} hitSlop={8} style={styles.headerButton} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ selected: active }}>
+      <Icon name={icon} size={20} color={active ? activeColor : colors.navy} />
+    </Touchable>
+  )
+}
+
+function Note({ icon, text }: { icon: IconName; text: string }) {
+  return (
+    <View style={styles.note}>
+      <Icon name={icon} size={14} color={colors.primaryDark} />
+      <Text style={[type.footnote, styles.noteText]}>{text}</Text>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, gap: spacing.md },
-  header: { height: 56, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border },
-  back: { width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, lineHeight: 28, color: colors.navy },
-  heart: { fontSize: 18, color: colors.navy400 },
-  heartActive: { color: colors.accent },
-  bell: { fontSize: 16, opacity: 0.35 },
-  bellActive: { opacity: 1 },
-  content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
-  top: { alignItems: 'center', backgroundColor: colors.card, borderRadius: radii.xxl, padding: spacing.xl, borderWidth: 1, borderColor: colors.border },
-  image: { width: 200, height: 200, borderRadius: radii.xl },
-  brand: { color: colors.primary, fontFamily: fonts.display.bold, marginTop: spacing.md },
-  title: { color: colors.navy, fontSize: 20, fontFamily: fonts.display.black, textAlign: 'center', marginTop: spacing.xs },
-  subtitle: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 12, marginTop: spacing.xs },
-  bestBox: { backgroundColor: colors.primaryLight, borderRadius: radii.xl, padding: spacing.lg, marginTop: spacing.lg },
-  bestLabel: { color: colors.primary, fontSize: 11, fontFamily: fonts.display.black },
-  bestPrice: { color: colors.navy, fontSize: 30, fontFamily: fonts.display.black },
-  bestStore: { color: colors.navy400, fontFamily: fonts.body.regular },
-  savings: { color: colors.accent, fontFamily: fonts.display.bold, marginTop: spacing.sm },
-  gamingBox: { backgroundColor: colors.card, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: 6, marginTop: spacing.md },
-  gamingNote: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 13 },
-  sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy, marginVertical: spacing.md },
-  offerRow: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md, ...shadows.sm },
-  offerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  offerRight: { alignItems: 'flex-end', gap: spacing.xs },
-  storeBadge: { width: 40, height: 40, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
-  storeBadgeText: { color: '#fff', fontFamily: fonts.display.black },
-  offerStore: { color: colors.navy, fontFamily: fonts.display.bold },
-  offerMeta: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 11 },
-  offerPrice: { color: colors.navy, fontSize: 16, fontFamily: fonts.display.black },
-  offerLink: { paddingVertical: 2 },
-  offerLinkText: { color: colors.primary, fontFamily: fonts.body.bold, fontSize: 11 },
-  errorText: { color: '#BE123C', fontFamily: fonts.body.bold },
-  backLink: { marginTop: spacing.md },
-  backLinkText: { color: colors.primary, fontFamily: fonts.body.bold },
+  screen: { flex: 1, backgroundColor: colors.background },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  content: { padding: spacing.lg, paddingBottom: spacing.page },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.xs },
+  headerButton: { padding: 2 },
+  imageCard: { backgroundColor: '#fff', borderRadius: radii.xxl, borderCurve: 'continuous', padding: spacing.xl, alignItems: 'center' },
+  image: { width: '100%', height: 240 },
+  titleBlock: { marginTop: spacing.xl, gap: 4 },
+  brand: { color: colors.primaryDark },
+  title: { color: colors.navy },
+  subtitle: { color: colors.secondaryLabel },
+  bestCard: { backgroundColor: colors.card, borderRadius: radii.xl, borderCurve: 'continuous', padding: spacing.lg, marginTop: spacing.xl },
+  bestTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  bestLabel: { color: colors.primaryDark, letterSpacing: 0.8 },
+  bestPrice: { color: colors.navy, marginTop: 2 },
+  bestStore: { color: colors.secondaryLabel },
+  savings: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.accentLight, borderRadius: radii.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginTop: spacing.md },
+  savingsText: { color: '#B86400', flexShrink: 1 },
+  gamingBox: { backgroundColor: colors.card, borderRadius: radii.xl, borderCurve: 'continuous', padding: spacing.lg, gap: spacing.sm, marginTop: spacing.md },
+  note: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+  noteText: { color: colors.secondaryLabel, flex: 1 },
+  sectionTitle: { color: colors.navy, marginTop: spacing.xxl, marginBottom: spacing.md },
+  offers: { backgroundColor: colors.card, borderRadius: radii.xl, borderCurve: 'continuous', overflow: 'hidden' },
+  offerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  offerNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  offerStore: { color: colors.navy, flexShrink: 1 },
+  bestTag: { color: colors.primaryDark, backgroundColor: colors.primaryLight, borderRadius: 4, overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 1, letterSpacing: 0.4 },
+  offerMeta: { color: colors.secondaryLabel },
+  offerUnavailable: { color: colors.tertiaryLabel },
+  offerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  offerPrice: { color: colors.navy },
+  offerPriceBest: { color: colors.primaryDark },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: 72 },
 })

@@ -1,45 +1,55 @@
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native'
 import type { StoreBranch } from '../api/stores'
-import { colors, radii, spacing } from '../design/tokens'
-import { fonts } from '../design/fonts'
+import { colors, spacing } from '../design/tokens'
+import { type } from '../design/type'
+import StoreLogo from './StoreLogo'
+import Icon from './Icon'
+import Touchable from './ui/Touchable'
 
-export default function StoreBranchRow({ branch }: { branch: StoreBranch }) {
+// One branch in a grouped list; tapping opens directions in the platform's
+// maps app (Apple Maps on iOS).
+export default function StoreBranchRow({ branch, divider = false }: { branch: StoreBranch; divider?: boolean }) {
+  const hasCoords = branch.latitude !== null && branch.longitude !== null
+
   const openMaps = () => {
-    if (branch.latitude === null || branch.longitude === null) return
-    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${branch.latitude},${branch.longitude}`)
+    if (!hasCoords) return
+    const label = encodeURIComponent(branch.name)
+    const url = Platform.OS === 'ios'
+      ? `https://maps.apple.com/?q=${label}&ll=${branch.latitude},${branch.longitude}`
+      : `https://www.google.com/maps/search/?api=1&query=${branch.latitude},${branch.longitude}`
+    void Linking.openURL(url)
   }
 
+  const distance = branch.distanceKm === undefined
+    ? null
+    : branch.distanceKm < 1 ? `${Math.round(branch.distanceKm * 1000)} m` : `${branch.distanceKm.toLocaleString('es-DO', { maximumFractionDigits: 1 })} km`
+
   return (
-    <Pressable onPress={openMaps} disabled={branch.latitude === null} style={styles.row}>
-      <View style={[styles.badge, { backgroundColor: branch.retailer.color }]}>
-        <Text style={styles.badgeText}>{branch.retailer.abbr}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.name}>{branch.name}</Text>
-        {!!branch.address && <Text style={styles.address} numberOfLines={2}>{branch.address}</Text>}
-      </View>
-      {branch.distanceKm !== undefined && (
-        <Text style={styles.distance}>{branch.distanceKm < 1 ? `${Math.round(branch.distanceKm * 1000)} m` : `${branch.distanceKm} km`}</Text>
-      )}
-    </Pressable>
+    <View>
+      <Touchable
+        onPress={openMaps}
+        disabled={!hasCoords}
+        style={styles.row}
+        accessibilityRole="button"
+        accessibilityLabel={`${branch.name}${distance ? `, a ${distance}` : ''}. Abrir en Mapas`}
+      >
+        <StoreLogo abbr={branch.retailer.abbr} color={branch.retailer.color} size={40} />
+        <View style={{ flex: 1 }}>
+          <Text style={[type.headline, styles.name]} numberOfLines={1}>{branch.name}</Text>
+          {!!branch.address && <Text style={[type.footnote, styles.address]} numberOfLines={2}>{branch.address}</Text>}
+        </View>
+        {distance && <Text style={[type.subheadlineEmphasized, styles.distance]}>{distance}</Text>}
+        {hasCoords && <Icon name="chevronRight" size={13} color={colors.tertiaryLabel} weight="semibold" />}
+      </Touchable>
+      {divider && <View style={styles.separator} />}
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  badge: { width: 40, height: 40, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#fff', fontFamily: fonts.display.black, fontSize: 12 },
-  name: { color: colors.navy, fontFamily: fonts.display.bold, fontSize: 14 },
-  address: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 12, marginTop: 2 },
-  distance: { color: colors.primary, fontFamily: fonts.display.bold, fontSize: 13 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  name: { color: colors.navy },
+  address: { color: colors.secondaryLabel, marginTop: 1 },
+  distance: { color: colors.primaryDark },
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: 72 },
 })
