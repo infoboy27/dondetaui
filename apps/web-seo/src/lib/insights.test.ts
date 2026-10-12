@@ -16,6 +16,12 @@ describe('matchesType', () => {
     expect(matchesType(product('Refrigerador Side by Side LG', [offer('PriceSmart', 80_000)]), type('neveras'))).toBe(true)
   })
 
+  it('excludes whole words only (KitchenAid is not a "kit", quemadores are not a spare "quemador")', () => {
+    expect(matchesType(product('Nevera Kitchenaid French Door 30P KRFF436SPS', [offer('Sirena', 190_000)]), type('neveras'))).toBe(true)
+    expect(matchesType(product('Estufa Al Piso Whirlpool, 30", 5 Quemadores Sellados, A Gas', [offer('Corripio', 40_000)]), type('estufas'))).toBe(true)
+    expect(matchesType(product('Kit de Instalación para Lavadora Whirlpool', [offer('Jumbo', 8_000)]), type('lavadoras'))).toBe(false)
+  })
+
   it('ignores accents and case', () => {
     expect(matchesType(product('ESTUFA ELÉCTRICA Frigidaire 30"', [offer('Jumbo', 20_000)]), type('estufas'))).toBe(true)
   })

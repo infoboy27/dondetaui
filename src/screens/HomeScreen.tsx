@@ -5,6 +5,7 @@ import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
 import { AD_SIZES } from '../data/adSizes'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { useCatalogFreshness } from '../hooks/useCatalogFreshness'
 import { compareByRelevance, getTopComparisons } from '../domain/offers'
 import { getTopPriceDrops } from '../domain/notifications'
 import { formatPrice } from '../domain/currency'
@@ -32,7 +33,8 @@ export default function HomeScreen({
   onSearch, onProduct, onCategory, onNearby, onStore, onViewAll, onNotifications, hasNotifications,
   favoriteIds, onToggleFavorite,
 }: Props) {
-  const { products } = useCatalogProducts()
+  const { products, error, retry } = useCatalogProducts()
+  const freshness = useCatalogFreshness()
   const comparisons = useMemo(() => getTopComparisons(products, 12), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 12), [products])
   const featured = useMemo(() => [...products].sort(compareByRelevance).slice(0, 10), [products])
@@ -147,6 +149,14 @@ export default function HomeScreen({
                 ? `Comparamos ${products.length.toLocaleString('es-DO')} productos en ${stores.length} tiendas`
                 : 'Antes de comprar, mira DóndeTa'}
             </div>
+            {freshness && (
+              <div style={{
+                fontSize: 11, color: 'rgba(255,255,255,0.85)',
+                fontFamily: "'DM Sans', sans-serif", marginTop: 2,
+              }}>
+                {freshness}
+              </div>
+            )}
           </div>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
@@ -158,6 +168,27 @@ export default function HomeScreen({
           </div>
         </div>
       </div>
+
+      {error && (
+        <div style={{ padding: '16px 20px 0' }}>
+          <div role="alert" style={{
+            background: '#FFF3E0', border: '1px solid #FF9F1C', borderRadius: 12,
+            padding: '12px 16px', color: '#0F1D2D',
+            fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+          }}>
+            No se pudo cargar el catálogo de precios. Revisa tu conexión e intenta de nuevo.{' '}
+            <button
+              onClick={retry}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                color: '#00B894', fontWeight: 600, fontFamily: 'inherit', fontSize: 'inherit',
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Comparaciones del día: the product's core promise, shown first */}
       {comparisons.length > 0 && (

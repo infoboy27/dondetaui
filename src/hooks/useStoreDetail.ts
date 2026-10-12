@@ -64,7 +64,8 @@ export function useStoreDetail(abbr: string | null): StoreDetailState {
       } catch (error) {
         if (!cancelled) {
           setState({
-            ...fixtureStore(abbr),
+            store: null,
+            products: [],
             loading: false,
             error: error instanceof Error ? error.message : 'No se pudo cargar la tienda',
           })
