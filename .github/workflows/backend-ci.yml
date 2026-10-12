@@ -55,6 +55,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://dondeta:dondeta@localhost:5432/dondeta
       PORT: 3001
+      # The API refuses to boot without it.
+      JWT_SECRET: ci-only-jwt-secret
     defaults:
       run:
         working-directory: apps/api
