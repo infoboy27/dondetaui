@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import ProductComparisonCard from '../components/ProductComparisonCard'
+import SectionHeader from '../components/SectionHeader'
+import { matchesSectionFilter } from '../domain/sections'
 import PaginationControls from '../components/PaginationControls'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
 import { CATEGORIES } from '../data/mock'
@@ -33,12 +35,18 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
   const [excludedStores, setExcludedStores] = useState<string[]>([])
   const [stockOnly, setStockOnly] = useState(false)
   const [freeShippingOnly, setFreeShippingOnly] = useState(false)
+  // Quick filter from the section header (a product type, or a Gaming kind).
+  const [sectionFilter, setSectionFilter] = useState<string | null>(null)
   // Category mode fetches the whole catalog (matchesCategory filters
   // client-side, same as DesktopView) rather than sending the category id
   // to the free-text search API.
   const { products, source, error, retry } = useCatalogProducts(category ? '' : query)
   const categoryLabel = category ? CATEGORIES.find(c => c.id === category)?.label : undefined
   const headingText = categoryLabel || query || 'Todos los productos'
+  const sectionProducts = useMemo(
+    () => (category ? products.filter(product => matchesCategory(product, category)) : []),
+    [products, category],
+  )
 
   const storeOptions = useMemo(
     () => [...new Set(products.flatMap(product => product.prices.map(offer => offer.store)))].sort((a, b) => a.localeCompare(b)),
@@ -60,7 +68,7 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
           product.brand.toLowerCase().includes(normalizedQuery) ||
           normalizedQuery.includes(product.brand.toLowerCase())
 
-      if (!matchesQuery) return false
+      if (!matchesQuery || !matchesSectionFilter(product, sectionFilter)) return false
 
       return product.prices.some(offer => {
         const storeMatches = !excludedStores.includes(offer.store)
@@ -83,7 +91,7 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
 
       return getOfferTotal(aOffer) - getOfferTotal(bOffer)
     })
-  }, [products, source, query, category, excludedStores, stockOnly, freeShippingOnly, sortBy])
+  }, [products, source, query, category, sectionFilter, excludedStores, stockOnly, freeShippingOnly, sortBy])
 
   const { page, pageSize, totalPages, total, pageItems, setPage, setPageSize } = usePagination(displayResults)
 
@@ -255,6 +263,11 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
 
       {/* Results */}
       <div style={{ padding: '16px 16px 0' }}>
+        {category && sectionProducts.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <SectionHeader category={category} products={sectionProducts} selected={sectionFilter} onSelect={setSectionFilter} />
+          </div>
+        )}
         {displayResults.length > 0 ? pageItems.map(product => (
           <ProductComparisonCard
             key={product.id}

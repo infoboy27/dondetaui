@@ -122,6 +122,36 @@ export default function HomeScreen({
           </span>
           <MicIcon size={18} color="#9AAABB" />
         </div>
+
+        {/* Sections, one tap away (they used to sit at the bottom of the page) */}
+        <nav aria-label="Secciones" style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '14px -20px 0', padding: '0 20px 2px' }}>
+          {/* Gaming first while it's new: fifth in line it sat off-screen. */}
+          {[...CATEGORIES].sort((a, b) => Number(b.id === 'gaming') - Number(a.id === 'gaming')).map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => onCategory(cat.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
+                background: cat.color, border: `1.5px solid ${cat.border}33`,
+                borderRadius: 999, padding: '7px 12px', cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{cat.emoji}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", color: '#0F1D2D' }}>
+                {cat.label}
+              </span>
+              {cat.id === 'gaming' && (
+                <span style={{
+                  fontSize: 9, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#fff',
+                  background: '#8B5CF6', borderRadius: 999, padding: '2px 6px', letterSpacing: '0.03em',
+                }}>
+                  NUEVO
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Value banner: what DóndeTa does, with the live catalog size */}
@@ -273,36 +303,6 @@ export default function HomeScreen({
           </HorizontalRow>
         </Section>
       )}
-
-      {/* Categories */}
-      <Section title="Categorías">
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', padding: '0 20px' }}>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => onCategory(cat.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                background: cat.color,
-                border: `1.5px solid ${cat.border}22`,
-                borderRadius: 12, padding: '8px 14px',
-                cursor: 'pointer', transition: 'transform 0.12s ease',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
-              onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-            >
-              <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-              <span style={{
-                fontSize: 12, fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif",
-                color: '#0F1D2D',
-              }}>
-                {cat.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Section>
 
       {/* Stores we compare */}
       {stores.length > 0 && (

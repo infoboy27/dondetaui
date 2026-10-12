@@ -159,11 +159,11 @@ export const PRODUCTS: Product[] = [
   },
 ]
 
+// Only sections DóndeTa has products for: Hogar and Muebles were here and
+// always opened on "0 resultados" (nothing in those departments is ingested).
 export const CATEGORIES = [
   { id: 'electrodomesticos', label: 'Electrodomésticos', emoji: '🏠', color: '#E6F7F3', border: '#00B894' },
-  { id: 'hogar', label: 'Hogar', emoji: '🛋️', color: '#FFF3E0', border: '#FF9F1C' },
   { id: 'tv-audio', label: 'TV y Audio', emoji: '📺', color: '#EEF2FF', border: '#6366F1' },
-  { id: 'muebles', label: 'Muebles', emoji: '🪑', color: '#FEF3C7', border: '#F59E0B' },
   { id: 'aires', label: 'Aires A/C', emoji: '❄️', color: '#E0F2FE', border: '#0EA5E9' },
   { id: 'cocina', label: 'Cocina', emoji: '🍳', color: '#FFF0F0', border: '#EF4444' },
   { id: 'gaming', label: 'Gaming', emoji: '🎮', color: '#F3E8FF', border: '#8B5CF6' },
