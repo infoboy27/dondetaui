@@ -1,23 +1,37 @@
 import { useState } from 'react'
-import { Image, StyleSheet, Text, View, type ImageStyle, type StyleProp } from 'react-native'
+import { StyleSheet, View, type ImageStyle, type StyleProp } from 'react-native'
+import { Image } from 'expo-image'
 import { colors, radii } from '../design/tokens'
+import Icon from './Icon'
 
 // Mirrors the web app's ProductImage component (src/components/ProductImage.tsx):
 // real product photos are sometimes missing or fail to load (ingested from
 // retailer scrapes, not guaranteed) -- show a neutral placeholder instead of
-// a broken-image icon or a blank box.
+// a broken-image icon or a blank box. expo-image caches photos on disk, so
+// lists scroll smoothly and revisits load instantly.
 export default function ProductImage({ uri, style }: { uri?: string; style?: StyleProp<ImageStyle> }) {
   const [failed, setFailed] = useState(false)
 
   if (!uri || failed) {
     return (
       <View style={[styles.placeholder, style]}>
-        <Text style={styles.placeholderGlyph}>📦</Text>
+        <Icon name="photo" size={26} color={colors.navy200} weight="light" />
       </View>
     )
   }
 
-  return <Image source={{ uri }} style={style} onError={() => setFailed(true)} />
+  return (
+    <Image
+      source={{ uri }}
+      style={style}
+      contentFit="contain"
+      transition={180}
+      cachePolicy="memory-disk"
+      recyclingKey={uri}
+      onError={() => setFailed(true)}
+      accessibilityIgnoresInvertColors
+    />
+  )
 }
 
 const styles = StyleSheet.create({
@@ -27,5 +41,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  placeholderGlyph: { fontSize: 28, opacity: 0.4 },
 })

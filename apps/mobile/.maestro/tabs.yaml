@@ -1,0 +1,24 @@
+appId: com.jfmcss.dondeta
+name: Saved, profile, scanner and nearby stores
+---
+- runFlow: common/open.yaml
+- tapOn: "Guardados"
+- assertVisible: "Favoritos"
+- takeScreenshot: 08-saved
+- tapOn: "Alertas de precio"
+- assertVisible: "Te avisamos cuando baje|Sin alertas todavía|.*RD\\$.*"
+- takeScreenshot: 09-saved-alerts
+- tapOn: "Perfil"
+- assertVisible: "Tu cuenta DóndeTa|Cerrar sesión"
+- takeScreenshot: 10-profile
+- tapOn: "Escanear"
+- takeScreenshot: 11-scanner
+- tapOn: "Inicio"
+- tapOn: "Cerca de ti"
+- assertVisible: "La sucursal más cerca de ti"
+- takeScreenshot: 12-nearby-idle
+- tapOn: "Ver tiendas en Santo Domingo"
+- extendedWaitUntil:
+    visible: "Cerca de Santo Domingo.*|Sin sucursales cerca"
+    timeout: 15000
+- takeScreenshot: 13-nearby-results

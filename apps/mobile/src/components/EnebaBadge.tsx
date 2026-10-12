@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native'
 import { colors, radii } from '../design/tokens'
-import { fonts } from '../design/fonts'
+import { type } from '../design/type'
 
 // Official Eneba logo, approved by Eneba for the Gaming section (2026-10-12),
 // same badge as the web. Any new placement with their brand needs their
@@ -12,7 +12,7 @@ const LOGO_RATIO = 406 / 136
 export default function EnebaBadge({ logoHeight = 18 }: { logoHeight?: number }) {
   return (
     <View style={styles.badge}>
-      <Text style={styles.text}>En alianza con</Text>
+      <Text style={[type.caption, styles.text]}>En alianza con</Text>
       <Image source={LOGO} accessibilityLabel="Eneba" style={{ height: logoHeight, width: logoHeight * LOGO_RATIO }} />
     </View>
   )
@@ -21,8 +21,8 @@ export default function EnebaBadge({ logoHeight = 18 }: { logoHeight?: number })
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: radii.full,
+    backgroundColor: '#fff', borderRadius: radii.full,
     paddingVertical: 3, paddingLeft: 12, paddingRight: 10,
   },
-  text: { fontSize: 11, color: colors.navy400, fontFamily: fonts.body.regular },
+  text: { color: colors.secondaryLabel },
 })

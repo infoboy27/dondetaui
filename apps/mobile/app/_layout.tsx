@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { useFonts } from 'expo-font'
 import { fontsToLoad } from '../src/design/fonts'
 import { AppStateProvider } from '../src/state/AppStateContext'
+import { nativeHeader } from '../src/design/navigation'
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -24,12 +25,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppStateProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="product/[slug]" />
-            <Stack.Screen name="store/[slug]" />
-            <Stack.Screen name="nearby-stores" />
-            <Stack.Screen name="gaming" />
+          <Stack screenOptions={nativeHeader}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="product/[slug]" options={{ title: '' }} />
+            <Stack.Screen name="store/[slug]" options={{ title: '', headerLargeTitle: true }} />
+            <Stack.Screen name="nearby-stores" options={{ title: 'Tiendas cercanas', headerLargeTitle: true }} />
+            <Stack.Screen name="gaming" options={{ title: 'Gaming', headerLargeTitle: true }} />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>

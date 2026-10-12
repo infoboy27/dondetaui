@@ -1,0 +1,5 @@
+# Maestro UI flows for the mobile app. Run against a dev build with Metro up:
+#   cd apps/mobile && pnpm ios        # once, builds and installs the app
+#   maestro test .maestro             # all flows
+flows:
+  - "*.yaml"

@@ -1,0 +1,29 @@
+appId: com.jfmcss.dondeta
+name: Home, search and product page
+---
+- runFlow: common/open.yaml
+- assertVisible: "Antes de comprar,.*"
+- takeScreenshot: 01-home
+- scrollUntilVisible:
+    element: "Todos los productos.*"
+    direction: DOWN
+- takeScreenshot: 02-home-list
+- tapOn: "Buscar"
+- assertVisible: "Sugerencias"
+- takeScreenshot: 03-search-idle
+- tapOn: "Buscar Neveras"
+- extendedWaitUntil:
+    visible: ".*resultados para “Neveras”"
+    timeout: 15000
+- takeScreenshot: 04-search-results
+- tapOn:
+    text: ".*RD\\$.*"
+    index: 0
+- extendedWaitUntil:
+    visible: "Precios en .* tiendas|Disponible en"
+    timeout: 15000
+- takeScreenshot: 05-product
+- scrollUntilVisible:
+    element: "Reseñas"
+    direction: DOWN
+- takeScreenshot: 06-product-offers

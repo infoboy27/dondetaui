@@ -66,6 +66,37 @@ Para la ficha de App Store hacen falta capturas de 6.7" y 6.5", el texto de la f
 - La lógica está en `src/domain/gaming.ts` y es copia de la de la web: hay que mantener las dos iguales. Sus tests (`gaming.test.ts`) corren con el `pnpm test` de la raíz.
 - El logo de Eneba está en `assets/partners/eneba.png`, aprobado por Eneba. Usarlo en otro sitio requiere su aprobación otra vez.
 
+## Diseño de la app (iOS nativo)
+
+La app no copia la web: usa los controles del sistema y conserva la marca
+(verde, naranja y azul marino). Dirección aprobada el 2026-10-12.
+
+- **Navegación:** pestañas nativas (`expo-router/unstable-native-tabs`, Liquid Glass en iOS 26+); "Buscar" con `role="search"`. Cada pestaña es una pila con títulos grandes (`src/design/navigation.ts`).
+- **Tipografía:** `src/design/type.ts`. En iOS se usa SF Pro con los tamaños de Dynamic Type y SF Pro Rounded para los precios. En Android se usan DM Sans y Poppins. Poppins en iOS solo aparece en la portada (`type.brand`).
+- **Íconos:** `src/components/Icon.tsx`: SF Symbols en iOS y Material Symbols en Android. Íconos nuevos se agregan ahí, nunca con emojis.
+- **Componentes:** `src/components/ui/`: Touchable (respuesta al toque), Button, Skeleton, EmptyState, SectionHeader, SegmentedControl, GroupedList.
+- **Errores:** `src/api/errors.ts` (`friendlyError`): nunca mostrar mensajes técnicos.
+- **Hápticos:** `src/design/haptics.ts`.
+- **Enlaces:** las ofertas se abren dentro de la app con `expo-web-browser` (`src/domain/links.ts`).
+- **Precios:** en pesos enteros (`formatPrice` redondea).
+- **iOS 27:** exige el ciclo de vida por escenas. Ver `plugins/withSceneLifecycle.js`.
+
+## Pruebas de interfaz (Maestro)
+
+`apps/mobile/.maestro/`: recorren portada, búsqueda (con y sin resultados),
+ficha de producto, Guardados, Perfil, Escanear y Tiendas cercanas, y toman
+capturas.
+
+```bash
+brew install mobile-dev-inc/tap/maestro   # una vez (usa Java 17)
+cd apps/mobile && pnpm ios                # build de desarrollo en el simulador
+npx expo start --dev-client               # Metro, en otra terminal
+maestro test .maestro
+```
+
+En el build de desarrollo, el botón flotante ⚙️ de Expo puede tapar botones;
+no existe en los builds de release.
+
 ## Checks
 
 ```bash
@@ -76,6 +107,10 @@ npx expo export --platform android
 ```
 
 ## Pendientes de la app
+
+- **Tiendas cercanas sin datos:** `/api/stores/nearby` no devuelve sucursales ni siquiera en Santo Domingo (radio de 25 km, 2026-10-12). Hay que revisar si la tabla de sucursales está cargada.
+- **Relevancia de la búsqueda:** "Neveras" trae bebederos primero. Esto se ajusta en la API, no en la app.
+- **Escáner:** probarlo en un iPhone real y medir cuántos productos tienen EAN/UPC (`product_variants.ean/upc`). Solo una de las fuentes de ingesta lo guarda.
 
 - **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
 - **Anuncios:** se quitó AdMob, que solo mostraba anuncios de prueba y rompía el build de release.

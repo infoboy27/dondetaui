@@ -1,108 +1,164 @@
 import { useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native'
 import * as Location from 'expo-location'
 import { storesApi, type StoreBranch } from '../src/api/stores'
+import { friendlyError } from '../src/api/errors'
 import StoreBranchRow from '../src/components/StoreBranchRow'
+import EmptyState from '../src/components/ui/EmptyState'
 import { colors, radii, spacing } from '../src/design/tokens'
-import { fonts } from '../src/design/fonts'
+import { type } from '../src/design/type'
+
+// Used when the device can't (or won't) give a location: the app's catalog
+// is Dominican, so Santo Domingo is the sensible default.
+const FALLBACK = { label: 'Santo Domingo', latitude: 18.4861, longitude: -69.9312 }
 
 type State =
   | { status: 'idle' }
-  | { status: 'requesting' }
-  | { status: 'denied' }
-  | { status: 'loading' }
-  | { status: 'ready'; branches: StoreBranch[] }
+  | { status: 'locating' }
+  | { status: 'denied'; canAskAgain: boolean }
+  | { status: 'servicesOff' }
+  | { status: 'noFix' }
+  | { status: 'ready'; branches: StoreBranch[]; near: string | null }
   | { status: 'error'; message: string }
 
 export default function NearbyStoresScreen() {
-  const router = useRouter()
   const [state, setState] = useState<State>({ status: 'idle' })
 
-  const findNearby = async () => {
-    setState({ status: 'requesting' })
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') {
-      setState({ status: 'denied' })
-      return
-    }
-    setState({ status: 'loading' })
+  const loadBranches = async (latitude: number, longitude: number, near: string | null) => {
     try {
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-      const branches = await storesApi.nearby(position.coords.latitude, position.coords.longitude)
-      setState({ status: 'ready', branches })
+      const branches = await storesApi.nearby(latitude, longitude)
+      setState({ status: 'ready', branches, near })
     } catch (e) {
-      setState({ status: 'error', message: e instanceof Error ? e.message : 'No se pudo obtener tu ubicación' })
+      setState({ status: 'error', message: friendlyError(e, 'No pudimos cargar las sucursales.') })
     }
   }
 
+  const findNearby = async () => {
+    setState({ status: 'locating' })
+    const permission = await Location.requestForegroundPermissionsAsync()
+    if (permission.status !== 'granted') {
+      setState({ status: 'denied', canAskAgain: permission.canAskAgain })
+      return
+    }
+    if (!(await Location.hasServicesEnabledAsync())) {
+      setState({ status: 'servicesOff' })
+      return
+    }
+    // A fresh fix can fail indoors or with weak GPS; a recent cached position
+    // is good enough to rank stores by distance.
+    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+      .catch(() => Location.getLastKnownPositionAsync({ maxAge: 30 * 60 * 1000 }))
+      .catch(() => null)
+    if (!position) {
+      setState({ status: 'noFix' })
+      return
+    }
+    await loadBranches(position.coords.latitude, position.coords.longitude, null)
+  }
+
+  const useFallback = () => {
+    setState({ status: 'locating' })
+    void loadBranches(FALLBACK.latitude, FALLBACK.longitude, FALLBACK.label)
+  }
+
+  const fallbackTitle = `Ver tiendas en ${FALLBACK.label}`
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Text style={styles.backText}>‹</Text>
-        </Pressable>
-        <Text style={styles.title}>Tiendas cercanas</Text>
-      </View>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.screen} contentContainerStyle={styles.content}>
+      {state.status === 'idle' && (
+        <EmptyState
+          icon="mappin"
+          tone="brand"
+          title="La sucursal más cerca de ti"
+          message="Usamos tu ubicación solo para calcular la distancia a cada tienda. No la guardamos."
+          actionTitle="Usar mi ubicación"
+          onAction={() => void findNearby()}
+          secondaryTitle={fallbackTitle}
+          onSecondary={useFallback}
+        />
+      )}
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {state.status === 'idle' && (
-          <View style={styles.prompt}>
-            <Text style={styles.promptTitle}>Encuentra la tienda más cerca de ti</Text>
-            <Text style={styles.promptText}>Usamos tu ubicación solo para calcular la distancia a cada sucursal.</Text>
-            <Pressable onPress={() => void findNearby()} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Usar mi ubicación</Text>
-            </Pressable>
-          </View>
-        )}
+      {state.status === 'locating' && (
+        <View style={styles.locating}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={[type.subheadline, styles.muted]}>Buscando tiendas cerca…</Text>
+        </View>
+      )}
 
-        {(state.status === 'requesting' || state.status === 'loading') && (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: spacing.xxxl }} />
-        )}
+      {state.status === 'denied' && (
+        <EmptyState
+          icon="location"
+          title="Sin acceso a tu ubicación"
+          message={state.canAskAgain
+            ? 'Permite el acceso a tu ubicación para ver qué tiendas te quedan más cerca.'
+            : 'Activa la ubicación para DóndeTa en Ajustes › DóndeTa › Ubicación.'}
+          actionTitle={state.canAskAgain ? 'Permitir ubicación' : 'Abrir Ajustes'}
+          onAction={() => (state.canAskAgain ? void findNearby() : void Linking.openSettings())}
+          secondaryTitle={fallbackTitle}
+          onSecondary={useFallback}
+        />
+      )}
 
-        {state.status === 'denied' && (
-          <View style={styles.prompt}>
-            <Text style={styles.promptTitle}>No pudimos acceder a tu ubicación</Text>
-            <Text style={styles.promptText}>Habilita el permiso de ubicación para DóndeTa en los ajustes de tu dispositivo e inténtalo de nuevo.</Text>
-            <Pressable onPress={() => void findNearby()} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Reintentar</Text>
-            </Pressable>
-          </View>
-        )}
+      {state.status === 'servicesOff' && (
+        <EmptyState
+          icon="location"
+          title="La ubicación está apagada"
+          message="Actívala en Ajustes › Privacidad y seguridad › Localización, y vuelve a intentarlo."
+          actionTitle="Intentar de nuevo"
+          onAction={() => void findNearby()}
+          secondaryTitle={fallbackTitle}
+          onSecondary={useFallback}
+        />
+      )}
 
-        {state.status === 'error' && (
-          <View style={styles.prompt}>
-            <Text style={styles.promptTitle}>{state.message}</Text>
-            <Pressable onPress={() => void findNearby()} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Reintentar</Text>
-            </Pressable>
-          </View>
-        )}
+      {state.status === 'noFix' && (
+        <EmptyState
+          icon="location"
+          tone="warning"
+          title="No pudimos ubicarte"
+          message="La señal de ubicación es débil en este momento. Intenta de nuevo cerca de una ventana o al aire libre."
+          actionTitle="Intentar de nuevo"
+          onAction={() => void findNearby()}
+          secondaryTitle={fallbackTitle}
+          onSecondary={useFallback}
+        />
+      )}
 
-        {state.status === 'ready' && (
-          state.branches.length ? (
-            state.branches.map(branch => <StoreBranchRow key={branch.id} branch={branch} />)
-          ) : (
-            <Text style={styles.empty}>No encontramos sucursales cerca de ti todavía.</Text>
-          )
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      {state.status === 'error' && (
+        <EmptyState icon="wifiSlash" title="Algo salió mal" message={state.message} actionTitle="Intentar de nuevo" onAction={() => void findNearby()} />
+      )}
+
+      {state.status === 'ready' && (
+        state.branches.length ? (
+          <>
+            <Text style={[type.footnote, styles.caption]}>
+              {state.near ? `Cerca de ${state.near}` : 'Cerca de tu ubicación'} · {state.branches.length === 1 ? '1 sucursal' : `${state.branches.length} sucursales`}
+            </Text>
+            <View style={styles.list}>
+              {state.branches.map((branch, index) => (
+                <StoreBranchRow key={branch.id} branch={branch} divider={index < state.branches.length - 1} />
+              ))}
+            </View>
+          </>
+        ) : (
+          <EmptyState
+            icon="storefront"
+            title="Sin sucursales cerca"
+            message={state.near ? `Todavía no tenemos sucursales registradas cerca de ${state.near}.` : 'Todavía no tenemos sucursales registradas en tu zona.'}
+            secondaryTitle={state.near ? undefined : fallbackTitle}
+            onSecondary={state.near ? undefined : useFallback}
+          />
+        )
+      )}
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  header: { height: 56, paddingHorizontal: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border },
-  back: { width: 38, height: 38, borderRadius: radii.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 28, lineHeight: 28, color: colors.navy },
-  title: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy },
-  content: { padding: spacing.xl, paddingBottom: spacing.xxxl },
-  prompt: { alignItems: 'center', marginTop: spacing.xxxl, gap: spacing.md },
-  promptTitle: { fontSize: 16, fontFamily: fonts.display.bold, color: colors.navy, textAlign: 'center' },
-  promptText: { fontFamily: fonts.body.regular, color: colors.navy400, textAlign: 'center', paddingHorizontal: spacing.lg },
-  primaryButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radii.md, marginTop: spacing.sm },
-  primaryButtonText: { color: '#fff', fontFamily: fonts.body.bold },
-  empty: { textAlign: 'center', color: colors.navy400, fontFamily: fonts.body.regular, marginTop: spacing.xxxl },
+  screen: { flex: 1, backgroundColor: colors.background },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.page },
+  locating: { alignItems: 'center', gap: spacing.md, paddingVertical: spacing.page },
+  muted: { color: colors.secondaryLabel },
+  caption: { color: colors.secondaryLabel, marginLeft: spacing.lg, marginBottom: 6, marginTop: spacing.sm },
+  list: { backgroundColor: colors.card, borderRadius: radii.lg, borderCurve: 'continuous', overflow: 'hidden' },
 })

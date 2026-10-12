@@ -1,43 +1,33 @@
-import { Tabs } from 'expo-router'
-import { Text, type ColorValue } from 'react-native'
+import { NativeTabs } from 'expo-router/unstable-native-tabs'
 import { colors } from '../../src/design/tokens'
-import { fonts } from '../../src/design/fonts'
+import { iconSymbol } from '../../src/components/Icon'
 
-function TabIcon({ symbol, color }: { symbol: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 20, color }}>{symbol}</Text>
-}
-
+// The system tab bar (Liquid Glass on iOS 26+, Material on Android) with SF
+// Symbols / Material Symbols. "Buscar" takes the search role, so iOS shows
+// it as its own search button next to the bar.
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.navy400,
-        tabBarLabelStyle: { fontFamily: fonts.body.medium, fontSize: 11 },
-        tabBarStyle: { borderTopColor: colors.border },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{ title: 'Inicio', tabBarIcon: ({ color }) => <TabIcon symbol="🏠" color={color} /> }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{ title: 'Buscar', tabBarIcon: ({ color }) => <TabIcon symbol="🔍" color={color} /> }}
-      />
-      <Tabs.Screen
-        name="scanner"
-        options={{ title: 'Escanear', tabBarIcon: ({ color }) => <TabIcon symbol="▦" color={color} /> }}
-      />
-      <Tabs.Screen
-        name="alerts"
-        options={{ title: 'Alertas', tabBarIcon: ({ color }) => <TabIcon symbol="🔔" color={color} /> }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{ title: 'Perfil', tabBarIcon: ({ color }) => <TabIcon symbol="👤" color={color} /> }}
-      />
-    </Tabs>
+    <NativeTabs tintColor={colors.primary} minimizeBehavior="onScrollDown">
+      <NativeTabs.Trigger name="(home)">
+        <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: iconSymbol('home').ios, selected: iconSymbol('homeFill').ios }} md={iconSymbol('home').android} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="scanner">
+        <NativeTabs.Trigger.Label>Escanear</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={iconSymbol('scan').ios} md={iconSymbol('scan').android} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="alerts">
+        <NativeTabs.Trigger.Label>Guardados</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: iconSymbol('heart').ios, selected: iconSymbol('heartFill').ios }} md={iconSymbol('heart').android} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <NativeTabs.Trigger.Label>Perfil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: iconSymbol('person').ios, selected: iconSymbol('personFill').ios }} md={iconSymbol('person').android} />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="search" role="search">
+        <NativeTabs.Trigger.Label>Buscar</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={iconSymbol('search').ios} md={iconSymbol('search').android} />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   )
 }
