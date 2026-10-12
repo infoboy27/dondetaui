@@ -1,0 +1,16 @@
+{
+  // Standalone on purpose (no "extends": "expo/tsconfig.base"): these files
+  // are pure TS and their tests run in the root vitest suite, which in CI
+  // transforms them without apps/mobile's node_modules installed.
+  // `pnpm typecheck` in apps/mobile still checks them with the app's config.
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["*.ts"]
+}
