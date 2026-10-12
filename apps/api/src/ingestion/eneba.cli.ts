@@ -54,7 +54,9 @@ async function main() {
         ingested += 1
         console.log(`[eneba] ${ingested}/${items.length} ${item.name} ${formatPrice(item.price)}`)
       } catch (error) {
-        failures.push(`${item.externalSku}: ${error instanceof Error ? error.message : String(error)}`)
+        const message = error instanceof Error ? error.message : String(error)
+        failures.push(`${item.externalSku}: ${message}`)
+        console.warn(`[eneba] skipped ${item.name}: ${message}`)
       }
     }
 

@@ -30,6 +30,14 @@ function isApplianceCategory(categoryName: string): boolean {
   return APPLIANCE_CATEGORY_KEYWORDS.some(keyword => normalized.includes(keyword))
 }
 
+// The one non-appliance department: Eneba's hand-picked Gaming catalog
+// (eneba.catalog.ts). Tied to that retailer so a store's own "gaming"
+// subcategory (keyboards, cables) is still filtered out.
+export function acceptsCategory(item: Pick<NormalizedRetailerItem, 'categoryName' | 'categorySlug' | 'retailer'>): boolean {
+  if (item.retailer.slug === 'eneba' && item.categorySlug === 'gaming') return true
+  return isApplianceCategory(item.categoryName)
+}
+
 // Suffixed with a slice of the product's own id, so this never needs a
 // collision-retry loop against the unique index even if two products
 // slugify to the same text.
@@ -49,7 +57,7 @@ export class IngestionRepository {
 
   async ingest(rawItem: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
     const item = { ...rawItem, brand: cleanBrand(rawItem.brand, rawItem.name) }
-    if (!isApplianceCategory(item.categoryName)) {
+    if (!acceptsCategory(item)) {
       throw new Error(`Skipped: category "${item.categoryName}" is not an appliance category`)
     }
 
