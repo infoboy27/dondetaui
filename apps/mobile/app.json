@@ -23,7 +23,14 @@
     },
     "ios": {
       "bundleIdentifier": "com.jfmcss.dondeta",
-      "supportsTablet": true
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "plugins": [
       [
@@ -37,7 +44,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas."
+          "locationWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas.",
+          "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas.",
+          "isIosBackgroundLocationEnabled": false
         }
       ],
       [
