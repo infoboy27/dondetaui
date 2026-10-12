@@ -151,3 +151,6 @@
 # text files (broken store logos, broken favicon). Keep them as regular blobs.
 public/** -filter -diff -merge -text
 src/assets/** -filter -diff -merge -text
+# Same for the app icons: EAS uploads the working tree, so a clone without
+# git-lfs would build the app with pointer files as icons.
+apps/mobile/assets/** -filter -diff -merge -text

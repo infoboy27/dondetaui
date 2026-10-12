@@ -34,6 +34,12 @@ export default defineConfig(({ mode }) => {
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
       watch: { ignored: ['**/.figma/**'] },
+      // DEV_API_PROXY=https://dondeta.com.do + VITE_USE_API=true +
+      // VITE_API_BASE_URL=/api: real production data without running the
+      // backend (same origin, so no CORS). Unset: no proxy.
+      proxy: process.env.DEV_API_PROXY
+        ? { '/api': { target: process.env.DEV_API_PROXY, changeOrigin: true, secure: true } }
+        : undefined,
     },
     preview: {
       host: '0.0.0.0',
