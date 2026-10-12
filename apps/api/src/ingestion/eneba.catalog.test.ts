@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { feedRows, parseEnebaPrice, selectEnebaItems, withAffiliateId, type EnebaFeedRow } from './eneba.catalog'
+import { acceptsCategory } from './ingestion.repository'
 
 const HEADER = 'id, title, original_title, description, link, image_link, availability, price, google_product_category, brand, region, condition, identifier_exists'
 
@@ -48,6 +49,14 @@ describe('Eneba catalog', () => {
       row('roblox-roblox-1800-robux-key-global', 'Roblox - 1,800 Robux Key GLOBAL', '1615.02 DOP'),
     ], 'DOP')
     expect(items).toEqual([])
+  })
+
+  // Regression: the first production run ingested 0/66 -- the repository's
+  // appliance-only category guard rejected every Gaming item.
+  it('produces items the repository accepts, without opening the guard to other stores', () => {
+    const [item] = selectEnebaItems([row('roblox-roblox-800-robux-key-global', 'Roblox - 800 Robux Key GLOBAL', '555.99 DOP')], 'DOP')
+    expect(acceptsCategory(item)).toBe(true)
+    expect(acceptsCategory({ ...item, retailer: { ...item.retailer, slug: 'plaza-lama' } })).toBe(false)
   })
 
   it('always links with the affiliate id', () => {
