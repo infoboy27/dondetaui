@@ -1,3 +1,4 @@
+import Campaigns from './Campaigns'
 import CustomPost from './CustomPost'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -61,6 +62,7 @@ export default function AdminInstagram() {
         {canPublish && <AutopilotSwitch />}
         {canPublish && <div style={{ marginTop: 16 }}><CustomPost onPublished={refreshHistory} /></div>}
         {canPublish && <div style={{ marginTop: 16 }}><InstagramMetrics /></div>}
+        <div style={{ marginTop: 16 }}><Campaigns /></div>
       </div>
       <main style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 16px 60px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 18 }}>
         {error && <div>No se pudo cargar el catálogo: {error}</div>}
