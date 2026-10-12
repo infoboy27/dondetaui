@@ -23,7 +23,14 @@
     },
     "ios": {
       "bundleIdentifier": "com.jfmcss.dondeta",
-      "supportsTablet": true
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "plugins": [
       [
@@ -37,20 +44,15 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas."
+          "locationWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas.",
+          "locationAlwaysAndWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas.",
+          "isIosBackgroundLocationEnabled": false
         }
       ],
       [
         "expo-notifications",
         {
           "color": "#00B894"
-        }
-      ],
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
       [

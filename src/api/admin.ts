@@ -147,6 +147,25 @@ export interface InstagramInsights {
   siteVisits: number | null
 }
 
+// GET /admin/campaigns -- apps/api/src/admin/google-analytics.ts campaignRows.
+export interface CampaignRow {
+  source: string
+  medium: string
+  campaign: string
+  paid: boolean
+  sessions: number
+  users: number
+  engagedSessions: number
+  offerClicks: number
+}
+
+export interface CampaignReport {
+  days: number
+  configured: boolean
+  rows: CampaignRow[] | null
+  error: string | null
+}
+
 export interface InstagramAutopilot {
   enabled: boolean
   slots: { target: 'feed' | 'story'; hour: number }[]
@@ -158,6 +177,9 @@ export const adminApi = {
   },
   igSetAutopilot(enabled: boolean): Promise<InstagramAutopilot> {
     return apiFetch('/admin/instagram/autopilot', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) })
+  },
+  campaigns(days: number): Promise<CampaignReport> {
+    return apiFetch(`/admin/campaigns?days=${days}`)
   },
   igInsights(): Promise<InstagramInsights> {
     return apiFetch('/admin/instagram/insights')

@@ -4,7 +4,7 @@ import { DATABASE_POOL } from '../database/database.module'
 import { ingestionHealth } from '../ingestion/ingestion-health'
 import { AdminGuard } from './admin.guard'
 import { AdminRepository } from './admin.repository'
-import { analyticsConfigured, analyticsSummary } from './google-analytics'
+import { analyticsConfigured, analyticsSummary, campaignReport } from './google-analytics'
 
 function periodDays(raw?: string): number {
   const days = Number(raw ?? 30)
@@ -46,6 +46,18 @@ export class AdminController {
       safeAnalytics(days),
     ])
     return { days, generatedAt: new Date().toISOString(), catalog, clicks, retailers, ingestion, analytics }
+  }
+
+  // Traffic and store visits per utm campaign (paid promotions first).
+  @Get('campaigns')
+  async campaigns(@Query('days') rawDays?: string) {
+    const days = periodDays(rawDays)
+    if (!analyticsConfigured()) return { days, configured: false, rows: null, error: null }
+    try {
+      return { days, configured: true, rows: await campaignReport(days), error: null }
+    } catch (error) {
+      return { days, configured: true, rows: null, error: error instanceof Error ? error.message.slice(0, 300) : String(error) }
+    }
   }
 
   @Get('retailers/:slug/report')

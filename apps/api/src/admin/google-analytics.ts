@@ -61,7 +61,7 @@ async function accessToken(account: ServiceAccount): Promise<string> {
   return body.access_token
 }
 
-async function runReport(token: string, days: number, dimensions: string[], metrics: string[], limit?: number): Promise<ReportRow[]> {
+async function runReport(token: string, days: number, dimensions: string[], metrics: string[], limit?: number, eventName?: string): Promise<ReportRow[]> {
   const response = await fetch(
     `https://analyticsdata.googleapis.com/v1beta/properties/${process.env.GA_PROPERTY_ID}:runReport`,
     {
@@ -72,6 +72,7 @@ async function runReport(token: string, days: number, dimensions: string[], metr
         dimensions: dimensions.map(name => ({ name })),
         metrics: metrics.map(name => ({ name })),
         ...(limit ? { limit, orderBys: [{ metric: { metricName: metrics[0] }, desc: true }] } : {}),
+        ...(eventName ? { dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: eventName } } } } : {}),
       }),
     },
   )
@@ -129,5 +130,63 @@ export async function analyticsSummary(days: number): Promise<AnalyticsSummary |
     topPages: pages.map(row => ({ label: dim(row), pageViews: num(row, 0) })),
   }
   cache.set(days, { at: Date.now(), value })
+  return value
+}
+
+// Traffic per campaign (utm_source / utm_medium / utm_campaign), with the
+// store visits each one produced (click_offer). Paid = a medium that says so
+// (paid, cpc, ppc, paid_social, ads...); Instagram's own "Promocionar" adds no
+// UTM, so a promotion only shows as paid when its link carries utm_medium=paid.
+export interface CampaignRow {
+  source: string
+  medium: string
+  campaign: string
+  paid: boolean
+  sessions: number
+  users: number
+  engagedSessions: number
+  offerClicks: number
+}
+
+const CAMPAIGN_DIMENSIONS = ['sessionSource', 'sessionMedium', 'sessionCampaignName']
+
+export function isPaidMedium(medium: string): boolean {
+  return /paid|cpc|ppc|cpm|(^|[^a-z])ads?($|[^a-z])/i.test(medium)
+}
+
+export function campaignRows(traffic: ReportRow[], clicks: ReportRow[]): CampaignRow[] {
+  const key = (row: ReportRow) => [dim(row, 0), dim(row, 1), dim(row, 2)].join('|')
+  const clicksByKey = new Map(clicks.map(row => [key(row), num(row, 0)]))
+  return traffic
+    .map(row => {
+      const medium = dim(row, 1)
+      return {
+        source: dim(row, 0),
+        medium,
+        campaign: dim(row, 2),
+        paid: isPaidMedium(medium),
+        sessions: num(row, 0),
+        users: num(row, 1),
+        engagedSessions: num(row, 2),
+        offerClicks: clicksByKey.get(key(row)) ?? 0,
+      }
+    })
+    .sort((a, b) => Number(b.paid) - Number(a.paid) || b.sessions - a.sessions)
+}
+
+const campaignCache = new Map<number, { at: number; value: CampaignRow[] }>()
+
+export async function campaignReport(days: number): Promise<CampaignRow[] | null> {
+  const account = serviceAccount()
+  if (!account || !process.env.GA_PROPERTY_ID) return null
+  const hit = campaignCache.get(days)
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.value
+  const token = await accessToken(account)
+  const [traffic, clicks] = await Promise.all([
+    runReport(token, days, CAMPAIGN_DIMENSIONS, ['sessions', 'activeUsers', 'engagedSessions'], 50),
+    runReport(token, days, CAMPAIGN_DIMENSIONS, ['eventCount'], 200, 'click_offer'),
+  ])
+  const value = campaignRows(traffic, clicks)
+  campaignCache.set(days, { at: Date.now(), value })
   return value
 }

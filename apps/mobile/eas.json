@@ -9,6 +9,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "preview": {
@@ -26,7 +29,22 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://dondeta.com.do/api"
+      },
+      "autoIncrement": true
+    },
+    "development-device": {
+      "extends": "development",
+      "ios": {
+        "simulator": false
       }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal"
+      },
+      "ios": {}
     }
   }
 }

@@ -11,6 +11,8 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:prod-data": "node scripts/dev-prod-data.mjs",
+    "setup": "bash scripts/setup.sh",
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt",

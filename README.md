@@ -2,45 +2,35 @@
 
 DóndeTa is a Dominican Republic product price-comparison experience focused on helping shoppers find where a product is cheaper, compare offers, track prices and eventually scan barcodes in-store.
 
-## Status
+## Start here
 
-This repository currently contains the Figma Make implementation that serves as the **visual reference for DóndeTa v1**.
+- **[docs/HANDOFF.md](docs/HANDOFF.md)** — clone + setup on a new machine, local commands, deploy, where secrets live, current state and next steps.
+- [docs/MOBILE.md](docs/MOBILE.md) — Expo app (Android + iOS).
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md), [AGENTS.md](AGENTS.md), [TESTING.md](TESTING.md), [DEPLOY_DEV.md](DEPLOY_DEV.md).
 
-The current UI is a React + Vite + Tailwind prototype. The production migration plan lives in `docs/ARCHITECTURE.md`. Visual rules live in `docs/DESIGN_SYSTEM.md` and coding-agent rules live in `AGENTS.md`.
+Live at https://dondeta.com.do (plus dondeta.co / dondeta.mx stacks).
 
-## Local development
-
-Requirements:
-
-- Node.js 22+
-- pnpm 10.34.3+
-
-Install and run:
+## Quick start
 
 ```bash
-pnpm install
-pnpm dev
+git lfs install
+git clone https://github.com/infoboy27/dondetaui.git && cd dondetaui
+bash scripts/setup.sh      # installs web, api, web-seo and mobile; creates local .env files
+pnpm dev                   # web app with mock data on :8443
+pnpm dev:prod-data         # web app against the production API
+pnpm check                 # typecheck + build + tests (same as CI)
 ```
 
-Quality checks:
+## Repository layout
 
-```bash
-pnpm typecheck
-pnpm build
-pnpm check
-```
-
-## Environment
-
-Copy `.env.example` to `.env.local` when API integration starts.
-
-```bash
-cp .env.example .env.local
-```
-
-Current variable:
-
-- `VITE_API_BASE_URL` — future backend/API base URL.
+| Path | What |
+| --- | --- |
+| `src/` | Vite/React SPA (dondeta.com.do, including `/admin`) |
+| `apps/api` | NestJS API, ingestion workers, Instagram autopilot, SQL migrations |
+| `apps/web-seo` | Next.js SEO pages (`/precios`, `/comparaciones`, …) |
+| `apps/mobile` | Expo app (Android + iOS) |
+| `deploy/` | server scripts, ingestion loops, CD script |
+| `marketing/` | brand assets and published campaign pieces |
 
 ## Visual source of truth
 
