@@ -29,7 +29,7 @@ export const AUTOPILOT_SLOTS = [
   { target: 'story' as const, hour: Number(process.env.IG_AUTOPILOT_STORY_HOUR ?? 19) },
 ]
 
-export type PostKind = 'comparison' | 'drop' | 'top5'
+export type PostKind = 'comparison' | 'drop' | 'top5' | 'promo'
 export type PostFormat = 'image' | 'carousel' | 'reel'
 export interface MediaFile {
   contentType: 'image/jpeg' | 'video/mp4'

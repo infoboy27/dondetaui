@@ -171,6 +171,10 @@ export const adminApi = {
   igPublish(input: { productId: string; kind: 'comparison' | 'drop'; target: 'feed' | 'story'; caption: string; imageBase64: string; force?: boolean }): Promise<{ id: string; status: string; permalink: string | null }> {
     return apiFetch('/admin/instagram/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })
   },
+  // Own images (campaigns): published in the background; follow it in igHistory().
+  igPublishCustom(input: { target: 'feed' | 'story'; caption: string; imagesBase64: string[] }): Promise<{ status: string }> {
+    return apiFetch('/admin/instagram/custom', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })
+  },
   me(): Promise<{ admin: boolean }> {
     return apiFetch('/admin/me')
   },
