@@ -77,6 +77,9 @@ jobs:
           cp deploy/cd/known_hosts ~/.ssh/known_hosts
       - name: Deploy (auto-rollback per stack on failed health check)
         run: |
+          # Without pipefail the step takes tee's exit code: a failed ssh
+          # (server unreachable, deploy error) still showed up as success.
+          set -o pipefail
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ServerAliveInterval=30 -p 1600 \
             ubuntu@163.245.207.38 "deploy ${GITHUB_SHA}" | tee status.json
       - name: Summary
@@ -114,6 +117,7 @@ jobs:
             rollback) CMD="rollback $STACK" ;;
             merge-products) CMD="merge-products $STACK $([ "$APPLY" = "true" ] && echo apply)" ;;
           esac
+          set -o pipefail
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ServerAliveInterval=30 -p 1600 \
             ubuntu@163.245.207.38 "$CMD" | tee output.txt
           { echo "### $CMD"; echo '```'; cat output.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
