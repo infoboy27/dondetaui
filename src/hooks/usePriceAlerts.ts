@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trackAlert } from '../analytics'
 import { alertsApi } from '../api/alerts'
 import type { PriceAlert, User } from '../types'
 
@@ -37,6 +38,7 @@ export function usePriceAlerts(user: User | null) {
 
   const create = async (productId: string, targetPrice?: number) => {
     const alert = await alertsApi.create(productId, targetPrice)
+    trackAlert(productId)
     setState(current => ({
       ...current,
       alerts: [alert, ...current.alerts.filter(a => a.productId !== productId)],

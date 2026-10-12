@@ -26,12 +26,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"
           rel="stylesheet"
         />
+        {/* click_offer: visits sent to a store, same event the app sends. */}
         {gaId && (
           <>
             <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
             <script
               dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`,
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a[href*="/api/go/"]');if(!a)return;var p=a.getAttribute('href').split('?')[0].split('/');gtag('event','click_offer',{placement:'seo_'+(location.pathname.split('/')[1]||'home'),store:a.getAttribute('data-store')||undefined,items:[{item_id:p[3]}]});});`,
               }}
             />
           </>

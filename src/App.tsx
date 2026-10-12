@@ -1,9 +1,10 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Tab } from './types'
 import type { Product } from './types'
 import { PRODUCTS } from './data/mock'
 import { appConfig } from './config/env'
+import { trackFavorite, trackSearch, trackViewItem } from './analytics'
 import { productsApi } from './api/products'
 import { getPriceDropNotifications } from './domain/notifications'
 import { useCatalogProducts } from './hooks/useCatalogProducts'
@@ -13,20 +14,23 @@ import { useFavorites } from './hooks/useFavorites'
 import { useSearchHistory } from './hooks/useSearchHistory'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
-import SearchScreen from './screens/SearchScreen'
-import ResultsScreen from './screens/ResultsScreen'
-import ProductDetailScreen from './screens/ProductDetailScreen'
-import ScannerScreen from './screens/ScannerScreen'
-import AlertsScreen from './screens/AlertsScreen'
-import ProfileScreen from './screens/ProfileScreen'
-import DesktopView from './screens/DesktopView'
-import StoreDetailScreen from './screens/StoreDetailScreen'
-import NearbyStoresScreen from './screens/NearbyStoresScreen'
-import EquipaHogarScreen from './screens/EquipaHogarScreen'
-import NotificationsScreen from './screens/NotificationsScreen'
-import LoginScreen from './screens/LoginScreen'
 import SplashOverlay from './components/SplashOverlay'
 import AuthModal from './components/AuthModal'
+
+// Each screen is its own chunk: phones only download the mobile home up front,
+// desktops only DesktopView (Lighthouse flagged ~85 KB of unused JS).
+const SearchScreen = lazy(() => import('./screens/SearchScreen'))
+const ResultsScreen = lazy(() => import('./screens/ResultsScreen'))
+const ProductDetailScreen = lazy(() => import('./screens/ProductDetailScreen'))
+const ScannerScreen = lazy(() => import('./screens/ScannerScreen'))
+const AlertsScreen = lazy(() => import('./screens/AlertsScreen'))
+const ProfileScreen = lazy(() => import('./screens/ProfileScreen'))
+const DesktopView = lazy(() => import('./screens/DesktopView'))
+const StoreDetailScreen = lazy(() => import('./screens/StoreDetailScreen'))
+const NearbyStoresScreen = lazy(() => import('./screens/NearbyStoresScreen'))
+const EquipaHogarScreen = lazy(() => import('./screens/EquipaHogarScreen'))
+const NotificationsScreen = lazy(() => import('./screens/NotificationsScreen'))
+const LoginScreen = lazy(() => import('./screens/LoginScreen'))
 
 // Owner-only portal, split into its own chunk so the public app doesn't ship it.
 const AdminApp = lazy(() => import('./screens/admin/AdminApp'))
@@ -88,6 +92,14 @@ function ProductRoute({ catalogProducts, favoriteIds, onToggleFavorite, onCreate
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
+
+  // Once per product page, as soon as we know which product it is.
+  const viewedSlug = useRef<string | null>(null)
+  useEffect(() => {
+    if (!product || viewedSlug.current === slug) return
+    viewedSlug.current = slug
+    trackViewItem(product)
+  }, [product, slug])
 
   if (loading) {
     return (
@@ -154,13 +166,14 @@ export default function App() {
   // point they're merged into the account's real favorites (see the effect
   // below) — logged-in favorites come from the backend instead, see favoriteIds.
   const [localFavoriteIds, setLocalFavoriteIds] = useState<Set<string>>(readGuestFavorites)
-  const { products: catalogProducts } = useCatalogProducts()
   const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
   const priceAlerts = usePriceAlerts(user)
   const favorites = useFavorites(user)
   const favoriteIds = user ? new Set(favorites.favorites.map(f => f.productId)) : localFavoriteIds
   const searchHistory = useSearchHistory(user)
   const alertedIds = new Set(priceAlerts.alerts.map(a => a.productId))
+  // Only for the notifications badge, so only when there are alerts to badge.
+  const { products: catalogProducts } = useCatalogProducts('', { enabled: alertedIds.size > 0 })
   const hasNotifications = getPriceDropNotifications(catalogProducts, alertedIds).length > 0
 
   const location = useLocation()
@@ -200,14 +213,16 @@ export default function App() {
     if (tab) setActiveTab(tab)
   }, [location.pathname])
 
+  const firstPageView = useRef(true)
   useEffect(() => {
-    // gtag.js is injected by vite.config.ts's figma-site-configuration plugin
-    // only when .figma/make/site.json sets analytics.googleAnalyticsId — a
-    // no-op until that's configured. Its own initial `gtag('config', ...)`
-    // call only fires once per real page load, so this SPA still needs its
-    // own page_view event per route change or GA would see one pageview for
-    // the entire session.
-    window.gtag?.('event', 'page_view', { page_path: location.pathname })
+    // gtag('config') (vite.config.ts) already records the landing page view;
+    // sending it here too counted every visit's first page twice. Later SPA
+    // route changes still need their own page_view.
+    if (firstPageView.current) {
+      firstPageView.current = false
+      return
+    }
+    window.gtag?.('event', 'page_view', { page_location: window.location.href, page_title: document.title })
   }, [location.pathname])
 
   // Preserves the deep-link's own history entry: hitting the app fresh
@@ -226,6 +241,7 @@ export default function App() {
   }
 
   const handleSearch = (q: string) => {
+    trackSearch(q)
     void searchHistory.record(q)
     navigate(`/results?q=${encodeURIComponent(q)}`)
   }
@@ -244,6 +260,7 @@ export default function App() {
       else void favorites.create(id)
       return
     }
+    if (!localFavoriteIds.has(id)) trackFavorite(id)
     setLocalFavoriteIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -300,7 +317,7 @@ export default function App() {
   // Desktop view
   if (isDesktop && !isMobileView) {
     return (
-      <>
+      <Suspense fallback={null}>
         <SplashOverlay />
         <DesktopView
           onRequireLogin={() => setShowLoginModal(true)}
@@ -320,11 +337,14 @@ export default function App() {
             error={authError}
           />
         )}
-      </>
+      </Suspense>
     )
   }
 
   const isScanner = location.pathname === '/scanner'
+  // The product page has its own fixed action bar ("Ver oferta en…") at the
+  // bottom; with the tab bar on top of it the main button was unreachable.
+  const hideBottomNav = isScanner || location.pathname.startsWith('/product/')
 
   return (
     <>
@@ -411,6 +431,7 @@ export default function App() {
 
         {/* Screen content */}
         <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}>
+          <Suspense fallback={null}>
           <Routes>
             <Route
               path="/"
@@ -511,10 +532,11 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </div>
 
         {/* Bottom nav */}
-        {!isScanner && (
+        {!hideBottomNav && (
           <BottomNav
             active={activeTab}
             onNavigate={handleTab}

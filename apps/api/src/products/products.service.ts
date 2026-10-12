@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { homeHighlights } from './highlights'
 import { buildReport, type PriceCheckReport } from './price-check'
 import { ProductsRepository } from './products.repository'
 
@@ -8,6 +9,10 @@ export class ProductsService {
 
   list() {
     return this.repository.list()
+  }
+
+  async highlights() {
+    return homeHighlights(await this.repository.list())
   }
 
   search(query: string) {

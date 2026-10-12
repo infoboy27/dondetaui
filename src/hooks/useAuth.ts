@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trackAuth } from '../analytics'
 import { authApi } from '../api/auth'
 import { appConfig } from '../config/env'
 import { clearToken, getToken, setToken } from '../auth/session'
@@ -42,6 +43,7 @@ export function useAuth() {
     try {
       const { token, user } = await authApi.login(email, password)
       setToken(token)
+      trackAuth('login')
       setState({ user, loading: false, error: null })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión'
@@ -61,6 +63,7 @@ export function useAuth() {
     try {
       const { token, user } = await authApi.register(email, password, name, phone)
       setToken(token)
+      trackAuth('sign_up')
       setState({ user, loading: false, error: null })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo crear la cuenta'

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trackFavorite } from '../analytics'
 import { favoritesApi, type Favorite } from '../api/favorites'
 import type { User } from '../types'
 
@@ -37,6 +38,7 @@ export function useFavorites(user: User | null) {
 
   const create = async (productId: string) => {
     const favorite = await favoritesApi.create(productId)
+    trackFavorite(productId)
     setState(current => ({
       ...current,
       favorites: [favorite, ...current.favorites.filter(f => f.productId !== productId)],

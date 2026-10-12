@@ -180,6 +180,7 @@ export default async function ProductPage({ params }: Props) {
               {bestOffer.url && (
                 <a
                   href={outboundHref(product.id, bestOffer)}
+                  data-store={bestOffer.store}
                   rel="nofollow sponsored noopener"
                   target="_blank"
                   style={{ display: 'inline-block', marginTop: 12, background: colors.primary, color: '#fff', padding: '10px 16px', borderRadius: 10, fontFamily: fonts.display, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
@@ -222,6 +223,7 @@ export default async function ProductPage({ params }: Props) {
               {offer.url && (
                 <a
                   href={outboundHref(product.id, offer)}
+                  data-store={offer.store}
                   rel="nofollow sponsored noopener"
                   target="_blank"
                   style={{ fontFamily: fonts.body, fontSize: 12, fontWeight: 600, color: colors.primary, textDecoration: 'none' }}
