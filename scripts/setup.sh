@@ -90,7 +90,8 @@ pnpm check
 cat <<'EOF'
 
 Ready. Next steps are in docs/HANDOFF.md:
-  pnpm dev                                # web app on http://localhost:5173 (mock data)
+  pnpm dev                                # web app on http://localhost:8443 (mock data)
+  pnpm dev:prod-data                      # same, against the production API
   cd apps/mobile && pnpm start            # Expo (Expo Go / dev client)
   cd apps/mobile && pnpm ios              # iOS simulator (macOS + Xcode)
 EOF
