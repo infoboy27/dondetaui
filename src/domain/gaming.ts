@@ -42,6 +42,22 @@ export function gamingShowcase(products: Product[], limit = 12): Product[] {
   return [...lead, ...games].slice(0, limit)
 }
 
-function lowestPrice(product: Product): number {
+function lowestPrice(product: Pick<Product, 'prices'>): number {
   return Math.min(...product.prices.map(offer => offer.price))
+}
+
+const KIND_ORDER: Record<GamingKind, number> = { Recarga: 0, 'Suscripción': 1, 'Juego PC': 2 }
+
+// Listing order for Gaming (the "relevance" of a single-store catalog): the
+// showcase top-ups first, then top-ups, subscription, games, cheapest first.
+// Without it, relevance falls back to "dearest first" and the page opened
+// with a RD$13,000 diamond pack.
+export function compareGaming(a: Pick<Product, 'name' | 'prices'>, b: Pick<Product, 'name' | 'prices'>): number {
+  const lead = (p: Pick<Product, 'name'>) => {
+    const index = SHOWCASE.findIndex(prefix => plain(p.name).startsWith(prefix))
+    return index < 0 ? SHOWCASE.length : index
+  }
+  return lead(a) - lead(b)
+    || KIND_ORDER[gamingKind(a)] - KIND_ORDER[gamingKind(b)]
+    || lowestPrice(a) - lowestPrice(b)
 }
