@@ -52,9 +52,12 @@ export function getPriceDropNotifications(products: Product[], alertedIds: Set<s
 
 // "Bajaron de precio": the whole catalog's real recent drops, biggest first.
 // Drops under minPct are noise (a peso of rounding, a shipping tweak).
+// Gaming (Eneba marketplace) is left out, as on the web: its prices wobble
+// daily and it has its own section.
 export function getTopPriceDrops(products: Product[], limit = 10, minPct = 3): PriceDropNotification[] {
   const drops: PriceDropNotification[] = []
   for (const product of products) {
+    if (product.categoryId === 'gaming') continue
     const drop = getRecentPriceDrop(product)
     if (drop && drop.pct >= minPct) drops.push({ product, ...drop })
   }

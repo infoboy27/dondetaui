@@ -5,6 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import type { Product } from '../../src/types'
 import { productsApi } from '../../src/api/products'
 import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offers'
+import { isGaming } from '../../src/domain/gaming'
+import DiscountCode from '../../src/components/DiscountCode'
 import { formatPrice } from '../../src/domain/currency'
 import { appConfig } from '../../src/config/env'
 import { colors, radii, spacing } from '../../src/design/tokens'
@@ -72,6 +74,8 @@ export default function ProductDetailScreen() {
   const offers = rankOffers(product.prices)
   const cheapest = getBestOffer(product.prices)
   const savings = getSavingsRange(product.prices)
+  const gaming = isGaming(product)
+  const singleStore = new Set(product.prices.map(offer => offer.store)).size === 1
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -104,19 +108,30 @@ export default function ProductDetailScreen() {
           <ProductImage uri={product.image} style={styles.image} />
           <Text style={styles.brand}>{product.brand}</Text>
           <Text style={styles.title}>{product.name}</Text>
-          {!!product.model && <Text style={styles.subtitle}>{product.model}</Text>}
+          {gaming
+            ? <Text style={styles.subtitle}>Código digital</Text>
+            : !!product.model && <Text style={styles.subtitle}>{product.model}</Text>}
         </View>
 
         {cheapest && (
           <View style={styles.bestBox}>
-            <Text style={styles.bestLabel}>MEJOR PRECIO</Text>
+            <Text style={styles.bestLabel}>{singleStore ? 'PRECIO' : 'MEJOR PRECIO'}</Text>
             <Text style={styles.bestPrice}>{formatPrice(cheapest.price)}</Text>
-            <Text style={styles.bestStore}>{cheapest.store} · {cheapest.shipping}</Text>
+            <Text style={styles.bestStore}>{cheapest.store} · {gaming ? 'Entrega inmediata' : cheapest.shipping}</Text>
             {savings > 0 && <Text style={styles.savings}>Ahorras hasta {formatPrice(savings)}</Text>}
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Comparación de tiendas</Text>
+        {gaming && (
+          <View style={styles.gamingBox}>
+            <DiscountCode />
+            <Text style={styles.gamingNote}>• Producto digital: el código llega a tu correo al instante.</Text>
+            <Text style={styles.gamingNote}>• Región global: se activa desde tu país.</Text>
+            <Text style={styles.gamingNote}>• La compra se hace en Eneba; DóndeTa no vende ni cobra.</Text>
+          </View>
+        )}
+
+        <Text style={styles.sectionTitle}>{singleStore ? 'Disponible en' : 'Comparación de tiendas'}</Text>
         {offers.map((offer, index) => {
           const storeSlug = STORE_SLUGS[offer.abbr]
           const Info = storeSlug ? Pressable : View
@@ -178,6 +193,8 @@ const styles = StyleSheet.create({
   bestPrice: { color: colors.navy, fontSize: 30, fontFamily: fonts.display.black },
   bestStore: { color: colors.navy400, fontFamily: fonts.body.regular },
   savings: { color: colors.accent, fontFamily: fonts.display.bold, marginTop: spacing.sm },
+  gamingBox: { backgroundColor: colors.card, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, gap: 6, marginTop: spacing.md },
+  gamingNote: { color: colors.navy400, fontFamily: fonts.body.regular, fontSize: 13 },
   sectionTitle: { fontSize: 17, fontFamily: fonts.display.extrabold, color: colors.navy, marginVertical: spacing.md },
   offerRow: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center', gap: spacing.md, ...shadows.sm },
   offerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },

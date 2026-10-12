@@ -37,7 +37,7 @@ export default function DealCard({ product, onPress, highlight, storeCount }: {
         {best && (
           <View style={styles.storeRow}>
             <StoreLogo abbr={best.abbr} color={best.color} size={20} />
-            <Text style={styles.muted} numberOfLines={1}>Más barato en {best.store}</Text>
+            <Text style={styles.muted} numberOfLines={1}>{new Set(product.prices.map(offer => offer.store)).size > 1 ? 'Más barato en' : 'Disponible en'} {best.store}</Text>
           </View>
         )}
       </View>

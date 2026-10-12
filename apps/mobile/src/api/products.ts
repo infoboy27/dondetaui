@@ -6,6 +6,11 @@ export const productsApi = {
     return apiFetch<Product[]>('/products')
   },
 
+  // Home highlights; `gaming` holds every Eneba product (apps/api/src/products/highlights.ts).
+  highlights(): Promise<{ total: number; stores: number; products: Product[]; gaming: Product[] }> {
+    return apiFetch('/products/highlights')
+  },
+
   search(query: string): Promise<Product[]> {
     const params = new URLSearchParams({ q: query })
     return apiFetch<Product[]>(`/search?${params.toString()}`)

@@ -31,8 +31,14 @@ const SHOWCASE = [
 
 const plain = (name: string) => name.replace(/(\d)[.,](\d{3})/g, '$1$2')
 
+// Eneba drops a size from its feed now and then (eneba.cli marks it out of
+// stock): it stays reachable, but never leads the strip or the section.
+function inStock(product: Pick<Product, 'prices'>): boolean {
+  return product.prices.some(offer => offer.available)
+}
+
 export function gamingShowcase(products: Product[], limit = 12): Product[] {
-  const gaming = products.filter(isGaming)
+  const gaming = products.filter(product => isGaming(product) && inStock(product))
   const lead = SHOWCASE
     .map(prefix => gaming.find(product => plain(product.name).startsWith(prefix)))
     .filter((product): product is Product => Boolean(product))
@@ -57,7 +63,8 @@ export function compareGaming(a: Pick<Product, 'name' | 'prices'>, b: Pick<Produ
     const index = SHOWCASE.findIndex(prefix => plain(p.name).startsWith(prefix))
     return index < 0 ? SHOWCASE.length : index
   }
-  return lead(a) - lead(b)
+  return Number(inStock(b)) - Number(inStock(a))
+    || lead(a) - lead(b)
     || KIND_ORDER[gamingKind(a)] - KIND_ORDER[gamingKind(b)]
     || lowestPrice(a) - lowestPrice(b)
 }

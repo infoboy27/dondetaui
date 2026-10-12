@@ -87,7 +87,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - Instagram `@dondetard`: lanzamiento Eneba publicado (carrusel, historia y post de alianza).
   - Piezas y textos en `marketing/eneba-lanzamiento-2026-10/`.
   - Logos en `marketing/brand/`.
-- **App móvil** (`apps/mobile`, Expo SDK 57): Android v0.2.0 con APK de prueba vía EAS; iOS configurado pero sin compilar todavía. Ver [MOBILE.md](MOBILE.md).
+- **App móvil** (`apps/mobile`, Expo SDK 57): Android v0.2.0 con APK de prueba vía EAS; iOS configurado pero sin compilar todavía. Gaming y el código DONDETA ya están en el código de la app; para que lleguen al teléfono hace falta un build nuevo. Ver [MOBILE.md](MOBILE.md).
 
 **Pendiente de Jonatan** (cuentas o accesos que solo él puede crear):
 
@@ -100,7 +100,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 
 **Siguientes pasos de producto:**
 
-- **Móvil:** paridad con la web en Gaming (sección y código DONDETA), primer build de iOS y publicación en las tiendas.
+- **Móvil:** nuevo build (`pnpm build:android:preview`) para probar Gaming en el teléfono, primer build de iOS y publicación en las tiendas.
 - **Campañas:** las promos pagadas deben llevar el enlace con `utm_medium=paid`, que se genera en /admin → Instagram → Campañas. El costo y el alcance pagado viven en Meta Ads Manager; traerlos al admin requiere un token de Marketing API con `ads_read`.
 - **SEO:** pedir indexación de los 7 tipos restantes de `/precios`.
 

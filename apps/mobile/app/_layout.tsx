@@ -29,6 +29,7 @@ export default function RootLayout() {
             <Stack.Screen name="product/[slug]" />
             <Stack.Screen name="store/[slug]" />
             <Stack.Screen name="nearby-stores" />
+            <Stack.Screen name="gaming" />
           </Stack>
         </AppStateProvider>
       </SafeAreaProvider>
