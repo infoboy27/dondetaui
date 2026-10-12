@@ -523,6 +523,21 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
     setScreen('results')
   }
 
+  // Logo: home listing with every filter cleared (it used to be plain text, so
+  // once inside a section there was no obvious way back).
+  const goHome = () => {
+    setQuery('')
+    setSelectedCategory(null)
+    setSectionFilter(null)
+    setSelectedStores([])
+    setStockOnly(false)
+    setFreeShippingOnly(false)
+    setMinPrice(0)
+    setMaxPrice(PRICE_SLIDER_MAX)
+    setScreen('results')
+    window.scrollTo({ top: 0 })
+  }
+
   const goToCategory = (categoryId: string) => {
     setSelectedCategory(categoryId)
     setSectionFilter(null)
@@ -604,8 +619,16 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
         boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
       }}>
         <div style={{ maxWidth: 1360, margin: '0 auto', display: 'flex', alignItems: 'center', height: 64, gap: 32 }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Logo: back to the home listing, like on any site */}
+          <button
+            type="button"
+            onClick={goHome}
+            aria-label="DóndeTa, ir al inicio"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+              background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+            }}
+          >
             <DondeTaMark size={34} />
             <div>
               <div style={{
@@ -624,7 +647,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                 Busca. Compara. Ahorra.
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Search */}
           <div style={{ position: 'relative', flex: 1, maxWidth: 480 }}>
