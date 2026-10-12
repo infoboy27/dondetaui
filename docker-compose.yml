@@ -173,6 +173,11 @@ services:
     working_dir: /app
     # Playwright's bundled Chromium needs real deps (mem, /dev/shm) beyond node:22-alpine.
     shm_size: "1gb"
+    # Hard cap so a runaway scraper (PriceSmart's page passed 4 GB on
+    # 2026-10-12) gets OOM-killed inside its own container instead of
+    # squeezing the 12 GB host every other site lives on. Override per stack.
+    mem_limit: ${INGESTION_MEM_LIMIT:-2560m}
+    memswap_limit: ${INGESTION_MEM_LIMIT:-2560m}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-dondeta}
       INGESTION_INTERVAL_SECONDS: ${INGESTION_INTERVAL_SECONDS:-21600}
@@ -217,6 +222,8 @@ services:
     restart: unless-stopped
     working_dir: /app
     shm_size: "512mb"
+    mem_limit: ${INSTAGRAM_AUTOPILOT_MEM_LIMIT:-1g}
+    memswap_limit: ${INSTAGRAM_AUTOPILOT_MEM_LIMIT:-1g}
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-dondeta}
       IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
