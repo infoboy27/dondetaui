@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
+import { trackOfferClick, trackSearch } from '../analytics'
 import { SiteLinks } from '../components/SiteLinks'
-import DealCard from '../components/DealCard'
+import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import { getTopPriceDrops } from '../domain/notifications'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
@@ -293,7 +294,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
             {isAlerted ? 'Alerta activa' : 'Alerta'}
           </button>
           <button
-            onClick={() => { const href = getOutboundUrl(product.id, cheapest, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
+            onClick={() => { const href = getOutboundUrl(product.id, cheapest, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) { trackOfferClick(product, cheapest, 'desktop_row'); window.open(href, '_blank', 'noopener,noreferrer') } }}
             disabled={!cheapest.url}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
@@ -421,7 +422,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
 
               <div style={{ textAlign: 'center' }}>
                 <button
-                  onClick={() => { const href = getOutboundUrl(product.id, sp, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
+                  onClick={() => { const href = getOutboundUrl(product.id, sp, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) { trackOfferClick(product, sp, 'desktop_offers'); window.open(href, '_blank', 'noopener,noreferrer') } }}
                   disabled={!sp.available || !sp.url}
                   style={{
                     border: 'none', borderRadius: 8,
@@ -496,6 +497,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
 
   const runSearch = (term = query) => {
     if (term !== query) setQuery(term)
+    trackSearch(term)
     if (term.trim()) void searchHistory.record(term)
     setFocused(false)
     setScreen('results')
@@ -1090,11 +1092,22 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
             unbroken product names/prices) and pushes the whole page into horizontal
             overflow. */}
         <main style={{ minWidth: 0 }}>
+          {isHome && loading && (
+            <>
+              <HomeStrip title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda">
+                {[0, 1, 2, 3, 4].map(i => <DealCardSkeleton key={i} width="100%" />)}
+              </HomeStrip>
+              <HomeStrip title="Bajaron de precio" subtitle="Según nuestro historial de precios">
+                {[0, 1, 2, 3, 4].map(i => <DealCardSkeleton key={i} width="100%" />)}
+              </HomeStrip>
+            </>
+          )}
           {comparisons.length > 0 && (
             <HomeStrip title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda">
-              {comparisons.map(entry => (
+              {comparisons.map((entry, index) => (
                 <DealCard
                   key={entry.product.id}
+                  priority={index === 0}
                   product={entry.product}
                   onProduct={openProductPage}
                   storeCount={entry.stores}

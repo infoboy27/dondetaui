@@ -10,6 +10,12 @@ export class ProductsController {
     return this.products.list()
   }
 
+  // Home page sections without the whole catalog (see highlights.ts).
+  @Get('products/highlights')
+  highlights() {
+    return this.products.highlights()
+  }
+
   // Public: the /black-friday page ("¿la oferta es real?").
   @Get('price-check')
   priceCheck() {

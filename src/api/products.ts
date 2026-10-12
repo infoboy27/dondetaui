@@ -6,6 +6,11 @@ export const productsApi = {
     return apiFetch<Product[]>('/products')
   },
 
+  // Home sections only: multi-store products and recent price movers.
+  highlights(): Promise<{ total: number; stores: number; products: Product[] }> {
+    return apiFetch('/products/highlights')
+  },
+
   search(query: string): Promise<Product[]> {
     const params = new URLSearchParams({ q: query })
     return apiFetch<Product[]>(`/search?${params.toString()}`)

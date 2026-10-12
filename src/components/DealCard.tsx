@@ -13,12 +13,13 @@ interface Props {
   highlight: { label: string; wasPrice?: number }
   storeCount?: number
   width?: number | string
+  priority?: boolean
 }
 
 // Home-page card for "Comparaciones del día" / "Bajaron de precio": same
 // card language as ProductCard, but it leads with why the product is worth
 // a look (how much you save, in how many stores) and where it's cheapest.
-export default function DealCard({ product, onProduct, highlight, storeCount, width = 200 }: Props) {
+export default function DealCard({ product, onProduct, highlight, storeCount, width = 200, priority = false }: Props) {
   const best = getBestOffer(product.prices)
 
   return (
@@ -50,7 +51,7 @@ export default function DealCard({ product, onProduct, highlight, storeCount, wi
       }}
     >
       <div style={{ position: 'relative', background: '#F8FAFC', height: 130, width: '100%' }}>
-        <ProductImage src={product.image} alt={product.name} />
+        <ProductImage src={product.image} alt={product.name} priority={priority} />
         <span style={{
           position: 'absolute', top: 8, left: 8,
           background: colors.accent, color: '#fff',
@@ -94,5 +95,23 @@ export default function DealCard({ product, onProduct, highlight, storeCount, wi
         )}
       </div>
     </button>
+  )
+}
+
+// Same footprint as a DealCard, shown while the catalog loads so the home
+// page doesn't jump when the real cards arrive (Lighthouse CLS was 0.81).
+export function DealCardSkeleton({ width = 200 }: { width?: number | string }) {
+  return (
+    <div aria-hidden="true" style={{
+      background: colors.card, borderRadius: radii.lg, border: `1px solid ${colors.border}`,
+      width, height: 248, flexShrink: 0, overflow: 'hidden',
+    }}>
+      <div style={{ height: 130, background: '#F8FAFC' }} />
+      <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ height: 12, width: '90%', borderRadius: 6, background: colors.border }} />
+        <div style={{ height: 12, width: '60%', borderRadius: 6, background: colors.border }} />
+        <div style={{ height: 18, width: '50%', borderRadius: 6, background: colors.border, marginTop: 4 }} />
+      </div>
+    </div>
   )
 }

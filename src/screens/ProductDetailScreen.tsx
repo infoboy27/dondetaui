@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { trackOfferClick } from '../analytics'
 import PriceHistoryChart from '../components/PriceHistoryChart'
 import ProductOfferSummary from '../components/ProductOfferSummary'
 import {
@@ -377,7 +378,7 @@ export default function ProductDetailScreen({
         </button>
         <button
           type="button"
-          onClick={() => { const href = bestOffer && getOutboundUrl(product.id, bestOffer, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href) window.open(href, '_blank', 'noopener,noreferrer') }}
+          onClick={() => { const href = bestOffer && getOutboundUrl(product.id, bestOffer, appConfig.useApi ? appConfig.apiBaseUrl : undefined); if (href && bestOffer) { trackOfferClick(product, bestOffer, 'mobile_detail'); window.open(href, '_blank', 'noopener,noreferrer') } }}
           disabled={!bestOffer?.url}
           style={{
             flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',

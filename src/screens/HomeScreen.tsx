@@ -4,12 +4,12 @@ import { SearchIcon, BellIcon, MicIcon, ChevronRight, ZapIcon } from '../compone
 import AdBanner from '../components/AdBanner'
 import ProductCard from '../components/ProductCard'
 import { AD_SIZES } from '../data/adSizes'
-import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { useHomeHighlights } from '../hooks/useCatalogProducts'
 import { useCatalogFreshness } from '../hooks/useCatalogFreshness'
 import { compareByRelevance, getTopComparisons } from '../domain/offers'
 import { getTopPriceDrops } from '../domain/notifications'
 import { formatPrice } from '../domain/currency'
-import DealCard from '../components/DealCard'
+import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
 import { storesApi, type Store } from '../api/stores'
@@ -33,7 +33,7 @@ export default function HomeScreen({
   onSearch, onProduct, onCategory, onNearby, onStore, onViewAll, onNotifications, hasNotifications,
   favoriteIds, onToggleFavorite,
 }: Props) {
-  const { products, error, retry } = useCatalogProducts()
+  const { products, total, loading, error, retry } = useHomeHighlights()
   const freshness = useCatalogFreshness()
   const comparisons = useMemo(() => getTopComparisons(products, 12), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 12), [products])
@@ -145,8 +145,8 @@ export default function HomeScreen({
               fontFamily: "'Poppins', sans-serif",
               fontWeight: 600, letterSpacing: '-0.02em',
             }}>
-              {products.length > 0 && stores.length > 0
-                ? `Comparamos ${products.length.toLocaleString('es-DO')} productos en ${stores.length} tiendas`
+              {total > 0 && stores.length > 0
+                ? `Comparamos ${total.toLocaleString('es-DO')} productos en ${stores.length} tiendas`
                 : 'Antes de comprar, mira DóndeTa'}
             </div>
             {freshness && (
@@ -190,13 +190,25 @@ export default function HomeScreen({
         </div>
       )}
 
+      {loading && (
+        <>
+          <Section title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda">
+            <HorizontalRow>{[0, 1, 2].map(i => <DealCardSkeleton key={i} />)}</HorizontalRow>
+          </Section>
+          <Section title="Bajaron de precio" subtitle="Según nuestro historial de precios">
+            <HorizontalRow>{[0, 1, 2].map(i => <DealCardSkeleton key={i} />)}</HorizontalRow>
+          </Section>
+        </>
+      )}
+
       {/* Comparaciones del día: the product's core promise, shown first */}
       {comparisons.length > 0 && (
         <Section title="Comparaciones del día" subtitle="El mismo producto, más barato en otra tienda" action="Ver todo" onAction={onViewAll}>
           <HorizontalRow>
-            {comparisons.map(entry => (
+            {comparisons.map((entry, index) => (
               <DealCard
                 key={entry.product.id}
+                priority={index === 0}
                 product={entry.product}
                 onProduct={onProduct}
                 storeCount={entry.stores}
@@ -315,7 +327,7 @@ export default function HomeScreen({
             fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: 14, color: '#00B894',
           }}
         >
-          {products.length > 0 ? `Explorar los ${products.length.toLocaleString('es-DO')} productos` : 'Explorar todos los productos'}
+          {total > 0 ? `Explorar los ${total.toLocaleString('es-DO')} productos` : 'Explorar todos los productos'}
           <ChevronRight size={16} color="#00B894" />
         </button>
       </div>

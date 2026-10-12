@@ -35,7 +35,9 @@ export function resetCatalogCache() {
   catalogRequest = null
 }
 
-export function useCatalogProducts(query = ''): CatalogResult {
+// `enabled: false` skips the request (App only needs the catalog to badge
+// price-drop notifications, i.e. when the user has alerts).
+export function useCatalogProducts(query = '', { enabled = true }: { enabled?: boolean } = {}): CatalogResult {
   // With a live API, start empty: seeding the fixtures here flashed fake
   // products on every real page load until the request came back.
   const [state, setState] = useState<CatalogState>({
@@ -52,6 +54,13 @@ export function useCatalogProducts(query = ''): CatalogResult {
 
     if (!appConfig.useApi) {
       setState({ products: PRODUCTS, loading: false, source: 'fixtures', error: null })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    if (!enabled) {
+      setState({ products: [], loading: false, source: 'api', error: null })
       return () => {
         cancelled = true
       }
@@ -87,7 +96,51 @@ export function useCatalogProducts(query = ''): CatalogResult {
     return () => {
       cancelled = true
     }
-  }, [query, attempt])
+  }, [query, attempt, enabled])
+
+  return { ...state, retry }
+}
+
+interface HighlightsState {
+  products: Product[]
+  total: number
+  stores: number
+  loading: boolean
+  error: string | null
+}
+
+// Mobile home: only the products its sections can show, plus catalog totals
+// (~365 KB instead of the 1.7 MB catalog). Falls back to the full catalog if
+// the API predates /products/highlights.
+export function useHomeHighlights(): HighlightsState & { retry: () => void } {
+  const [state, setState] = useState<HighlightsState>(() => appConfig.useApi
+    ? { products: [], total: 0, stores: 0, loading: true, error: null }
+    : { products: PRODUCTS, total: PRODUCTS.length, stores: 0, loading: false, error: null })
+  const [attempt, setAttempt] = useState(0)
+  const retry = useCallback(() => setAttempt(n => n + 1), [])
+
+  useEffect(() => {
+    if (!appConfig.useApi) return
+    let cancelled = false
+    setState(current => ({ ...current, loading: true, error: null }))
+    productsApi.highlights()
+      .catch(async () => {
+        const products = await loadCatalog()
+        return { total: products.length, stores: 0, products }
+      })
+      .then(result => {
+        if (!cancelled) setState({ ...result, loading: false, error: null })
+      })
+      .catch(error => {
+        if (!cancelled) {
+          setState({
+            products: [], total: 0, stores: 0, loading: false,
+            error: error instanceof Error ? error.message : 'No se pudo cargar el catálogo',
+          })
+        }
+      })
+    return () => { cancelled = true }
+  }, [attempt])
 
   return { ...state, retry }
 }

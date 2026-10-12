@@ -148,15 +148,11 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
         }
 
         if (googleAnalyticsId) {
+          // gtag.js costs ~0.9 s of main-thread time on a mid-range phone, so it
+          // loads after the page has; dataLayer queues the config and any
+          // events (page_view, clicks) until then.
+          const gtagSrc = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`
           tags.push(
-            {
-              tag: 'script',
-              attrs: {
-                async: true,
-                src: `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`,
-              },
-              injectTo: 'head',
-            },
             {
               tag: 'script',
               children: `
@@ -164,6 +160,14 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', ${JSON.stringify(googleAnalyticsId)});
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = ${JSON.stringify(gtagSrc)};
+      document.head.appendChild(s);
+    }, 1500);
+  });
 `,
               injectTo: 'head',
             },
