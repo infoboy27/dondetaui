@@ -71,10 +71,21 @@ active_profiles() {
 }
 
 build_and_up() {
-  local dir="$1" profiles
+  local dir="$1" profiles svc
   profiles="$(active_profiles "$dir")"
+  # One service at a time: a parallel build of api + web (Vite) + web-seo
+  # (Next.js) + ingestion pushed load to ~17 on 3 vCPUs that also serve every
+  # live site. Services sharing a Dockerfile hit the layer cache on the second
+  # build, and so do the co/mx stacks after dondeta, so this costs little time.
   # shellcheck disable=SC2086
-  (cd "$dir" && docker compose $profiles build --quiet && docker compose $profiles up -d) >>"$LOG" 2>&1
+  (
+    cd "$dir"
+    for svc in $(docker compose $profiles config --format json |
+        python3 -c 'import json,sys; print(*(n for n, s in json.load(sys.stdin)["services"].items() if "build" in s))'); do
+      docker compose $profiles build --quiet "$svc" || exit 1
+    done
+    docker compose $profiles up -d
+  ) >>"$LOG" 2>&1
   # nginx.conf may be bind-mounted; make sure the running nginx has it.
   (cd "$dir" && docker compose exec -T web nginx -s reload) >>"$LOG" 2>&1 || true
 }

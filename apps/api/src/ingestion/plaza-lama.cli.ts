@@ -5,6 +5,7 @@ import { IngestionRepository } from './ingestion.repository'
 import { PlazaLamaAdapter } from './plaza-lama.adapter'
 import { PlazaLamaCatalogDiscovery } from './plaza-lama.discovery'
 import { formatPrice } from '../common/currency'
+import { RecycledPage } from './recycled-page'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
@@ -73,14 +74,10 @@ async function main() {
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
   })
-  // One page, reused for every navigation (discovery + each product) — this is what
-  // keeps Playwright's memory footprint bounded to a single browser instance for the
-  // whole run, rather than one per request.
-  const page = await browser.newPage({
-    userAgent: 'Mozilla/5.0 (compatible; DondeTaPriceIndexer/0.3; +https://dondeta.app)',
-  })
-  const adapter = new PlazaLamaAdapter(page)
-  const discovery = new PlazaLamaCatalogDiscovery(page)
+  // One browser for the whole run; its page is replaced every N products so the
+  // renderer's memory can't grow without bound (see recycled-page.ts).
+  const pages = new RecycledPage(browser, numberFromEnv('PLAZA_LAMA_PAGE_RECYCLE_EVERY', 10))
+  const discovery = new PlazaLamaCatalogDiscovery(await pages.page())
 
   let urls: string[]
   try {
@@ -106,7 +103,7 @@ async function main() {
   try {
     for (const [index, url] of urls.entries()) {
       try {
-        const item = await adapter.fetchProduct(url)
+        const item = await new PlazaLamaAdapter(await pages.page()).fetchProduct(url)
         await repository.ingest(item, runId)
         ingested += 1
         console.log(

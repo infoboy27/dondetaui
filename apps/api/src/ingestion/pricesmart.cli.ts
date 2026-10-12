@@ -5,6 +5,7 @@ import { IngestionRepository } from './ingestion.repository'
 import { PriceSmartAdapter } from './pricesmart.adapter'
 import { PriceSmartCatalogDiscovery } from './pricesmart.discovery'
 import { formatPrice } from '../common/currency'
+import { RecycledPage } from './recycled-page'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
@@ -71,11 +72,8 @@ async function main() {
   const browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
   })
-  const page = await browser.newPage({
-    userAgent: 'Mozilla/5.0 (compatible; DondeTaPriceIndexer/0.3; +https://dondeta.app)',
-  })
-  const adapter = new PriceSmartAdapter(page)
-  const discovery = new PriceSmartCatalogDiscovery(page)
+  const pages = new RecycledPage(browser, numberFromEnv('PRICESMART_PAGE_RECYCLE_EVERY', 10))
+  const discovery = new PriceSmartCatalogDiscovery(await pages.page())
 
   let urls: string[]
   try {
@@ -101,7 +99,7 @@ async function main() {
   try {
     for (const [index, url] of urls.entries()) {
       try {
-        const item = await adapter.fetchProduct(url)
+        const item = await new PriceSmartAdapter(await pages.page()).fetchProduct(url)
         await repository.ingest(item, runId)
         ingested += 1
         console.log(

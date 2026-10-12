@@ -1,0 +1,99 @@
+# External uptime check for everything hosted on 163.245.207.38.
+#
+# deploy/uptime-check.sh runs from cron on that same server, so when the
+# whole box drops off the network (2026-10-12, ~11:00 UTC) nothing alerts.
+# This runs from GitHub's side instead. It posts to Discord only when the
+# state changes (this run vs. the previous scheduled run), so an outage sends
+# one "down" and one "recovered" message, not one every few minutes.
+#
+# Needs the repo secret DISCORD_WEBHOOK_ALERTS (same webhook the server uses).
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe sites
+        id: probe
+        run: |
+          # Any 2xx/3xx counts as up. Traefik answers 404 when a site's
+          # container is gone, so 4xx/5xx/timeouts are down.
+          SITES="
+          https://dondeta.com.do/api/health
+          https://dondeta.com.do/
+          https://control.jfmcss.com/
+          https://servicios.jfmcss.com/
+          https://jfmcss.com/
+          https://movidashop.com/
+          https://zafygraf.com/
+          https://resetbariatricsurgery.com/
+          https://odoo.jfmcss.com/
+          "
+          down=""
+          for url in $SITES; do
+            code=000
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$url" || true)
+              case "$code" in 2*|3*) break ;; esac
+              sleep 10
+            done
+            echo "$code $url"
+            case "$code" in 2*|3*) ;; *) down="$down\n- $url ($code)" ;; esac
+          done
+          # SSH answering tells "whole server unreachable" apart from "one site down".
+          if timeout 15 bash -c 'echo > /dev/tcp/163.245.207.38/1600' 2>/dev/null; then
+            echo "ssh up"
+          else
+            echo "ssh down"
+            down="$down\n- SSH 163.245.207.38:1600 (servidor inaccesible)"
+          fi
+          {
+            echo "down<<EOF"
+            printf '%b\n' "$down" | sed '/^$/d'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Previous state
+        id: prev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Conclusion of the last finished run of this workflow (failure = was down).
+          prev=$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/uptime.yml/runs?status=completed&per_page=1" \
+            | jq -r '.workflow_runs[0].conclusion // "success"')
+          echo "conclusion=$prev" >> "$GITHUB_OUTPUT"
+          echo "previous run: $prev"
+
+      - name: Notify Discord on change
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_ALERTS }}
+          DOWN: ${{ steps.probe.outputs.down }}
+          PREV: ${{ steps.prev.outputs.conclusion }}
+        run: |
+          msg=""
+          if [ -n "$DOWN" ] && [ "$PREV" != "failure" ]; then
+            msg=$(printf '🔻 **Caída detectada desde fuera del servidor**\n%s' "$DOWN")
+          elif [ -z "$DOWN" ] && [ "$PREV" = "failure" ]; then
+            msg="✅ **Todo responde de nuevo** (163.245.207.38)"
+          fi
+          if [ -n "$msg" ] && [ -n "$WEBHOOK" ]; then
+            jq -n --arg c "$msg" '{content: $c}' | curl -fsS -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK" >/dev/null
+          fi
+          [ -z "$msg" ] || echo "$msg"
+          # The run's own conclusion is the state the next run compares against.
+          [ -z "$DOWN" ]
