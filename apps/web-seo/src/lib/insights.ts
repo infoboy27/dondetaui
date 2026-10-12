@@ -20,11 +20,11 @@ export const PRODUCT_TYPES: ProductType[] = [
   { slug: 'neveras', label: 'neveras', title: 'Neveras y refrigeradores', keywords: ['nevera', 'refrigerador', 'refrigeradora', 'side by side'], exclude: ['base', 'filtro', 'kit', 'cubeta', 'bebida'], minPrice: 8_000 },
   { slug: 'lavadoras', label: 'lavadoras', title: 'Lavadoras', keywords: ['lavadora'], exclude: ['kit', 'base', 'manguera', 'secadora'], minPrice: 7_000 },
   { slug: 'secadoras', label: 'secadoras', title: 'Secadoras de ropa', keywords: ['secadora'], exclude: ['pelo', 'cabello', 'kit', 'lavadora', 'ducto'], minPrice: 7_000 },
-  { slug: 'centros-de-lavado', label: 'centros de lavado', title: 'Centros de lavado (lavadora y secadora)', keywords: ['lavadora y secadora', 'lavadora secadora', 'centro de lavado', 'torre'], exclude: ['kit'], minPrice: 15_000 },
+  { slug: 'centros-de-lavado', label: 'centros de lavado', title: 'Centros de lavado (lavadora y secadora)', keywords: ['lavadora y secadora', 'lavadora secadora', 'lavadora/secadora', 'centro de lavado', 'torre'], exclude: ['kit'], minPrice: 15_000 },
   { slug: 'estufas', label: 'estufas', title: 'Estufas y cocinas', keywords: ['estufa', 'cocina a gas', 'cocina electrica'], exclude: ['butano', 'camping', 'parrilla', 'repuesto', 'quemador'], minPrice: 5_000 },
-  { slug: 'aires-acondicionados', label: 'aires acondicionados', title: 'Aires acondicionados', keywords: ['aire acondicionado', 'a/a', 'inverter', 'btu'], exclude: ['control', 'soporte', 'base', 'kit', 'purificador', 'deshumid'], minPrice: 10_000 },
-  { slug: 'televisores', label: 'televisores', title: 'Televisores', keywords: ['televisor', 'smart tv', ' tv ', 'pulgadas', 'qled', 'oled', 'uhd'], exclude: ['soporte', 'base', 'control', 'cable', 'bocina', 'barra'], minPrice: 6_000 },
-  { slug: 'microondas', label: 'microondas', title: 'Microondas', keywords: ['microondas'], exclude: ['soporte', 'base', 'plato'], minPrice: 2_500 },
+  { slug: 'aires-acondicionados', label: 'aires acondicionados', title: 'Aires acondicionados', keywords: ['aire acondicionado', 'a/a', 'inverter', 'btu'], exclude: ['control', 'soporte', 'base', 'kit', 'purificador', 'deshumidificador', 'deshumificador'], minPrice: 10_000 },
+  { slug: 'televisores', label: 'televisores', title: 'Televisores', keywords: ['televisor', 'smart tv', ' tv ', 'pulgadas', 'qled', 'oled', 'uhd'], exclude: ['soporte', 'base', 'control', 'cable', 'bocina', 'barra', 'abanico', 'ventilador', 'extractor', 'campana', 'estufa', 'lavaplatos'], minPrice: 6_000 },
+  { slug: 'microondas', label: 'microondas', title: 'Microondas', keywords: ['microondas', 'microonda'], exclude: ['soporte', 'base', 'plato'], minPrice: 2_500 },
   { slug: 'freidoras-de-aire', label: 'freidoras de aire', title: 'Freidoras de aire', keywords: ['freidora de aire', 'air fryer', 'freidora'], exclude: ['papel', 'molde', 'accesorio', 'canasta'], minPrice: 1_500 },
   { slug: 'abanicos', label: 'abanicos', title: 'Abanicos y ventiladores', keywords: ['abanico', 'ventilador'], exclude: ['repuesto', 'aspa', 'cuello'], minPrice: 900 },
   { slug: 'licuadoras', label: 'licuadoras', title: 'Licuadoras', keywords: ['licuadora'], exclude: ['vaso', 'cuchilla', 'tapa', 'rosca', 'repuesto', 'jarra'], minPrice: 1_200 },
@@ -44,7 +44,10 @@ export function bestPrice(product: Product): number | undefined {
 export function matchesType(product: Product, type: ProductType): boolean {
   const name = normalize(product.name)
   if (!type.keywords.some(keyword => name.includes(normalize(keyword).trim()))) return false
-  if (type.exclude?.some(word => name.includes(normalize(word).trim()))) return false
+  // Whole words only: "kit" must not exclude KitchenAid, nor "quemador" every
+  // stove "de 5 quemadores".
+  const words = ` ${name.replace(/[^a-z0-9]+/g, ' ').trim()} `
+  if (type.exclude?.some(word => words.includes(` ${normalize(word).trim()} `))) return false
   const price = bestPrice(product)
   return price !== undefined && price >= type.minPrice
 }

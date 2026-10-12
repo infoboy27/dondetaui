@@ -12,6 +12,8 @@ import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
+import { availableTypes, matchesTypeFilter } from '../domain/productTypes'
+import { useCatalogFreshness } from '../hooks/useCatalogFreshness'
 import { usePagination } from '../hooks/usePagination'
 import PaginationControls from '../components/PaginationControls'
 import { useProductReviews } from '../hooks/useProductReviews'
@@ -455,7 +457,8 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const [screen, setScreen] = useState<DesktopScreen>('results')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
-  const { products, loading, error } = useCatalogProducts(query)
+  const { products, loading, error, retry } = useCatalogProducts(query)
+  const freshness = useCatalogFreshness()
   // Home strips (no search, no category): what DóndeTa is for, before the list.
   const isHome = screen === 'results' && !query.trim() && !selectedCategory
   const comparisons = useMemo(() => (isHome ? getTopComparisons(products, 5) : []), [products, isHome])
@@ -487,15 +490,9 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
     setSelectedCategory(prev => (prev === categoryId ? null : categoryId))
   }
 
-  const availableCategories = useMemo(() => {
-    const byId = new Map<string, { id: string; label: string }>()
-    for (const p of products) {
-      if (!byId.has(p.categoryId)) {
-        byId.set(p.categoryId, { id: p.categoryId, label: p.category })
-      }
-    }
-    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label))
-  }, [products])
+  // Grouped by what the product is: retailer categories repeat each other
+  // (Neveras / Refrigeradores, Televisores / Televisión...).
+  const availableCategories = useMemo(() => availableTypes(products), [products])
 
   const runSearch = (term = query) => {
     if (term !== query) setQuery(term)
@@ -521,7 +518,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
         p.prices.some(price => selectedStores.includes(price.store))
       const total = getOfferTotal(getBestOffer(p.prices) ?? p.prices[0])
       const inPriceRange = total >= minPrice && total <= maxPrice
-      const inCategory = !selectedCategory || matchesCategory(p, selectedCategory)
+      const inCategory = !selectedCategory || (matchesTypeFilter(p, selectedCategory) ?? matchesCategory(p, selectedCategory))
       // p.discount is never set for real ingested products (see
       // getRecentPriceDrop's comment) -- fall back to an actual observed
       // price drop so "Ofertas" isn't permanently empty for real data.
@@ -982,7 +979,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                     fontSize: 13, fontFamily: "'DM Sans', sans-serif",
                     color: '#0F1D2D',
                   }}>
-                    {cat.label}
+                    {cat.label} <span style={{ color: '#9AAABB' }}>({cat.count})</span>
                   </span>
                 </label>
               ))}
@@ -1136,6 +1133,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                 margin: '4px 0 0',
               }}>
                 {visibleProducts.length} productos comparados en {availableStores.length} tiendas
+                {freshness && ` · ${freshness}`}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -1190,7 +1188,16 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               padding: '10px 16px', marginBottom: 16,
               color: '#0F1D2D', fontFamily: "'DM Sans', sans-serif", fontSize: 13,
             }}>
-              No se pudo conectar con el catálogo en vivo — mostrando datos de referencia.
+              No se pudo cargar el catálogo de precios. Revisa tu conexión e intenta de nuevo.{' '}
+              <button
+                onClick={retry}
+                style={{
+                  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  color: '#00B894', fontWeight: 600, fontFamily: 'inherit', fontSize: 'inherit',
+                }}
+              >
+                Reintentar
+              </button>
             </div>
           )}
 
@@ -1203,7 +1210,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
             }}>
               Cargando productos…
             </div>
-          ) : visibleProducts.length === 0 ? (
+          ) : visibleProducts.length === 0 && !error ? (
             <div style={{
               background: '#fff', borderRadius: 14, padding: '40px 20px',
               textAlign: 'center', color: '#5d7ea0',

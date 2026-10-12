@@ -3,6 +3,10 @@
 // model code, compatible brand). Ingestion only matches going forward; this
 // fixes the catalog that was ingested before matching worked.
 //
+// Also merges listings of the same retailer that share a product URL: when a
+// retailer's ingestion changed SKU format (Sirena's HTML crawler -> VTEX API)
+// the same page was stored twice under different external SKUs.
+//
 //   node dist/ingestion/merge-products.cli.js           # dry run, prints groups
 //   node dist/ingestion/merge-products.cli.js --apply   # writes
 //
@@ -28,6 +32,7 @@ interface VariantRow {
   ean: string | null
   created_at: Date
   retailers: string[]
+  urls: string[]
 }
 
 interface ProductInfo {
@@ -43,7 +48,8 @@ async function main() {
   const { rows } = await pool.query<VariantRow>(`
     select pv.id::text as variant_id, p.id::text as product_id, p.slug, p.name, p.brand, pv.model, pv.ean,
            p.created_at,
-           coalesce(array_agg(distinct r.name) filter (where r.name is not null), '{}') as retailers
+           coalesce(array_agg(distinct r.name) filter (where r.name is not null), '{}') as retailers,
+           coalesce(array_agg(distinct o.retailer_id::text || ' ' || o.url) filter (where o.url is not null), '{}') as urls
     from product_variants pv
     join products p on p.id = pv.product_id
     left join offers o on o.product_variant_id = pv.id
@@ -73,6 +79,7 @@ async function main() {
     }
     const keys = codes.map(code => `code:${code}`)
     if (row.ean) keys.push(`ean:${row.ean}`)
+    for (const url of row.urls) keys.push(`url:${url}`)
     for (const key of keys) {
       const set = keyIndex.get(key) ?? new Set<string>()
       set.add(row.product_id)
@@ -99,9 +106,12 @@ async function main() {
       for (let j = i + 1; j < list.length; j++) {
         const a = list[i]
         const b = list[j]
-        const sameRetailerOnly = [...a.retailers].every(r => b.retailers.has(r)) && [...b.retailers].every(r => a.retailers.has(r))
-        if (sameRetailerOnly) continue
-        if (!key.startsWith('ean:') && (!brandsCompatible(a, b) || !bundlesCompatible(a, b))) continue
+        // Same retailer + same product page is the same listing, whatever its SKU.
+        if (!key.startsWith('url:')) {
+          const sameRetailerOnly = [...a.retailers].every(r => b.retailers.has(r)) && [...b.retailers].every(r => a.retailers.has(r))
+          if (sameRetailerOnly) continue
+          if (!key.startsWith('ean:') && (!brandsCompatible(a, b) || !bundlesCompatible(a, b))) continue
+        }
         parent.set(find(a.id), find(b.id))
       }
     }
@@ -140,7 +150,42 @@ async function main() {
     }
   }
 
+  const collapsed = await collapseDuplicateOffers(apply)
+  console.log(`[merge] ${collapsed} duplicate offers (same retailer + URL on one product) ${apply ? 'collapsed' : 'to collapse'}`)
+
   if (!apply) console.log('[merge] dry run -- re-run with --apply to write')
+}
+
+// After a merge, a product can hold two offers for the same retailer page
+// (old SKU and new SKU). Keep the most recently seen one, move the other's
+// price history onto it and drop it.
+async function collapseDuplicateOffers(write: boolean): Promise<number> {
+  const { rows } = await pool.query<{ keep_id: string; drop_id: string }>(`
+    select keep_id::text, drop_id::text from (
+      select first_value(o.id) over w as keep_id, o.id as drop_id, row_number() over w as rn
+      from offers o
+      join product_variants pv on pv.id = o.product_variant_id
+      where o.store_id is null
+      window w as (partition by pv.product_id, o.retailer_id, o.url order by o.last_seen_at desc, o.created_at desc)
+    ) ranked
+    where rn > 1`)
+  if (!write) return rows.length
+
+  const client = await pool.connect()
+  try {
+    await client.query('begin')
+    for (const row of rows) {
+      await client.query('update price_observations set offer_id = $1 where offer_id = $2', [row.keep_id, row.drop_id])
+      await client.query('delete from offers where id = $1', [row.drop_id])
+    }
+    await client.query('commit')
+  } catch (error) {
+    await client.query('rollback')
+    throw error
+  } finally {
+    client.release()
+  }
+  return rows.length
 }
 
 async function mergeInto(client: PoolClient, keepId: string, loser: ProductInfo) {
@@ -172,6 +217,10 @@ async function mergeInto(client: PoolClient, keepId: string, loser: ProductInfo)
       [keepId, loser.id],
     )
   }
+
+  // Click and Instagram history would otherwise be orphaned (on delete set null).
+  await client.query('update outbound_clicks set product_id = $1 where product_id = $2', [keepId, loser.id])
+  await client.query('update instagram_posts set product_id = $1 where product_id = $2', [keepId, loser.id])
 
   await client.query('update product_slug_redirects set product_id = $1 where product_id = $2', [keepId, loser.id])
   await client.query(

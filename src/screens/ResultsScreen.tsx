@@ -36,7 +36,7 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
   // Category mode fetches the whole catalog (matchesCategory filters
   // client-side, same as DesktopView) rather than sending the category id
   // to the free-text search API.
-  const { products, source } = useCatalogProducts(category ? '' : query)
+  const { products, source, error, retry } = useCatalogProducts(category ? '' : query)
   const categoryLabel = category ? CATEGORIES.find(c => c.id === category)?.label : undefined
   const headingText = categoryLabel || query || 'Todos los productos'
 
@@ -269,7 +269,20 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
             padding: '28px 20px', textAlign: 'center',
             fontFamily: "'DM Sans', sans-serif", color: '#5d7ea0', fontSize: 13,
           }}>
-            No encontramos productos con esos filtros.
+            {error ? (
+              <>
+                No se pudo cargar el catálogo de precios.{' '}
+                <button
+                  onClick={retry}
+                  style={{
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    color: '#00B894', fontWeight: 600, fontFamily: 'inherit', fontSize: 'inherit',
+                  }}
+                >
+                  Reintentar
+                </button>
+              </>
+            ) : 'No encontramos productos con esos filtros.'}
           </div>
         )}
         <PaginationControls

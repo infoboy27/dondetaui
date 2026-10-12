@@ -30,7 +30,7 @@ interface Props {
 }
 
 export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Props) {
-  const { store, products: storeProducts, loading } = useStoreDetail(storeAbbr)
+  const { store, products: storeProducts, loading, error } = useStoreDetail(storeAbbr)
 
   if (loading) {
     return (
@@ -62,7 +62,9 @@ export default function StoreDetailScreen({ storeAbbr, onBack, onProduct }: Prop
         </div>
         <div style={{ padding: '0 20px', textAlign: 'center', marginTop: 40 }}>
           <span style={{ fontSize: 14, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>
-            No pudimos encontrar esta tienda.
+            {error && error !== 'Tienda no encontrada'
+              ? 'No se pudo cargar la tienda. Revisa tu conexión e intenta de nuevo.'
+              : 'No pudimos encontrar esta tienda.'}
           </span>
         </div>
       </div>
