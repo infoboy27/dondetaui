@@ -14,7 +14,7 @@ run() {
   fi
 }
 
-RETAILERS="exito alkosto ktronix falabella-co"
+RETAILERS="exito alkosto ktronix falabella-co eneba"
 
 while true; do
   # Oldest data first (and close runs a restart cut off) -- deploys restart
@@ -27,6 +27,7 @@ while true; do
       alkosto) run alkosto node dist/ingestion/algolia-api.cli.js alkosto ;;
       ktronix) run ktronix node dist/ingestion/algolia-api.cli.js ktronix ;;
       falabella-co) run falabella-co node dist/ingestion/falabella.cli.js falabella-co ;;
+      eneba) run eneba env ENEBA_COUNTRY=co ENEBA_CURRENCY=COP node dist/ingestion/eneba.cli.js ;;
     esac
   done
 

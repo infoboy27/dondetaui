@@ -166,6 +166,7 @@ export const CATEGORIES = [
   { id: 'muebles', label: 'Muebles', emoji: '🪑', color: '#FEF3C7', border: '#F59E0B' },
   { id: 'aires', label: 'Aires A/C', emoji: '❄️', color: '#E0F2FE', border: '#0EA5E9' },
   { id: 'cocina', label: 'Cocina', emoji: '🍳', color: '#FFF0F0', border: '#EF4444' },
+  { id: 'gaming', label: 'Gaming', emoji: '🎮', color: '#F3E8FF', border: '#8B5CF6' },
 ]
 
 export const TRENDING = [

@@ -103,6 +103,8 @@ export function useCatalogProducts(query = '', { enabled = true }: { enabled?: b
 
 interface HighlightsState {
   products: Product[]
+  // Eneba digital products (their own home section).
+  gaming: Product[]
   total: number
   stores: number
   loading: boolean
@@ -114,8 +116,8 @@ interface HighlightsState {
 // the API predates /products/highlights.
 export function useHomeHighlights(): HighlightsState & { retry: () => void } {
   const [state, setState] = useState<HighlightsState>(() => appConfig.useApi
-    ? { products: [], total: 0, stores: 0, loading: true, error: null }
-    : { products: PRODUCTS, total: PRODUCTS.length, stores: 0, loading: false, error: null })
+    ? { products: [], gaming: [], total: 0, stores: 0, loading: true, error: null }
+    : { products: PRODUCTS, gaming: [], total: PRODUCTS.length, stores: 0, loading: false, error: null })
   const [attempt, setAttempt] = useState(0)
   const retry = useCallback(() => setAttempt(n => n + 1), [])
 
@@ -126,15 +128,15 @@ export function useHomeHighlights(): HighlightsState & { retry: () => void } {
     productsApi.highlights()
       .catch(async () => {
         const products = await loadCatalog()
-        return { total: products.length, stores: 0, products }
+        return { total: products.length, stores: 0, products, gaming: products.filter(p => p.categoryId === 'gaming') }
       })
       .then(result => {
-        if (!cancelled) setState({ ...result, loading: false, error: null })
+        if (!cancelled) setState({ ...result, gaming: result.gaming ?? [], loading: false, error: null })
       })
       .catch(error => {
         if (!cancelled) {
           setState({
-            products: [], total: 0, stores: 0, loading: false,
+            products: [], gaming: [], total: 0, stores: 0, loading: false,
             error: error instanceof Error ? error.message : 'No se pudo cargar el catálogo',
           })
         }

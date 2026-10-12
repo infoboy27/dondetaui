@@ -10,6 +10,8 @@ import { compareByRelevance, getTopComparisons } from '../domain/offers'
 import { getTopPriceDrops } from '../domain/notifications'
 import { formatPrice } from '../domain/currency'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
+import DiscountCode from '../components/DiscountCode'
+import { gamingKind, gamingShowcase } from '../domain/gaming'
 import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
 import { storesApi, type Store } from '../api/stores'
@@ -33,10 +35,11 @@ export default function HomeScreen({
   onSearch, onProduct, onCategory, onNearby, onStore, onViewAll, onNotifications, hasNotifications,
   favoriteIds, onToggleFavorite,
 }: Props) {
-  const { products, total, loading, error, retry } = useHomeHighlights()
+  const { products, gaming, total, loading, error, retry } = useHomeHighlights()
   const freshness = useCatalogFreshness()
   const comparisons = useMemo(() => getTopComparisons(products, 12), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 12), [products])
+  const gamingDeals = useMemo(() => gamingShowcase(gaming), [gaming])
   const featured = useMemo(() => [...products].sort(compareByRelevance).slice(0, 10), [products])
   const [stores, setStores] = useState<Store[]>([])
 
@@ -229,6 +232,25 @@ export default function HomeScreen({
                 product={drop.product}
                 onProduct={onProduct}
                 highlight={{ label: `Bajó ${drop.pct}%`, wasPrice: drop.oldPrice }}
+              />
+            ))}
+          </HorizontalRow>
+        </Section>
+      )}
+
+      {/* Gaming: Eneba top-ups, subscriptions and PC keys (one store, so no comparison) */}
+      {gamingDeals.length > 0 && (
+        <Section title="🎮 Gaming" subtitle="Recargas y juegos digitales · Entrega inmediata" action="Ver todo" onAction={() => onCategory('gaming')}>
+          <div style={{ padding: '0 20px 12px' }}>
+            <DiscountCode compact />
+          </div>
+          <HorizontalRow>
+            {gamingDeals.map(product => (
+              <DealCard
+                key={product.id}
+                product={product}
+                onProduct={onProduct}
+                highlight={{ label: gamingKind(product) }}
               />
             ))}
           </HorizontalRow>

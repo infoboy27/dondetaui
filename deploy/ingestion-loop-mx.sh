@@ -14,7 +14,7 @@ run() {
   fi
 }
 
-RETAILERS="elektra chedraui sears-mx"
+RETAILERS="elektra chedraui sears-mx eneba"
 
 while true; do
   # Oldest data first (and close runs a restart cut off) -- deploys restart
@@ -26,6 +26,7 @@ while true; do
       elektra) run elektra node dist/ingestion/vtex-api.cli.js elektra ;;
       chedraui) run chedraui node dist/ingestion/vtex-api.cli.js chedraui ;;
       sears-mx) run sears-mx node dist/ingestion/sears.cli.js ;;
+      eneba) run eneba env ENEBA_COUNTRY=mx ENEBA_CURRENCY=MXN node dist/ingestion/eneba.cli.js ;;
     esac
   done
 

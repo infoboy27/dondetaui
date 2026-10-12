@@ -11,6 +11,9 @@ export interface NormalizedRetailerItem {
   name: string
   brand: string
   model: string
+  // Shown under the product name; defaults to the model. Digital products
+  // (Eneba) have an opaque listing id as model, so they say what they are.
+  subtitle?: string
   ean?: string
   upc?: string
   categoryName: string

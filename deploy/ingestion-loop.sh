@@ -14,7 +14,7 @@ run() {
   fi
 }
 
-RETAILERS="plaza-lama jumbo sirena corripio pricesmart"
+RETAILERS="plaza-lama jumbo sirena corripio pricesmart eneba"
 
 while true; do
   # Oldest data first (and close runs a restart cut off) -- deploys restart
@@ -28,6 +28,7 @@ while true; do
       sirena) run sirena node dist/ingestion/vtex-api.cli.js sirena ;;
       corripio) run corripio node dist/ingestion/retailer.cli.js corripio ;;
       pricesmart) run pricesmart node dist/ingestion/pricesmart.cli.js ;;
+      eneba) run eneba env ENEBA_COUNTRY=do ENEBA_CURRENCY=DOP node dist/ingestion/eneba.cli.js ;;
     esac
   done
 

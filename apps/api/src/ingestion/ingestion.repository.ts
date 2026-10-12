@@ -113,7 +113,7 @@ export class IngestionRepository {
         await client.query(
           `insert into products(id, category_id, name, brand, subtitle, image_url, slug)
            values ($1, $2, $3, $4, $5, $6, $7)`,
-          [productId, categoryId, item.name, item.brand, item.model, item.imageUrl ?? null, slug],
+          [productId, categoryId, item.name, item.brand, item.subtitle ?? item.model, item.imageUrl ?? null, slug],
         )
 
         const variant = await client.query<{ id: string }>(
