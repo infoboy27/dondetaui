@@ -95,9 +95,11 @@ export interface PriceDrop {
 }
 
 // Latest move in the price history, if it went down by at least minPct.
+// Gaming (Eneba marketplace) prices wobble daily; it isn't a "bajó de precio".
 export function topDrops(products: Product[], limit = 10, minPct = 3): PriceDrop[] {
   const drops: PriceDrop[] = []
   for (const product of products) {
+    if (product.categoryId === 'gaming') continue
     const history = product.priceHistory ?? []
     if (history.length < 2) continue
     const previous = history[history.length - 2]

@@ -7,7 +7,7 @@ export const productsApi = {
   },
 
   // Home sections only: multi-store products and recent price movers.
-  highlights(): Promise<{ total: number; stores: number; products: Product[] }> {
+  highlights(): Promise<{ total: number; stores: number; products: Product[]; gaming?: Product[] }> {
     return apiFetch('/products/highlights')
   },
 

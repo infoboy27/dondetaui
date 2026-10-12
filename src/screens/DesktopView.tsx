@@ -3,6 +3,7 @@ import { trackOfferClick, trackSearch } from '../analytics'
 import { SiteLinks } from '../components/SiteLinks'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import { getTopPriceDrops } from '../domain/notifications'
+import { ENEBA_DISCOUNT_CODE, gamingKind, gamingShowcase, isGaming } from '../domain/gaming'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
@@ -228,7 +229,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
             fontSize: 11, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif",
             marginBottom: 3, fontWeight: 500,
           }}>
-            {product.brand} · {product.model}
+            {product.brand} · {isGaming(product) ? 'Código digital' : product.model}
           </div>
           <div style={{
             fontSize: 16, fontWeight: 700,
@@ -464,6 +465,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
   const isHome = screen === 'results' && !query.trim() && !selectedCategory
   const comparisons = useMemo(() => (isHome ? getTopComparisons(products, 5) : []), [products, isHome])
   const drops = useMemo(() => (isHome ? getTopPriceDrops(products, 5) : []), [products, isHome])
+  const gamingDeals = useMemo(() => (isHome ? gamingShowcase(products, 5) : []), [products, isHome])
   // Derived from real offer data instead of a hardcoded DR-only list, so
   // this filter/directory reflects whatever retailers this deployment
   // actually ingests (per AGENTS.md: store info comes from retailer data,
@@ -1126,6 +1128,22 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                   onProduct={openProductPage}
                   width="100%"
                   highlight={{ label: `Bajó ${drop.pct}%`, wasPrice: drop.oldPrice }}
+                />
+              ))}
+            </HomeStrip>
+          )}
+          {gamingDeals.length > 0 && (
+            <HomeStrip
+              title="🎮 Gaming"
+              subtitle={`Recargas y juegos digitales · 5% de descuento en Eneba con el código ${ENEBA_DISCOUNT_CODE.toUpperCase()}`}
+            >
+              {gamingDeals.map(product => (
+                <DealCard
+                  key={product.id}
+                  product={product}
+                  onProduct={openProductPage}
+                  width="100%"
+                  highlight={{ label: gamingKind(product) }}
                 />
               ))}
             </HomeStrip>

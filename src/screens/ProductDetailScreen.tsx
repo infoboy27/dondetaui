@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { trackOfferClick } from '../analytics'
 import PriceHistoryChart from '../components/PriceHistoryChart'
+import DiscountCode from '../components/DiscountCode'
+import { isGaming } from '../domain/gaming'
 import ProductOfferSummary from '../components/ProductOfferSummary'
 import {
   BellIcon,
@@ -180,7 +182,7 @@ export default function ProductDetailScreen({
             marginBottom: 4, letterSpacing: '0.02em',
             textTransform: 'uppercase',
           }}>
-            {product.brand} · {product.model}
+            {product.brand} · {isGaming(product) ? 'Código digital' : product.model}
           </div>
           <h1 style={{
             fontSize: 20, fontWeight: 700,
@@ -231,6 +233,28 @@ export default function ProductDetailScreen({
       <div style={{ margin: '12px 16px 0' }}>
         <ProductOfferSummary offers={product.prices} />
       </div>
+
+      {/* Gaming (Eneba): digital delivery and the affiliate discount code */}
+      {isGaming(product) && (
+        <div style={{ margin: '12px 16px 0' }}>
+          <div style={{
+            background: '#fff', borderRadius: 16,
+            border: '1px solid #E8EDF2',
+            boxShadow: '0 2px 8px rgba(15,29,45,0.04)',
+            padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12,
+          }}>
+            <DiscountCode />
+            <ul style={{
+              margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4,
+              fontSize: 13, color: '#5d7ea0', fontFamily: "'DM Sans', sans-serif",
+            }}>
+              <li>Producto digital: el código llega a tu correo al instante.</li>
+              <li>Región global: se activa desde tu país.</li>
+              <li>La compra se hace en Eneba; DóndeTa no vende ni cobra.</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Price History */}
       <div style={{ margin: '12px 16px 0' }}>

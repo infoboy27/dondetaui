@@ -30,7 +30,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
           Resumen de precios
         </div>
         <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: fonts.body, marginTop: 2 }}>
-          {rankedOffers.length} tiendas comparadas
+          {rankedOffers.length === 1 ? 'Disponible en 1 tienda' : `${rankedOffers.length} tiendas comparadas`}
         </div>
       </div>
 
@@ -54,7 +54,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
               <span style={{ fontSize: 13, fontWeight: 600, fontFamily: fonts.body, color: colors.navy }}>
                 {offer.store}
               </span>
-              {index === 0 && (
+              {index === 0 && rankedOffers.length > 1 && (
                 <span
                   style={{
                     fontSize: 9,

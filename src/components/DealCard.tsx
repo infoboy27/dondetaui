@@ -89,7 +89,8 @@ export default function DealCard({ product, onProduct, highlight, storeCount, wi
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto' }}>
             <StoreLogo store={best.store} abbr={best.abbr} color={best.color} size={20} borderRadius={6} />
             <span style={{ fontSize: 11, color: colors.navy400, fontFamily: fonts.body, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Más barato en {best.store}
+              {/* "Más barato" only means something when there's another store to beat. */}
+              {new Set(product.prices.map(offer => offer.store)).size > 1 ? 'Más barato en' : 'Disponible en'} {best.store}
             </span>
           </div>
         )}
