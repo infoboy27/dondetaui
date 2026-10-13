@@ -36,6 +36,15 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
           accent: false,
           onClick: onAlerts,
         },
+        ...(user
+          ? [{
+              icon: ShieldIcon,
+              label: 'Seguridad de la cuenta',
+              value: user.emailVerified === false ? 'Confirma tu correo' : user.mfaMethod ? '2FA activa' : '',
+              accent: false,
+              onClick: () => { window.location.href = '/cuenta/seguridad' },
+            }]
+          : []),
       ],
     },
     {

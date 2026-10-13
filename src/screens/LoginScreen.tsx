@@ -3,7 +3,7 @@ import AuthForm from '../components/AuthForm'
 
 interface Props {
   onBack: () => void
-  onLogin: (email: string, password: string) => Promise<void>
+  onLogin: (email: string, password: string) => Promise<unknown>
   onRegister: (email: string, password: string, name?: string, phone?: string) => Promise<void>
   loading: boolean
   error: string | null

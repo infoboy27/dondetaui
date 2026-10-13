@@ -14,11 +14,15 @@ export type Screen =
 
 export type Tab = 'home' | 'search' | 'scanner' | 'alerts' | 'profile'
 
+export type MfaMethod = 'email' | 'totp'
+
 export interface User {
   id: string
   email: string
   name: string | null
   phone?: string | null
+  emailVerified?: boolean
+  mfaMethod?: MfaMethod | null
 }
 
 export interface PriceAlert {

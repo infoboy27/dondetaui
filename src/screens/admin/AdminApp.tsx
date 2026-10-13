@@ -16,7 +16,7 @@ interface Props {
   user: User | null
   authLoading: boolean
   authError: string | null
-  onLogin: (email: string, password: string) => Promise<void>
+  onLogin: (email: string, password: string) => Promise<unknown>
   onRegister: (email: string, password: string, name?: string, phone?: string) => Promise<void>
   onLogout: () => void
 }

@@ -89,9 +89,11 @@ export default function SavedScreen() {
               icon="bellFill"
               tone="brand"
               title="Te avisamos cuando baje"
-              message="Inicia sesión para crear alertas de precio y recibir una notificación cuando un producto baje."
-              actionTitle="Iniciar sesión"
-              onAction={() => router.navigate('/profile')}
+              message="Crea una cuenta gratis y te enviamos una notificación cuando baje el precio de lo que te interesa."
+              actionTitle="Crear cuenta gratis"
+              onAction={() => router.push({ pathname: '/auth', params: { reason: 'alerts', mode: 'register' } })}
+              secondaryTitle="Ya tengo cuenta"
+              onSecondary={() => router.push({ pathname: '/auth', params: { reason: 'alerts' } })}
             />
           ) : loading ? (
             <View><ProductRowSkeleton /><ProductRowSkeleton /></View>

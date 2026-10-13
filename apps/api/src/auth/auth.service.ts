@@ -272,8 +272,10 @@ export class AuthService {
     return row
   }
 
+  // 403, not 401: the session is fine, only the confirmation is wrong. Clients
+  // treat 401 on an authenticated request as "signed out".
   private async checkPassword(row: UserRow, password: string): Promise<void> {
-    if (!(await bcrypt.compare(password, row.password_hash))) throw new UnauthorizedException('Contraseña incorrecta.')
+    if (!(await bcrypt.compare(password, row.password_hash))) throw new ForbiddenException('Contraseña incorrecta.')
   }
 
   private deliver(to: string, content: EmailContent): Promise<void> {

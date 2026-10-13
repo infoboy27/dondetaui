@@ -46,6 +46,17 @@ const ICONS = {
   sparkles: { ios: 'sparkles', android: 'auto_awesome' },
   bolt: { ios: 'bolt.fill', android: 'bolt' },
   photo: { ios: 'photo', android: 'image' },
+  eye: { ios: 'eye', android: 'visibility' },
+  eyeSlash: { ios: 'eye.slash', android: 'visibility_off' },
+  envelope: { ios: 'envelope.fill', android: 'mail' },
+  key: { ios: 'key.fill', android: 'key' },
+  shield: { ios: 'checkmark.shield.fill', android: 'verified_user' },
+  authApp: { ios: 'lock.iphone', android: 'phonelink_lock' },
+  trash: { ios: 'trash.fill', android: 'delete' },
+  personAdd: { ios: 'person.crop.circle.badge.plus', android: 'person_add' },
+  devices: { ios: 'laptopcomputer.and.iphone', android: 'devices' },
+  sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
+  info: { ios: 'info.circle.fill', android: 'info' },
 } satisfies Record<string, { ios: SFSymbol; android: AndroidSymbol }>
 
 export type IconName = keyof typeof ICONS
@@ -75,6 +86,11 @@ export default function Icon({
       weight={weight}
       resizeMode="scaleAspectFit"
       style={[{ width: size, height: size }, style]}
+      // Decorative: the text or accessibilityLabel next to it says what it
+      // means. Otherwise VoiceOver reads the symbol's own name ("get mail").
+      accessible={false}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
     />
   )
 }

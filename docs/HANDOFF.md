@@ -94,7 +94,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - Secret `DISCORD_WEBHOOK_ALERTS` en GitHub, para las alertas de `uptime.yml`.
 - Configurar el pago de Eneba en my.eneba.com/affiliates/overview.
 - Cuenta de Play Console (US$25) y Apple Developer Program (US$99/año).
-- Resend (alertas por email).
+- Resend: crear la cuenta, verificar el dominio `dondeta.com.do` (registros DNS) y poner `RESEND_API_KEY` en `~/dondeta/.env`. Sin eso no salen los correos de cuenta (verificación, recuperar contraseña, 2FA por correo) ni las alertas por email.
 - Reaplicar a AdSense hacia noviembre de 2026.
 - Mergear la rama `kong-memoria` del repo serviciosadsemble (otro proyecto, mismo server).
 

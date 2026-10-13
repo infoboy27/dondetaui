@@ -863,6 +863,16 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
                         <div style={{ fontSize: 11, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif" }}>Alertas</div>
                       </div>
                     </div>
+                    <a
+                      href="/cuenta/seguridad"
+                      style={{
+                        display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 8,
+                        border: '1px solid #E8EDF2', borderRadius: 10, background: '#F8FAFC', color: '#0F1D2D',
+                        padding: '9px 0', fontSize: 13, fontWeight: 600, fontFamily: "'Poppins', sans-serif",
+                      }}
+                    >
+                      Seguridad de la cuenta
+                    </a>
                     <button
                       onClick={() => { setShowAccountMenu(false); onLogout() }}
                       style={{

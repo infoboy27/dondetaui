@@ -11,6 +11,14 @@ export class ApiError extends Error {
   }
 }
 
+// Called when a request that carried a session token gets 401: the session
+// was closed elsewhere (sign out of every device, password change, deleted
+// account). useAuth registers it to sign the app out.
+let onSessionExpired: (() => void) | null = null
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  onSessionExpired = handler
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const headers = new Headers(init?.headers)
@@ -30,6 +38,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   })
 
   if (!response.ok) {
+    if (response.status === 401 && token && headers.get('Authorization') === `Bearer ${token}`) onSessionExpired?.()
     const message = await response
       .clone()
       .json()

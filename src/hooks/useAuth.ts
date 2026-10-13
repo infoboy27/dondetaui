@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { trackAuth } from '../analytics'
-import { authApi } from '../api/auth'
+import { authApi, isMfaChallenge, type LoginResult } from '../api/auth'
 import { appConfig } from '../config/env'
-import { clearToken, getToken, setToken } from '../auth/session'
+import { clearToken, getToken, setToken, subscribeSession } from '../auth/session'
 import type { User } from '../types'
 
 interface AuthState {
@@ -32,7 +32,15 @@ export function useAuth() {
     return () => { cancelled = true }
   }, [])
 
-  const login = async (email: string, password: string) => {
+  // Two-step sign-in, password reset and account settings finish outside
+  // this hook (AuthForm, AccountSecurity) and announce the result here.
+  useEffect(() => subscribeSession(event => {
+    setState({ user: event?.user ?? null, loading: false, error: null })
+  }), [])
+
+  // Resolves with the API's answer: signed in, or an MFA challenge that the
+  // auth form completes (the session then arrives via subscribeSession).
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     if (!appConfig.useApi) {
       const message = 'Iniciar sesión requiere conexión con el servidor.'
       setState(current => ({ ...current, error: message }))
@@ -41,10 +49,15 @@ export function useAuth() {
 
     setState(current => ({ ...current, loading: true, error: null }))
     try {
-      const { token, user } = await authApi.login(email, password)
-      setToken(token)
+      const result = await authApi.login(email, password)
+      if (isMfaChallenge(result)) {
+        setState(current => ({ ...current, loading: false, error: null }))
+        return result
+      }
+      setToken(result.token)
       trackAuth('login')
-      setState({ user, loading: false, error: null })
+      setState({ user: result.user, loading: false, error: null })
+      return result
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión'
       setState({ user: null, loading: false, error: message })

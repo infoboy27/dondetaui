@@ -31,6 +31,7 @@ const NearbyStoresScreen = lazy(() => import('./screens/NearbyStoresScreen'))
 const EquipaHogarScreen = lazy(() => import('./screens/EquipaHogarScreen'))
 const NotificationsScreen = lazy(() => import('./screens/NotificationsScreen'))
 const LoginScreen = lazy(() => import('./screens/LoginScreen'))
+const AccountSecurityScreen = lazy(() => import('./screens/AccountSecurityScreen'))
 
 // Owner-only portal, split into its own chunk so the public app doesn't ship it.
 const AdminApp = lazy(() => import('./screens/admin/AdminApp'))
@@ -290,6 +291,31 @@ export default function App() {
     } else {
       void priceAlerts.create(productId)
     }
+  }
+
+  // Account security (also the "delete your account" link for Google Play),
+  // outside both the phone-width shell and the desktop view.
+  if (location.pathname === '/cuenta/seguridad') {
+    const desktopLogin = isDesktop && !isMobileView
+    return (
+      <Suspense fallback={null}>
+        <AccountSecurityScreen
+          user={user}
+          onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
+          onLogin={() => (desktopLogin ? setShowLoginModal(true) : navigate('/login'))}
+          onDeleted={() => navigate('/')}
+        />
+        {showLoginModal && (
+          <AuthModal
+            onClose={() => setShowLoginModal(false)}
+            onLogin={login}
+            onRegister={register}
+            loading={authLoading}
+            error={authError}
+          />
+        )}
+      </Suspense>
+    )
   }
 
   if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) {

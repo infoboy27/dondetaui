@@ -12,3 +12,11 @@ export function friendlyError(error: unknown, fallback: string): string {
   if (error instanceof TypeError) return 'Revisa tu conexión a internet e intenta de nuevo.'
   return fallback
 }
+
+// Account screens: the API's own 4xx messages are already written for the
+// shopper (wrong code, wrong password, email taken...), so show them as is.
+export function accountError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.status < 500 && error.message) return error.message
+  if (error instanceof Error && !(error instanceof ApiError) && !(error instanceof TypeError) && error.message) return error.message
+  return friendlyError(error, fallback)
+}
