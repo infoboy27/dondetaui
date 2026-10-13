@@ -5,7 +5,8 @@ import type { SearchBarCommands } from 'react-native-screens'
 import type { Product } from '../../../src/types'
 import { productsApi } from '../../../src/api/products'
 import { friendlyError } from '../../../src/api/errors'
-import AdBanner from '../../../src/components/AdBanner'
+import NativeAdCard from '../../../src/ads/NativeAdCard'
+import { withAdSlots } from '../../../src/domain/feed'
 import ProductCard from '../../../src/components/ProductCard'
 import Icon from '../../../src/components/Icon'
 import EmptyState from '../../../src/components/ui/EmptyState'
@@ -136,9 +137,10 @@ export default function SearchScreen() {
         </ScrollView>
       ) : (
         <FlatList
-          data={status === 'done' ? results.slice(0, visibleCount) : []}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => <ProductCard product={item} onPress={() => openProduct(item)} />}
+          data={status === 'done' ? withAdSlots(results.slice(0, visibleCount)) : []}
+          keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}
+          renderItem={({ item: entry }) =>
+            entry.kind === 'ad' ? <NativeAdCard /> : <ProductCard product={entry.item} onPress={() => openProduct(entry.item)} />}
           onEndReached={() => setVisibleCount(count => (count < results.length ? count + BATCH : count))}
           onEndReachedThreshold={0.6}
           contentInsetAdjustmentBehavior="automatic"
@@ -149,7 +151,6 @@ export default function SearchScreen() {
           ListHeaderComponent={
             status === 'done' && results.length > 0 ? (
               <View>
-                <AdBanner />
                 <Text style={[type.footnote, styles.count]}>
                   {results.length === 1 ? '1 resultado' : `${results.length.toLocaleString('es-DO')} resultados`} para “{term}”
                 </Text>

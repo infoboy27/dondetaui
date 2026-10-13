@@ -81,6 +81,19 @@ La app no copia la web: usa los controles del sistema y conserva la marca
 - **Precios:** en pesos enteros (`formatPrice` redondea).
 - **iOS 27:** exige el ciclo de vida por escenas. Ver `plugins/withSceneLifecycle.js`.
 
+## Anuncios (AdMob)
+
+- **Código:** `src/ads/`. `ads.ts` contiene los IDs de bloques, el consentimiento (`AdsConsent.gatherConsent`: mensaje de AdMob y luego el permiso de rastreo de Apple) y la inicialización. Los IDs de las apps están en `app.json`, plugin `react-native-google-mobile-ads`.
+- **Dónde aparecen:**
+  - un nativo (`NativeAdCard`) con forma de tarjeta y etiqueta "Anuncio", en Inicio y en Buscar: después del producto 6 y luego cada 12 (`src/domain/feed.ts`);
+  - un banner (`BannerSlot`) al final de la ficha de producto.
+  - Sin anuncios en Escanear, Guardados, Perfil, Gaming ni los carruseles.
+- **Si no hay anuncio:** no queda hueco (el componente no se renderiza).
+- **Contenido:** clasificación PG, palabras clave de hogar y tecnología. Sin consentimiento de personalización, los anuncios son no personalizados.
+- **Desarrollo:** siempre usa los `TestIds` de Google. Nunca tocar anuncios reales desde un build propio: es tráfico inválido.
+- **`app-ads.txt`:** en `public/` de la web, con el mismo editor que `ads.txt`.
+- **Android:** la librería 17.x trae `play-services-ads` 25.4.0 (Kotlin 2.3), que rompió el build de release con Kotlin 2.1. Probar la opción `androidSdk` del plugin al retomar Android.
+
 ## Pruebas de interfaz (Maestro)
 
 `apps/mobile/.maestro/`: recorren portada, búsqueda (con y sin resultados),
@@ -113,5 +126,4 @@ npx expo export --platform android
 - **Escáner:** probarlo en un iPhone real y medir cuántos productos tienen EAN/UPC (`product_variants.ean/upc`). Solo una de las fuentes de ingesta lo guarda.
 
 - **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
-- **Anuncios:** se quitó AdMob, que solo mostraba anuncios de prueba y rompía el build de release.
 - **`android/` en la raíz:** es el intento viejo con Capacitor; la app oficial es `apps/mobile`.

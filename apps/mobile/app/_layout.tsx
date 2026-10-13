@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Stack } from 'expo-router'
@@ -8,11 +8,17 @@ import { useFonts } from 'expo-font'
 import { fontsToLoad } from '../src/design/fonts'
 import { AppStateProvider } from '../src/state/AppStateContext'
 import { nativeHeader } from '../src/design/navigation'
+import { initAds } from '../src/ads/ads'
 
 void SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontsToLoad)
+
+  // Consent + ads SDK start once the UI is up (never blocks the app).
+  useEffect(() => {
+    if (fontsLoaded || fontError) void initAds()
+  }, [fontsLoaded, fontError])
 
   const onLayout = useCallback(() => {
     if (fontsLoaded || fontError) void SplashScreen.hideAsync()
