@@ -27,11 +27,21 @@ push) solo funciona en un build real o en el dev client.
 2. Simulador sin cuenta de Apple: `pnpm ios` (compila localmente con Xcode y
    abre el simulador), o en la nube `pnpm build:ios:simulator` e instalar el
    `.app` que devuelve EAS.
-3. iPhone físico: requiere **Apple Developer Program** (US$99/año, cuenta de
-   Jonatan). Luego:
+3. iPhone físico **sin pagar** (instalación personal, dura 7 días):
+   - Activa *Ajustes → Privacidad y seguridad → Modo desarrollador* en el iPhone.
+   - Agrega tu Apple ID en *Xcode → Settings → Accounts*.
+   - Elige tu "Personal Team" una vez en *Signing & Capabilities* para obtener el Team ID.
+   - Ejecuta:
+     ```bash
+     DONDETA_DEVICE_TEAM=<team id> npx expo prebuild --platform ios --no-install
+     DONDETA_DEVICE_TEAM=<team id> npx expo run:ios --device
+     ```
+   - En el iPhone: *Ajustes → General → VPN y gestión de dispositivos → confiar*.
+   - Usa el bundle id `com.jonatanmaria.dondeta.dev` (cambiable con `DONDETA_DEVICE_BUNDLE_ID`) y no tiene notificaciones push (los equipos gratuitos no las firman). Ver `app.config.js`.
+4. iPhone físico vía TestFlight: requiere **Apple Developer Program** (US$99/año). Luego:
    - `npx eas device:create` para registrar el iPhone (ad hoc).
    - `pnpm build:ios:preview` → instalar desde el enlace de EAS.
-4. App Store: `pnpm build:ios:production` y `pnpm submit:ios` (pide crear la
+5. App Store: `pnpm build:ios:production` y `pnpm submit:ios` (pide crear la
    app en App Store Connect la primera vez; EAS gestiona certificados y
    perfiles).
 
