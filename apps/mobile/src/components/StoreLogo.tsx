@@ -5,13 +5,16 @@ import { type } from '../design/type'
 
 // Same official logos as the web (src/data/storeLogos.ts, copied into
 // assets/stores), keyed by retailer abbreviation. Retailers without a logo
-// keep the tinted initials badge, like the web does.
+// keep the tinted initials badge, like the web does. Eneba's official symbol as a
+// store badge was approved by Eneba (2026-10-12), like the "En alianza con"
+// badge; any other new placement of their brand needs their approval again.
 const STORE_LOGOS: Record<string, number> = {
   PL: require('../../assets/stores/plaza-lama.png'),
   SI: require('../../assets/stores/sirena.webp'),
   CO: require('../../assets/stores/corripio.svg'),
   JU: require('../../assets/stores/jumbo.svg'),
   PS: require('../../assets/stores/pricesmart.png'),
+  EN: require('../../assets/stores/eneba-symbol.png'),
 }
 
 export default function StoreLogo({ abbr, color, size = 56 }: { abbr: string; color: string; size?: number }) {
