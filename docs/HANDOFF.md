@@ -100,8 +100,8 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 
 **Siguientes pasos de producto:**
 
-- **Móvil:** nuevo build (`pnpm build:android:preview`) para probar Gaming en el teléfono, primer build de iOS y publicación en las tiendas, probar el escáner en un iPhone real y anuncios no invasivos (requiere cuenta de AdMob).
-- **Datos:** `/api/stores/nearby` no devuelve sucursales (Tiendas cercanas sale vacía) y la búsqueda de "Neveras" trae bebederos primero.
+- **Móvil:** nuevo build (`pnpm build:android:preview`) para probar Gaming en el teléfono, primer build de iOS y publicación en las tiendas, probar el escáner en un iPhone real y Android: compilar con los anuncios (AdMob ya integrado en iOS).
+- **Datos:** la búsqueda de "Neveras" trae bebederos primero. (Tiendas cercanas se arregló el 2026-10-12 con la migración 023: 41 sucursales.)
 - **Campañas:** las promos pagadas deben llevar el enlace con `utm_medium=paid`, que se genera en /admin → Instagram → Campañas. El costo y el alcance pagado viven en Meta Ads Manager; traerlos al admin requiere un token de Marketing API con `ads_read`.
 - **SEO:** pedir indexación de los 7 tipos restantes de `/precios`.
 

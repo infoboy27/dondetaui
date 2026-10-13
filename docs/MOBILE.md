@@ -121,9 +121,8 @@ npx expo export --platform android
 
 ## Pendientes de la app
 
-- **Tiendas cercanas sin datos:** `/api/stores/nearby` no devuelve sucursales ni siquiera en Santo Domingo (radio de 25 km, 2026-10-12). Hay que revisar si la tabla de sucursales está cargada.
 - **Relevancia de la búsqueda:** "Neveras" trae bebederos primero. Esto se ajusta en la API, no en la app.
-- **Escáner:** probarlo en un iPhone real y medir cuántos productos tienen EAN/UPC (`product_variants.ean/upc`). Solo una de las fuentes de ingesta lo guarda.
+- **Escáner:** probarlo en un iPhone real. Al 2026-10-12, 582 de 1,802 variantes (32 %) tienen EAN/UPC; solo una de las fuentes de ingesta lo guarda.
 
 - **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
 - **`android/` en la raíz:** es el intento viejo con Capacitor; la app oficial es `apps/mobile`.
