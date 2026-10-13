@@ -32,9 +32,12 @@ export class AlertingExceptionFilter implements ExceptionFilter {
       )
     }
 
-    const body = exception instanceof HttpException
+    // Always an object with `message`: clients read body.message, and some
+    // exceptions (e.g. the throttler) carry a bare string.
+    const raw = exception instanceof HttpException
       ? exception.getResponse()
       : { statusCode: status, message: 'Internal server error' }
+    const body = typeof raw === 'string' ? { statusCode: status, message: raw } : raw
 
     response.status(status).json(body)
   }

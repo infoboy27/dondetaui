@@ -103,3 +103,17 @@ jobs:
           curl -fsS http://localhost:3001/api/products/20000000-0000-0000-0000-000000000001/offers | jq -e 'length >= 2'
           curl -fsS http://localhost:3001/api/products/20000000-0000-0000-0000-000000000001/history | jq -e 'length >= 1'
           curl -fsS http://localhost:3001/api/products/barcode/8806092000001 | jq -e '.model == "WA18T6360BV"'
+      - name: Smoke test accounts
+        run: |
+          API=http://localhost:3001/api
+          EMAIL="ci-$RANDOM@example.com"
+          TOKEN=$(curl -fsS -X POST $API/auth/register -H 'Content-Type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"clave-de-prueba\"}" | jq -er '.token')
+          curl -fsS $API/auth/me -H "Authorization: Bearer $TOKEN" | jq -e '.emailVerified == false and .mfaMethod == null'
+          curl -fsS -X POST $API/auth/login -H 'Content-Type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"clave-de-prueba\"}" | jq -e '.token and (.mfaRequired | not)'
+          curl -fsS -X POST $API/auth/password/forgot -H 'Content-Type: application/json' \
+            -d '{"email":"nadie@example.com"}' | jq -e '.ok == true'
+          curl -fsS -X DELETE $API/auth/me -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            -d '{"password":"clave-de-prueba"}' | jq -e '.deleted == true'
+          test "$(curl -s -o /dev/null -w '%{http_code}' $API/auth/me -H "Authorization: Bearer $TOKEN")" = 401

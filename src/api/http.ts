@@ -1,5 +1,5 @@
 import { appConfig } from '../config/env'
-import { getToken } from '../auth/session'
+import { emitSession, getToken } from '../auth/session'
 
 export class ApiError extends Error {
   status: number
@@ -30,6 +30,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   })
 
   if (!response.ok) {
+    // A signed request rejected as unauthenticated: the session was closed
+    // elsewhere (every device signed out, password changed, account deleted).
+    if (response.status === 401 && token && headers.get('Authorization') === `Bearer ${token}`) emitSession(null)
     const message = await response
       .clone()
       .json()

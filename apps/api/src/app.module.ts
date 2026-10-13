@@ -17,7 +17,11 @@ import { StoresModule } from './stores/stores.module'
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 120 }],
+      // Shown to shoppers (e.g. too many sign-in attempts), so in Spanish.
+      errorMessage: 'Demasiados intentos seguidos. Espera un minuto e intenta de nuevo.',
+    }),
     DatabaseModule,
     AuthModule,
     AdminModule,

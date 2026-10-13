@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth, type AuthApi } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import { usePushNotifications } from '../hooks/usePushNotifications'
@@ -11,10 +11,8 @@ const GUEST_FAVORITES_KEY = 'dondeta.guestFavorites'
 interface AppState {
   user: User | null
   authLoading: boolean
-  authError: string | null
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, name?: string, phone?: string) => Promise<void>
-  logout: () => Promise<void>
+  // Sign-in, 2FA, password and account actions (src/hooks/useAuth.ts).
+  auth: AuthApi
   favoriteIds: Set<string>
   toggleFavorite: (productId: string) => void
   alertedIds: Set<string>
@@ -26,7 +24,8 @@ interface AppState {
 const AppStateContext = createContext<AppState | null>(null)
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { user, loading: authLoading, error: authError, login, register, logout } = useAuth()
+  const auth = useAuth()
+  const { user, loading: authLoading } = auth
   const favorites = useFavorites(user)
   const priceAlerts = usePriceAlerts(user)
   usePushNotifications(user)
@@ -90,10 +89,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value: AppState = {
     user,
     authLoading,
-    authError,
-    login,
-    register,
-    logout,
+    auth,
     favoriteIds,
     toggleFavorite,
     alertedIds,

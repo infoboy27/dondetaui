@@ -110,7 +110,7 @@ export default function ProductDetailScreen() {
 
   const onToggleAlert = () => {
     if (!toggleAlert(product.id)) {
-      router.navigate('/profile')
+      router.push({ pathname: '/auth', params: { reason: 'alerts' } })
       return
     }
     haptics.success()

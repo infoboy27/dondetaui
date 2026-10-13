@@ -1,8 +1,12 @@
+export type MfaMethod = 'email' | 'totp'
+
 export interface User {
   id: string
   email: string
   name: string | null
   phone?: string | null
+  emailVerified?: boolean
+  mfaMethod?: MfaMethod | null
 }
 
 export interface PriceAlert {

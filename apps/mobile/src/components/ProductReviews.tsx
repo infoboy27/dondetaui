@@ -34,7 +34,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
 
   const openForm = () => {
     if (!user) {
-      router.navigate('/profile')
+      router.push({ pathname: '/auth', params: { reason: 'reviews' } })
       return
     }
     setShowForm(true)

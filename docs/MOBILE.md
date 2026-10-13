@@ -91,6 +91,17 @@ La app no copia la web: usa los controles del sistema y conserva la marca
 - **Precios:** en pesos enteros (`formatPrice` redondea).
 - **iOS 27:** exige el ciclo de vida por escenas. Ver `plugins/withSceneLifecycle.js`.
 
+## Cuenta y seguridad
+
+- **Sin cuenta:** buscar, comparar, escanear, tiendas cercanas, Gaming, compartir y favoritos solo en el teléfono.
+- **Con cuenta:** favoritos sincronizados con la web, alertas de precio, reseñas e historial.
+- **Funciones de cuenta sin sesión:** abren la hoja `app/auth` con `?reason=alerts|reviews|sync`, que explica para qué sirve la cuenta.
+- **Pantallas de acceso (`app/auth/`):** iniciar sesión / crear cuenta, verificación en dos pasos (`mfa`), recuperar contraseña (`forgot`) y confirmar correo (`verify-email`).
+- **Seguridad (`app/(tabs)/profile/`):** `security`, `change-password`, `two-factor` (correo o app autenticadora; en iOS "Agregar a mi app" abre el llavero) y `delete-account`, que exigen Apple y Google.
+- **Sesión cerrada desde otro lado** (cerrar todas las sesiones, cambio de contraseña, cuenta borrada): la API responde 401 y la app cierra la sesión sola (`setSessionExpiredHandler`). Una contraseña incorrecta en una confirmación responde 403, no 401.
+- **Correos** (bienvenida con código, recuperación, código de acceso, avisos de seguridad): los envía Resend. Sin `RESEND_API_KEY`, la API solo los registra en el log, y fuera de producción con el contenido, útil para pruebas locales.
+- **Web:** el mismo flujo en `src/components/AuthForm.tsx` (2FA y recuperación) y `/cuenta/seguridad` (`src/screens/AccountSecurityScreen.tsx`). Esa URL es el enlace para "eliminar cuenta" que pide Google Play.
+
 ## Anuncios (AdMob)
 
 - **Código:** `src/ads/`. `ads.ts` contiene los IDs de bloques, el consentimiento (`AdsConsent.gatherConsent`: mensaje de AdMob y luego el permiso de rastreo de Apple) y la inicialización. Los IDs de las apps están en `app.json`, plugin `react-native-google-mobile-ads`.
