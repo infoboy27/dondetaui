@@ -13,6 +13,7 @@ import { gamingKind, gamingShowcase } from '../../../src/domain/gaming'
 import DiscountCode from '../../../src/components/DiscountCode'
 import EnebaBadge from '../../../src/components/EnebaBadge'
 import Icon, { type IconName } from '../../../src/components/Icon'
+import BrandTitle from '../../../src/components/BrandTitle'
 import EmptyState from '../../../src/components/ui/EmptyState'
 import SectionHeader from '../../../src/components/ui/SectionHeader'
 import Touchable from '../../../src/components/ui/Touchable'
@@ -159,7 +160,7 @@ export default function HomeScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'DóndeTa' }} />
+      <Stack.Screen options={{ title: 'DóndeTa', headerLargeTitle: false, headerTitle: () => <BrandTitle /> }} />
       <FlatList
         data={loading || error ? [] : visible}
         keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}

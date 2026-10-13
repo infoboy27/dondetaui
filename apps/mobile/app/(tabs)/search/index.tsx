@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { FlatList, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Stack, useRouter } from 'expo-router'
 import type { SearchBarCommands } from 'react-native-screens'
 import type { Product } from '../../../src/types'
@@ -84,17 +84,41 @@ export default function SearchScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Buscar' }} />
-      <Stack.SearchBar
-        ref={searchBar}
-        placeholder="Productos, marcas o modelos"
-        onChangeText={event => setQuery(event.nativeEvent.text)}
-        onSearchButtonPress={event => searchNow(event.nativeEvent.text)}
-        onCancelButtonPress={() => setQuery('')}
-        hideWhenScrolling={false}
-        autoCapitalize="none"
-        tintColor={colors.primaryDark}
-        cancelButtonText="Cancelar"
-      />
+      {Platform.OS === 'ios' ? (
+        <Stack.SearchBar
+          ref={searchBar}
+          placeholder="Productos, marcas o modelos"
+          onChangeText={event => setQuery(event.nativeEvent.text)}
+          onSearchButtonPress={event => searchNow(event.nativeEvent.text)}
+          onCancelButtonPress={() => setQuery('')}
+          hideWhenScrolling={false}
+          autoCapitalize="none"
+          tintColor={colors.primaryDark}
+          cancelButtonText="Cancelar"
+        />
+      ) : (
+        // Android's toolbar search collapses to an icon; a visible field
+        // matches Material's search bar and the home screen's search pill.
+        <View style={styles.androidField}>
+          <Icon name="search" size={20} color={colors.tertiaryLabel} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => searchNow(query)}
+            placeholder="Productos, marcas o modelos"
+            placeholderTextColor={colors.tertiaryLabel}
+            returnKeyType="search"
+            autoCapitalize="none"
+            style={[type.body, styles.androidInput]}
+            accessibilityLabel="Buscar productos"
+          />
+          {query.length > 0 && (
+            <Touchable onPress={() => setQuery('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Borrar búsqueda">
+              <Icon name="closeCircle" size={18} color={colors.tertiaryLabel} />
+            </Touchable>
+          )}
+        </View>
+      )}
 
       {status === 'idle' ? (
         <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content} style={styles.screen}>
@@ -191,4 +215,9 @@ const styles = StyleSheet.create({
   chip: { backgroundColor: colors.card, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipText: { color: colors.navy },
   count: { color: colors.secondaryLabel, marginBottom: spacing.sm, marginTop: spacing.xs },
+  androidField: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 52, borderRadius: 26,
+    backgroundColor: colors.fillStrong, paddingHorizontal: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.sm, marginBottom: spacing.xs,
+  },
+  androidInput: { flex: 1, color: colors.navy, paddingVertical: 0 },
 })

@@ -73,6 +73,7 @@
         {
           "iosAppId": "ca-app-pub-3955748382514121~2657587887",
           "androidAppId": "ca-app-pub-3955748382514121~7018584852",
+          "androidSdk": "classic",
           "delayAppMeasurementInit": true,
           "userTrackingUsageDescription": "DóndeTa usa este permiso para mostrarte anuncios más relevantes. Los anuncios ayudan a mantener la app gratis.",
           "skAdNetworkItems": [
