@@ -3,7 +3,8 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 're
 import { Stack, useRouter } from 'expo-router'
 import type { Product } from '../../../src/types'
 import { productsApi } from '../../../src/api/products'
-import AdBanner from '../../../src/components/AdBanner'
+import NativeAdCard from '../../../src/ads/NativeAdCard'
+import { withAdSlots } from '../../../src/domain/feed'
 import DealCard from '../../../src/components/DealCard'
 import ProductCard from '../../../src/components/ProductCard'
 import { compareByRelevance, getTopComparisons } from '../../../src/domain/offers'
@@ -38,7 +39,7 @@ export default function HomeScreen() {
   const comparisons = useMemo(() => getTopComparisons(products, 10), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 10), [products])
   const gaming = useMemo(() => gamingShowcase(products), [products])
-  const visible = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount])
+  const visible = useMemo(() => withAdSlots(sorted.slice(0, visibleCount)), [sorted, visibleCount])
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true)
@@ -86,7 +87,6 @@ export default function HomeScreen() {
         <QuickAction icon="gamecontroller" label="Gaming" onPress={() => router.push('/gaming')} />
       </View>
 
-      <AdBanner />
 
       {loading ? (
         <View style={styles.section}>
@@ -162,8 +162,9 @@ export default function HomeScreen() {
       <Stack.Screen options={{ title: 'DóndeTa' }} />
       <FlatList
         data={loading || error ? [] : visible}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <ProductCard product={item} onPress={() => openProduct(item)} />}
+        keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}
+        renderItem={({ item: entry }) =>
+          entry.kind === 'ad' ? <NativeAdCard /> : <ProductCard product={entry.item} onPress={() => openProduct(entry.item)} />}
         ListHeaderComponent={header}
         ListEmptyComponent={loading ? <View><ProductRowSkeleton /><ProductRowSkeleton /><ProductRowSkeleton /></View> : null}
         onEndReached={() => setVisibleCount(count => (count < sorted.length ? count + BATCH : count))}
