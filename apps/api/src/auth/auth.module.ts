@@ -4,6 +4,8 @@ import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { JwtAuthGuard } from './jwt-auth.guard'
 import { UsersRepository } from './users.repository'
+import { AuthCodesRepository } from './auth-codes.repository'
+import { EmailProvider } from '../notifications/email.provider'
 
 const jwtModule = JwtModule.registerAsync({
   useFactory: () => {
@@ -19,7 +21,9 @@ const jwtModule = JwtModule.registerAsync({
 @Module({
   imports: [jwtModule],
   controllers: [AuthController],
-  providers: [AuthService, UsersRepository, JwtAuthGuard],
+  // EmailProvider is provided here directly: NotificationsModule imports
+  // AuthModule (for the guard), so importing it back would be circular.
+  providers: [AuthService, UsersRepository, AuthCodesRepository, EmailProvider, JwtAuthGuard],
   // Re-export jwtModule too: JwtAuthGuard is used via @UseGuards() in other
   // modules (alerts), and Nest resolves its JwtService dependency in THAT
   // module's own injector context — just exporting the guard class isn't
