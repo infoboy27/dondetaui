@@ -56,14 +56,15 @@ export async function initAds() {
   try {
     const consent = await AdsConsent.gatherConsent().catch(() => null)
     if (consent && !consent.canRequestAds) return
-    // Where no consent form applies (outside the EEA/UK, e.g. the DR), there
-    // are no stored choices to read; ads may be personalized, and on iOS the
-    // SDK still honors Apple's tracking prompt.
-    const notRequired = consent?.status === AdsConsentStatus.NOT_REQUIRED
-    const choices = notRequired ? null : await AdsConsent.getUserChoices().catch(() => null)
+    // Stored choices only exist after the user answered AdMob's consent form
+    // (EEA/UK). Elsewhere (e.g. the DR) there are none to read: ads may be
+    // personalized, and on iOS the SDK still honors Apple's tracking prompt.
+    const answered = consent?.status === AdsConsentStatus.OBTAINED
+    const choices = answered ? await AdsConsent.getUserChoices().catch(() => null) : null
+    const personalized = answered ? (choices?.selectPersonalisedAds ?? false) : consent?.status !== AdsConsentStatus.REQUIRED
     await mobileAds().setRequestConfiguration({ maxAdContentRating: MaxAdContentRating.PG })
     await mobileAds().initialize()
-    setState({ ready: true, personalized: notRequired || (choices?.selectPersonalisedAds ?? false) })
+    setState({ ready: true, personalized })
   } catch {
     // Ads are optional: never let them affect the app.
   }

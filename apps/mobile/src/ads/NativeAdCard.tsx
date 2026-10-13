@@ -36,39 +36,44 @@ export default function NativeAdCard() {
   const { NativeAdView, NativeAsset, NativeAssetType, NativeMediaView } = AdMob
 
   return (
-    <NativeAdView nativeAd={ad} style={styles.card}>
-      <View style={styles.row}>
-        <NativeMediaView style={styles.media} resizeMode="cover" />
-        <View style={styles.body}>
-          <View style={styles.labelRow}>
-            <Text style={[type.caption2, styles.badge]}>Anuncio</Text>
-            {!!ad.advertiser && (
-              <NativeAsset assetType={NativeAssetType.ADVERTISER}>
-                <Text style={[type.caption, styles.advertiser]} numberOfLines={1}>{ad.advertiser}</Text>
+    // The rounded clip lives on a wrapper: Android's native ad view ignores
+    // borderRadius on itself.
+    <View style={styles.card}>
+      <NativeAdView nativeAd={ad} style={styles.inner}>
+        <View style={styles.row}>
+          <NativeMediaView style={styles.media} resizeMode="cover" />
+          <View style={styles.body}>
+            <View style={styles.labelRow}>
+              <Text style={[type.caption2, styles.badge]}>Anuncio</Text>
+              {!!ad.advertiser && (
+                <NativeAsset assetType={NativeAssetType.ADVERTISER}>
+                  <Text style={[type.caption, styles.advertiser]} numberOfLines={1}>{ad.advertiser}</Text>
+                </NativeAsset>
+              )}
+            </View>
+            <NativeAsset assetType={NativeAssetType.HEADLINE}>
+              <Text style={[type.subheadlineEmphasized, styles.headline]} numberOfLines={2}>{ad.headline}</Text>
+            </NativeAsset>
+            {!!ad.body && (
+              <NativeAsset assetType={NativeAssetType.BODY}>
+                <Text style={[type.caption, styles.text]} numberOfLines={2}>{ad.body}</Text>
+              </NativeAsset>
+            )}
+            {!!ad.callToAction && (
+              <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+                <Text style={[type.footnoteEmphasized, styles.cta]}>{ad.callToAction}</Text>
               </NativeAsset>
             )}
           </View>
-          <NativeAsset assetType={NativeAssetType.HEADLINE}>
-            <Text style={[type.subheadlineEmphasized, styles.headline]} numberOfLines={2}>{ad.headline}</Text>
-          </NativeAsset>
-          {!!ad.body && (
-            <NativeAsset assetType={NativeAssetType.BODY}>
-              <Text style={[type.caption, styles.text]} numberOfLines={2}>{ad.body}</Text>
-            </NativeAsset>
-          )}
-          {!!ad.callToAction && (
-            <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
-              <Text style={[type.footnoteEmphasized, styles.cta]}>{ad.callToAction}</Text>
-            </NativeAsset>
-          )}
         </View>
-      </View>
-    </NativeAdView>
+      </NativeAdView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radii.lg, borderCurve: 'continuous', padding: spacing.md, marginBottom: spacing.sm },
+  card: { backgroundColor: colors.card, borderRadius: radii.lg, borderCurve: 'continuous', overflow: 'hidden', marginBottom: spacing.sm },
+  inner: { padding: spacing.md, backgroundColor: colors.card },
   row: { flexDirection: 'row', gap: spacing.md },
   media: { width: 84, height: 84, borderRadius: radii.md, overflow: 'hidden', backgroundColor: colors.navy50 },
   body: { flex: 1, gap: 2 },

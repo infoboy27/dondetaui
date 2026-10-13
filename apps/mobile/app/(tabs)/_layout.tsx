@@ -7,7 +7,7 @@ import { iconSymbol } from '../../src/components/Icon'
 // it as its own search button next to the bar.
 export default function TabsLayout() {
   return (
-    <NativeTabs tintColor={colors.primary} minimizeBehavior="onScrollDown">
+    <NativeTabs tintColor={colors.primary} minimizeBehavior="onScrollDown" labelVisibilityMode="labeled">
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: iconSymbol('home').ios, selected: iconSymbol('homeFill').ios }} md={iconSymbol('home').android} />
