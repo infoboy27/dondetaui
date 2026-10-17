@@ -35,6 +35,11 @@ export function usePriceAlerts(user: User | null) {
     return () => { cancelled = true }
   }, [user])
 
+  const refresh = async () => {
+    const alerts = await alertsApi.list()
+    setState(current => ({ ...current, alerts }))
+  }
+
   const create = async (productId: string, targetPrice?: number) => {
     const alert = await alertsApi.create(productId, targetPrice)
     setState(current => ({
@@ -48,5 +53,5 @@ export function usePriceAlerts(user: User | null) {
     setState(current => ({ ...current, alerts: current.alerts.filter(a => a.productId !== productId) }))
   }
 
-  return { ...state, create, remove }
+  return { ...state, create, remove, refresh }
 }
