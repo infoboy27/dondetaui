@@ -85,6 +85,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
   - Instagram: publicación de productos, publicación propia (imágenes) y el piloto automático (Reels lun/mié/vie y carrusel Top 5 los domingos);
   - **Campañas**: tráfico y clics a tiendas por `utm_campaign`, más un generador de enlaces para las promociones pagadas.
 - Instagram `@dondetard`: lanzamiento Eneba publicado (carrusel, historia y post de alianza).
+- Instagram programado: la tabla `instagram_scheduled` guarda posts para una fecha; el ciclo del piloto automático los publica a su hora (aunque el piloto esté apagado), reintenta 3 veces y descarta lo que llega más de 6 h tarde, avisando por Discord. Campaña Black Friday 2026 (13, 24 y 27 de nov; feed 11:00 e historia 18:00, hora RD) en `marketing/black-friday-2026-11/` (`schedule_sql.py` genera el SQL de carga).
   - Piezas y textos en `marketing/eneba-lanzamiento-2026-10/`.
   - Logos en `marketing/brand/`.
 - **App móvil** (`apps/mobile`, Expo SDK 57): Android v0.2.0 con APK de prueba vía EAS; iOS compila y corre en el simulador (iOS 27), con diseño nativo: pestañas Liquid Glass, SF Symbols y SF Pro. Gaming, el código DONDETA y el rediseño ya están en el código; para que lleguen al teléfono hace falta un build nuevo. Ver [MOBILE.md](MOBILE.md).
