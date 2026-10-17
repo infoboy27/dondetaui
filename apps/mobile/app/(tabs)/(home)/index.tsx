@@ -10,6 +10,9 @@ import ProductCard from '../../../src/components/ProductCard'
 import { compareByRelevance, getTopComparisons } from '../../../src/domain/offers'
 import { getTopPriceDrops } from '../../../src/domain/notifications'
 import { gamingKind, gamingShowcase } from '../../../src/domain/gaming'
+import { blackFridayBanner } from '../../../src/domain/blackFriday'
+import { openInApp } from '../../../src/domain/links'
+import { appConfig } from '../../../src/config/env'
 import DiscountCode from '../../../src/components/DiscountCode'
 import EnebaBadge from '../../../src/components/EnebaBadge'
 import Icon, { type IconName } from '../../../src/components/Icon'
@@ -65,6 +68,7 @@ export default function HomeScreen() {
     router.push(`/product/${encodeURIComponent(product.slug ?? product.id)}`)
   }, [router])
 
+  const blackFriday = blackFridayBanner()
   const header = (
     <View>
       <Touchable onPress={() => router.navigate('/search')} style={styles.searchPill} accessibilityRole="search" accessibilityLabel="Buscar productos">
@@ -87,6 +91,18 @@ export default function HomeScreen() {
         <QuickAction icon="location" label="Cerca de ti" onPress={() => router.push('/nearby-stores')} />
         <QuickAction icon="gamecontroller" label="Gaming" onPress={() => router.push('/gaming')} />
       </View>
+
+      {blackFriday && (
+        <Touchable
+          onPress={() => openInApp(`${appConfig.apiBaseUrl.replace(/\/api$/, '')}/black-friday`)}
+          style={styles.blackFriday}
+          accessibilityRole="link"
+          accessibilityLabel={`${blackFriday.title}. ${blackFriday.subtitle}`}
+        >
+          <Text style={[type.headline, styles.blackFridayTitle]}>🏷️ {blackFriday.title}</Text>
+          <Text style={[type.footnote, styles.blackFridayText]}>{blackFriday.subtitle}</Text>
+        </Touchable>
+      )}
 
 
       {loading ? (
@@ -224,6 +240,9 @@ const styles = StyleSheet.create({
   quick: { flex: 1, backgroundColor: colors.card, borderRadius: radii.lg, borderCurve: 'continuous', paddingVertical: spacing.md, alignItems: 'center', gap: spacing.sm },
   quickIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   quickLabel: { color: colors.navy },
+  blackFriday: { backgroundColor: colors.navy, borderRadius: radii.xl, borderCurve: 'continuous', padding: spacing.lg, marginBottom: spacing.xxl, gap: 2 },
+  blackFridayTitle: { color: '#FFD166' },
+  blackFridayText: { color: 'rgba(255,255,255,0.8)' },
   section: { marginBottom: spacing.xxl },
   gamingIntro: { gap: spacing.sm, marginBottom: spacing.xs },
   // Bleed shelves to the screen edges so cards scroll under the page padding.

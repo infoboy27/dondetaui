@@ -12,6 +12,7 @@ import { formatPrice } from '../domain/currency'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import DiscountCode from '../components/DiscountCode'
 import EnebaBadge from '../components/EnebaBadge'
+import BlackFridayBanner from '../components/BlackFridayBanner'
 import { gamingKind, gamingShowcase } from '../domain/gaming'
 import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
@@ -154,6 +155,9 @@ export default function HomeScreen({
           ))}
         </nav>
       </div>
+
+      {/* Black Friday countdown: only renders inside its date window */}
+      <BlackFridayBanner />
 
       {/* Value banner: what DóndeTa does, with the live catalog size */}
       <div style={{ padding: '16px 20px 0' }}>
