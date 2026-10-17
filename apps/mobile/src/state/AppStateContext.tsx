@@ -65,8 +65,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const toggleFavorite = (productId: string) => {
     if (user) {
-      if (favoriteIds.has(productId)) void favorites.remove(productId)
-      else void favorites.create(productId)
+      if (favoriteIds.has(productId)) {
+        void favorites.remove(productId).then(() => priceAlerts.refresh()).catch(() => {})
+      } else {
+        // The API also creates the price alert for a saved product; resync the bell.
+        void favorites.create(productId).then(() => priceAlerts.refresh()).catch(() => {})
+      }
       return
     }
     setGuestFavoriteIds(prev => {

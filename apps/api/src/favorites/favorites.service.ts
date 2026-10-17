@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { AlertsRepository } from '../alerts/alerts.repository'
 import { ProductsRepository } from '../products/products.repository'
 import { FavoritesRepository } from './favorites.repository'
 import type { CreateFavoriteDto, FavoriteDto } from './favorites.types'
@@ -8,6 +9,7 @@ export class FavoritesService {
   constructor(
     private readonly favorites: FavoritesRepository,
     private readonly products: ProductsRepository,
+    private readonly alerts: AlertsRepository,
   ) {}
 
   async list(userId: string): Promise<FavoriteDto[]> {
@@ -20,10 +22,13 @@ export class FavoritesService {
     if (!product) throw new NotFoundException('Product not found')
 
     const row = await this.favorites.create(userId, dto.productId)
+    // Saving a product opts the user into price-drop notifications for it.
+    await this.alerts.createIfAbsent(userId, dto.productId)
     return { productId: row.product_id, createdAt: row.created_at.toISOString() }
   }
 
-  remove(userId: string, productId: string): Promise<void> {
-    return this.favorites.remove(userId, productId)
+  async remove(userId: string, productId: string): Promise<void> {
+    await this.favorites.remove(userId, productId)
+    await this.alerts.removeIfAutoCreated(userId, productId)
   }
 }

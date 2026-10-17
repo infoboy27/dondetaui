@@ -9,5 +9,6 @@ import { AlertsService } from './alerts.service'
   imports: [AuthModule, ProductsModule],
   controllers: [AlertsController],
   providers: [AlertsRepository, AlertsService],
+  exports: [AlertsRepository],
 })
 export class AlertsModule {}
