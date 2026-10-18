@@ -25,7 +25,17 @@ function greeting(name: string | null): string {
 }
 
 // Shared layout: wordmark, body paragraphs, optional big code, footer.
-function layout(opts: { name: string | null; paragraphs: string[]; code?: string; after?: string[]; cta?: { label: string; url: string } }): { text: string; html: string } {
+function layout(opts: {
+  name: string | null
+  paragraphs: string[]
+  code?: string
+  after?: string[]
+  cta?: { label: string; url: string }
+  // HTML-only deal card that replaces the first paragraph (the text body keeps it).
+  highlight?: { badge: string; title: string; value: string; oldValue?: string; savings?: string; imageUrl?: string }
+  preheader?: string
+  footer?: string
+}): { text: string; html: string } {
   const lines = [greeting(opts.name), '', ...opts.paragraphs]
   if (opts.code) lines.push('', `Tu código: ${opts.code}`, '')
   if (opts.after) lines.push(...opts.after)
@@ -40,17 +50,30 @@ function layout(opts: { name: string | null; paragraphs: string[]; code?: string
   const cta = opts.cta
     ? `<div style="margin:22px 0 4px;text-align:center"><a href="${escape(opts.cta.url)}" style="display:inline-block;background:${GREEN};color:${NAVY};font-weight:700;font-size:15px;text-decoration:none;border-radius:999px;padding:13px 28px">${escape(opts.cta.label)}</a></div>`
     : ''
+  const highlight = opts.highlight
+    ? `<div style="margin:0 0 18px;border:1px solid #CDEFE7;background:#F2FBF8;border-radius:14px;padding:18px 20px">
+<span style="display:inline-block;background:${GREEN};color:${NAVY};font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;border-radius:999px;padding:4px 10px">${escape(opts.highlight.badge)}</span>
+${opts.highlight.imageUrl ? `<div style="margin:14px 0 0;text-align:center;background:#ffffff;border-radius:10px;padding:10px"><img src="${escape(opts.highlight.imageUrl)}" alt="${escape(opts.highlight.title)}" height="150" style="display:inline-block;border:0;max-width:100%;height:150px;width:auto;object-fit:contain"></div>` : ''}
+<div style="margin:12px 0 6px;font-size:17px;line-height:23px;font-weight:700;color:${NAVY}">${escape(opts.highlight.title)}</div>
+<div style="font-size:34px;line-height:40px;font-weight:800;color:${NAVY}">${escape(opts.highlight.value)}${opts.highlight.oldValue ? ` <span style="font-size:16px;font-weight:500;color:${MUTED};text-decoration:line-through">${escape(opts.highlight.oldValue)}</span>` : ''}</div>
+${opts.highlight.savings ? `<div style="margin-top:4px;font-size:14px;font-weight:700;color:#007A63">${escape(opts.highlight.savings)}</div>` : ''}
+</div>`
+    : ''
+  const paragraphs = opts.highlight ? opts.paragraphs.slice(1) : opts.paragraphs
+  const preheader = opts.preheader
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escape(opts.preheader)}</div>`
+    : ''
   const html = `<!doctype html><html lang="es"><body style="margin:0;background:#F2F4F7;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif">
-<div style="max-width:480px;margin:0 auto;padding:28px 16px">
+${preheader}<div style="max-width:480px;margin:0 auto;padding:28px 16px">
 <a href="${SITE}" style="display:inline-block;margin-bottom:18px"><img src="${LOGO_URL}" width="168" alt="DóndeTa" style="display:block;border:0;height:auto;font-size:22px;font-weight:800;color:${NAVY}"></a>
 <div style="background:#ffffff;border-radius:16px;padding:24px">
 ${p(greeting(opts.name))}
-${opts.paragraphs.map(p).join('\n')}
+${highlight}${paragraphs.map(p).join('\n')}
 ${code}
 ${(opts.after ?? []).map(p).join('\n')}
 ${cta}
 </div>
-<p style="font-size:12px;line-height:18px;color:${MUTED};margin:16px 4px 0">Recibes este correo porque tienes una cuenta en DóndeTa. Si no fuiste tú, ignóralo o escríbenos respondiendo a este mensaje.</p>
+<p style="font-size:12px;line-height:18px;color:${MUTED};margin:16px 4px 0">${escape(opts.footer ?? 'Recibes este correo porque tienes una cuenta en DóndeTa. Si no fuiste tú, ignóralo o escríbenos respondiendo a este mensaje.')}</p>
 </div></body></html>`
   return { text, html }
 }
@@ -144,13 +167,31 @@ export function accountDeletedEmail(name: string | null): EmailContent {
   }
 }
 
-export function priceDropEmail(productName: string, price: string): EmailContent {
+export interface PriceDropDetails {
+  previousPrice?: string
+  savings?: string
+  imageUrl?: string | null
+  // Path under the site, e.g. /product/nevera-samsung.
+  path?: string | null
+}
+
+export function priceDropEmail(productName: string, price: string, details: PriceDropDetails = {}): EmailContent {
+  // Mail clients only load absolute https images.
+  const imageUrl = details.imageUrl && /^https:\/\//.test(details.imageUrl) ? details.imageUrl : undefined
+  const url = details.path?.startsWith('/') ? `${SITE}${details.path}` : SITE
+  const was = details.previousPrice ? ` (antes ${details.previousPrice})` : ''
   return {
-    subject: `Bajó de precio: ${productName}`,
+    subject: `Bajó de precio: ${productName} ahora ${price}`,
     ...layout({
       name: null,
-      paragraphs: [`${productName} ahora cuesta ${price}.`, 'Lo guardaste en DóndeTa, así que te avisamos apenas bajó.'],
-      cta: { label: 'Ver la oferta', url: SITE },
+      paragraphs: [
+        `${productName} ahora cuesta ${price}${was}.`,
+        'Lo guardaste en DóndeTa, así que te avisamos apenas bajó. Los precios pueden cambiar en cualquier momento, no te quedes sin el tuyo.',
+      ],
+      highlight: { badge: 'Bajó de precio', title: productName, value: price, oldValue: details.previousPrice, savings: details.savings, imageUrl },
+      preheader: `${productName} ahora cuesta ${price}. Míralo antes de que vuelva a subir.`,
+      cta: { label: 'Ver la oferta', url },
+      footer: 'Recibes este correo porque guardaste este producto en DóndeTa y activaste las alertas de precio. Puedes quitarlo de tus favoritos cuando quieras.',
     }),
   }
 }

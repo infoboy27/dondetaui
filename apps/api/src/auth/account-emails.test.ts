@@ -41,7 +41,7 @@ describe('account emails', () => {
 
   it('price-drop email names the product and price, with a button and a text link', () => {
     const email = priceDropEmail('Nevera <X>', 'RD$24,495')
-    expect(email.subject).toBe('Bajó de precio: Nevera <X>')
+    expect(email.subject).toBe('Bajó de precio: Nevera <X> ahora RD$24,495')
     expect(email.text).toContain('Nevera <X> ahora cuesta RD$24,495.')
     expect(email.text).toContain('Ver la oferta: https://dondeta.com.do')
     expect(email.html).toContain('Ver la oferta')
