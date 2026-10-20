@@ -203,10 +203,17 @@ export function describeHistory(
 
 /**
  * A product page is "thin" for indexing purposes when it has a single
- * retailer AND not enough price history to stand on its own. These get
- * `noindex` and stay out of the sitemap so the site isn't judged on
- * hundreds of near-empty pages.
+ * retailer and its price history has nothing to say yet: fewer than 5 daily
+ * observations, under two weeks of data, or a price that has never moved.
+ * A flat line from one store is the same page for every product, so those get
+ * `noindex` and stay out of the sitemap until real movement shows up. Pages
+ * with 2+ stores always stand on their own (the comparison is the content).
+ * The rule is evaluated per request, so a page re-enters the index by itself
+ * as its history grows.
  */
+export const MIN_INDEXABLE_OBSERVATIONS = 5
+export const MIN_INDEXABLE_SPAN_DAYS = 14
+
 export function isThinProduct(
   storeCount: number,
   history: PricePoint[] | undefined,
@@ -215,5 +222,10 @@ export function isThinProduct(
   if (storeCount === 0) return true
   if (storeCount >= 2) return false
   const stats = analyzeHistory(history)
-  return !stats || stats.count < 5
+  return (
+    !stats ||
+    stats.count < MIN_INDEXABLE_OBSERVATIONS ||
+    stats.spanDays < MIN_INDEXABLE_SPAN_DAYS ||
+    stats.changeCount < 1
+  )
 }

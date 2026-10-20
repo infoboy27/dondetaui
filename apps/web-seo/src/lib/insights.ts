@@ -146,3 +146,89 @@ export function typeStats(products: Product[]): TypeStats | null {
 export function monthYear(date = new Date()): string {
   return date.toLocaleDateString('es-DO', { month: 'long', year: 'numeric', timeZone: 'America/Santo_Domingo' })
 }
+
+export interface MarketPosition {
+  type: ProductType
+  peers: number
+  price: number
+  median: number
+  /** Signed % of the product's price versus the median of its type: negative = cheaper. */
+  pctVsMedian: number
+  /** How many other products of the type have a lower price. */
+  cheaperCount: number
+  brandPeers: number
+  brandMedian: number | null
+}
+
+const MIN_PEERS = 8
+
+function median(sorted: number[]): number {
+  return sorted[Math.floor(sorted.length / 2)]!
+}
+
+/**
+ * Where a product's price sits among the other products of the same type in
+ * the catalog. Null when the product isn't a known type or the group is too
+ * small to say anything meaningful.
+ */
+export function marketPosition(product: Product, catalog: Product[]): MarketPosition | null {
+  const type = PRODUCT_TYPES.find(t => matchesType(product, t))
+  const price = bestPrice(product)
+  if (!type || price === undefined) return null
+
+  const peers = catalog.filter(p => matchesType(p, type))
+  const prices = peers.map(bestPrice).filter((v): v is number => v !== undefined).sort((a, b) => a - b)
+  if (prices.length < MIN_PEERS) return null
+
+  const med = median(prices)
+  const brandPrices = peers
+    .filter(p => p.brand && p.brand.toLowerCase() === product.brand?.toLowerCase())
+    .map(bestPrice)
+    .filter((v): v is number => v !== undefined)
+    .sort((a, b) => a - b)
+
+  return {
+    type,
+    peers: prices.length,
+    price,
+    median: med,
+    pctVsMedian: Math.round(((price - med) / med) * 100),
+    cheaperCount: prices.filter(v => v < price).length,
+    brandPeers: brandPrices.length,
+    brandMedian: brandPrices.length >= 3 ? median(brandPrices) : null,
+  }
+}
+
+export function describeMarketPosition(position: MarketPosition, brand: string, format: (n: number) => string): string[] {
+  const { type, peers, price, median: med, pctVsMedian, cheaperCount, brandPeers, brandMedian } = position
+  const out: string[] = []
+
+  const relation =
+    Math.abs(pctVsMedian) < 3
+      ? `prácticamente en la mediana (${format(med)})`
+      : pctVsMedian < 0
+        ? `${Math.abs(pctVsMedian)}% por debajo de la mediana (${format(med)})`
+        : `${pctVsMedian}% por encima de la mediana (${format(med)})`
+  out.push(
+    `DóndeTa sigue ${peers} productos de la categoría ${type.label}. A ${format(price)}, este está ${relation} de esa categoría, ` +
+      `y ${cheaperCount === 0 ? 'ninguno de los otros cuesta menos' : `${cheaperCount} de los otros ${cheaperCount === 1 ? 'cuesta' : 'cuestan'} menos`}.`,
+  )
+
+  if (brandMedian !== null) {
+    const diff = Math.round(((price - brandMedian) / brandMedian) * 100)
+    out.push(
+      `Dentro de ${brand} hay ${brandPeers} productos de este tipo con una mediana de ${format(brandMedian)}; ` +
+        (Math.abs(diff) < 3
+          ? 'este modelo está en ese mismo nivel.'
+          : diff < 0
+            ? `este modelo cuesta ${Math.abs(diff)}% menos que esa mediana.`
+            : `este modelo cuesta ${diff}% más que esa mediana.`),
+    )
+  }
+
+  out.push(
+    'Un precio bajo frente a la mediana no significa mejor producto: capacidad, tecnología y garantía cambian entre modelos. ' +
+      'Úsalo como punto de referencia y compara la ficha técnica antes de decidir.',
+  )
+  return out
+}

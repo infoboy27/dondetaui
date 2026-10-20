@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
-import { getProductBySlug, getProductReviews } from '../../../lib/api'
+import { getCatalog, getProductBySlug, getProductReviews } from '../../../lib/api'
 import { SEO_CATEGORIES, matchesCategory } from '../../../lib/categories'
 import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
+import { describeMarketPosition, marketPosition } from '../../../lib/insights'
 import { outboundHref, rankOffers } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
@@ -65,10 +66,10 @@ export default async function ProductPage({ params }: Props) {
   // Old slug of a product merged into this one.
   if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`)
 
-  const [reviews, offers] = await Promise.all([
-    getProductReviews(product.id),
-    Promise.resolve(rankOffers(product.prices)),
-  ])
+  const [reviews, catalog] = await Promise.all([getProductReviews(product.id), getCatalog()])
+  const offers = rankOffers(product.prices)
+  const position = marketPosition(product, catalog)
+  const positionProse = position ? describeMarketPosition(position, product.brand, formatPrice) : []
   const bestOffer = offers[0]
   const storeCount = new Set(offers.map(offer => offer.store)).size
   const category = seoCategoryFor(product)
@@ -242,6 +243,24 @@ export default async function ProductPage({ params }: Props) {
         name={product.name}
         store={bestOffer?.store ?? 'la tienda'}
       />
+
+      {position && (
+        <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 10px' }}>
+            Frente a otras {position.type.label}
+          </h2>
+          {positionProse.map((paragraph, i) => (
+            <p key={i} style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: i === positionProse.length - 1 ? 0 : '0 0 10px' }}>
+              {paragraph}
+            </p>
+          ))}
+          <p style={{ fontFamily: fonts.body, fontSize: 13, margin: '10px 0 0' }}>
+            <a href={`/precios/${position.type.slug}`} style={{ color: colors.primary }}>
+              Ver precios de {position.type.label} en RD
+            </a>
+          </p>
+        </section>
+      )}
 
       <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16 }}>
         <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 10px' }}>
