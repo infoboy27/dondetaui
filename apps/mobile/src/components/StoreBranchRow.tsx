@@ -1,3 +1,4 @@
+import { getCountry } from '../domain/currentCountry'
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native'
 import type { StoreBranch } from '../api/stores'
 import { colors, spacing } from '../design/tokens'
@@ -22,7 +23,7 @@ export default function StoreBranchRow({ branch, divider = false }: { branch: St
 
   const distance = branch.distanceKm === undefined
     ? null
-    : branch.distanceKm < 1 ? `${Math.round(branch.distanceKm * 1000)} m` : `${branch.distanceKm.toLocaleString('es-DO', { maximumFractionDigits: 1 })} km`
+    : branch.distanceKm < 1 ? `${Math.round(branch.distanceKm * 1000)} m` : `${branch.distanceKm.toLocaleString(getCountry().locale, { maximumFractionDigits: 1 })} km`
 
   return (
     <View>

@@ -1,3 +1,4 @@
+import { formatCount } from '../../domain/currency'
 import { StyleSheet, Text, View } from 'react-native'
 import { colors, spacing } from '../../design/tokens'
 import { type } from '../../design/type'
@@ -24,7 +25,7 @@ export default function SectionHeader({
       <View style={{ flex: 1 }}>
         <Text style={[type.title3, styles.title]} accessibilityRole="header">
           {title}
-          {count !== undefined && <Text style={[type.title3, styles.count]}>  {count.toLocaleString('es-DO')}</Text>}
+          {count !== undefined && <Text style={[type.title3, styles.count]}>  {formatCount(count)}</Text>}
         </Text>
         {!!subtitle && <Text style={[type.footnote, styles.subtitle]}>{subtitle}</Text>}
       </View>

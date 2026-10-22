@@ -1,4 +1,6 @@
 import { getBestOffer, getOfferTotal } from './offers'
+import { htmlLang, timeZone } from './country'
+import { COUNTRY } from './site'
 import type { Product } from './types'
 
 // Data-driven landing pages ("precio de neveras en RD", "bajas de precio"):
@@ -144,7 +146,7 @@ export function typeStats(products: Product[]): TypeStats | null {
 }
 
 export function monthYear(date = new Date()): string {
-  return date.toLocaleDateString('es-DO', { month: 'long', year: 'numeric', timeZone: 'America/Santo_Domingo' })
+  return date.toLocaleDateString(htmlLang(COUNTRY), { month: 'long', year: 'numeric', timeZone: timeZone(COUNTRY) })
 }
 
 export interface MarketPosition {

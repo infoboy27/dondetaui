@@ -1,5 +1,5 @@
 # Continuous deployment: every push to main is verified and, if green,
-# deployed to all DóndeTa stacks (dondeta.com.do, .co, .mx) on 163.245.207.38.
+# deployed to all DóndeTa stacks (dondeta.com.do and the co/mx/us country sites) on 163.245.207.38.
 # The server side is deploy/cd/dondeta-deploy.sh, which health-checks each
 # stack and rolls it back on its own if the new version doesn't come up.
 #
@@ -23,7 +23,7 @@ on:
         required: false
         default: dondeta
         type: choice
-        options: [dondeta, dondeta-co, dondeta-mx]
+        options: [dondeta, dondeta-co, dondeta-mx, dondeta-us]
       apply:
         description: "merge-products: write changes (otherwise dry run)"
         required: false

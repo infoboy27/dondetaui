@@ -53,7 +53,7 @@ Gotchas conocidos:
   y ejecuta `deploy/cd/dondeta-deploy.sh deploy <sha>` (health check + rollback).
 - Si cambia `deploy/cd/dondeta-deploy.sh`, copiarlo a mano en el server:
   `cp ~/dondeta/deploy/cd/dondeta-deploy.sh ~/dondeta-deploy/dondeta-deploy.sh`.
-- Stacks: `~/dondeta` (RD, dondeta.com.do), `~/dondeta-co`, `~/dondeta-mx`.
+- Stacks: `~/dondeta` (RD, dondeta.com.do), `~/dondeta-co` (co.dondeta.com.do), `~/dondeta-mx` (mx.dondeta.com.do) y `~/dondeta-us` (us.dondeta.com.do, catálogo Best Buy; falta `BESTBUY_API_KEY` en su `.env` y la ruta en Traefik). Los subdominios resuelven por el comodín `*.dondeta.com.do`; las rutas están en `~/loadbalancer/dynamic/dondeta-countries.yml`. La app móvil elige el país por la región del teléfono (selector en Perfil); la web enlaza entre países y sugiere el de la lengua del navegador, sin redirigir. Los sitios no dominicanos salen con `noindex` hasta `COUNTRY_INDEXABLE=1`.
 - Uptime externo: `uptime.yml` cada 5 min → Discord.
 
 ## 4. Dónde viven los secretos (nunca en el repo)

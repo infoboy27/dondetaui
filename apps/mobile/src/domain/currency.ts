@@ -1,12 +1,18 @@
-// Baked in at Expo build time -- each country's app build sets its own
-// EXPO_PUBLIC_CURRENCY_SYMBOL/EXPO_PUBLIC_CURRENCY_LOCALE (mirrors
-// src/domain/currency.ts's Vite build-arg pattern for the web SPA).
-const CURRENCY_SYMBOL = process.env.EXPO_PUBLIC_CURRENCY_SYMBOL || 'RD$'
-const CURRENCY_LOCALE = process.env.EXPO_PUBLIC_CURRENCY_LOCALE || 'es-DO'
+import { getCountry } from './currentCountry'
 
-// Whole pesos, like the design system's RD$24,495: converted prices (Eneba)
-// carry cents that only add noise next to shelf prices. The exact amount is
-// on the store's page.
+// Whole units, like the design system's RD$24,495: converted prices (Eneba)
+// carry cents that only add noise next to shelf prices. Countries whose shelf
+// prices have cents (US) keep them when the amount has any. The exact amount
+// is on the store's page.
 export function formatPrice(price: number): string {
-  return `${CURRENCY_SYMBOL}${Math.round(price).toLocaleString(CURRENCY_LOCALE)}`
+  const { currencySymbol, locale, cents } = getCountry()
+  if (cents && !Number.isInteger(price)) {
+    return `${currencySymbol}${price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+  return `${currencySymbol}${Math.round(price).toLocaleString(locale)}`
+}
+
+/** Counts ("1,200 productos") in the user's number format. */
+export function formatCount(count: number): string {
+  return count.toLocaleString(getCountry().locale)
 }

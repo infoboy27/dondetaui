@@ -5,7 +5,8 @@ import { formatPrice } from '../../../lib/format'
 import { getBestOffer } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
-import { SITE_URL } from '../../../lib/site'
+import { hasGuides, storeDescription } from '../../../lib/country'
+import { COUNTRY, SITE_URL } from '../../../lib/site'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!store) return {}
 
   const title = `${store.name} — Compara precios | DóndeTa`
-  const description = `Compara los precios de ${store.productCount} productos en ${store.name} contra otras tiendas de República Dominicana.`
+  const description = storeDescription(COUNTRY, store.name, store.productCount)
 
   return {
     title,
@@ -108,9 +109,11 @@ export default async function StorePage({ params }: Props) {
         )
       })}
 
-      <p style={{ marginTop: 20, fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400 }}>
-        Tambien puedes revisar nuestra <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>guia para comparar electrodomesticos antes de comprar</a>.
-      </p>
+      {hasGuides(COUNTRY) && (
+        <p style={{ marginTop: 20, fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400 }}>
+          Tambien puedes revisar nuestra <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>guia para comparar electrodomesticos antes de comprar</a>.
+        </p>
+      )}
       <SiteFooter />
     </main>
   )

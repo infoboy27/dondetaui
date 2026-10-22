@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { BUYING_GUIDES, guideReadingMinutes } from '../../lib/content'
+import { notFound } from 'next/navigation'
+import { hasGuides } from '../../lib/country'
+import { COUNTRY } from '../../lib/site'
 import { H1, Lead, Shell } from '../../lib/page'
 import { colors, fonts } from '../../lib/tokens'
 
@@ -11,6 +14,7 @@ export const metadata: Metadata = {
 }
 
 export default function GuidesIndexPage() {
+  if (!hasGuides(COUNTRY)) notFound()
   return (
     <Shell>
       <H1>Guías de compra</H1>

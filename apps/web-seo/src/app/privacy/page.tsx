@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { colors, fonts } from '../../lib/tokens'
-import { SITE_URL } from '../../lib/site'
+import { COUNTRY, SITE_URL } from '../../lib/site'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad — DóndeTa',
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
       <Section title="Qué es DóndeTa">
         <p>
           DóndeTa es una aplicación de comparación de precios de electrodomésticos y productos en tiendas de
-          República Dominicana, disponible en <strong>{SITE_HOSTNAME}</strong> y como aplicación para Android.
+          {COUNTRY.name}, disponible en <strong>{SITE_HOSTNAME}</strong> y como aplicación para Android.
           Esta política aplica a ambas.
         </p>
       </Section>

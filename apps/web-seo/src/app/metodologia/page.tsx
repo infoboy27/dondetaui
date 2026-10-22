@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { H1, H2, Lead, List, P, Shell } from '../../lib/page'
+import { COUNTRY } from '../../lib/site'
 import { colors, fonts } from '../../lib/tokens'
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function MethodologyPage() {
         <H2>Fuentes de datos</H2>
         <P>
           Los precios provienen de la información que las propias tiendas publican en sus catálogos en línea. Actualmente
-          seguimos cinco cadenas dominicanas: Plaza Lama, Jumbo, Sirena, Corripio y PriceSmart. Cada oferta conserva el
+          seguimos {COUNTRY.isDominican ? 'cinco cadenas dominicanas: Plaza Lama, Jumbo, Sirena, Corripio y PriceSmart' : `las principales cadenas ${COUNTRY.adjective}`}. Cada oferta conserva el
           nombre de la tienda y, cuando está disponible, el enlace directo a la ficha original para que puedas verificar.
         </P>
         <P>
@@ -66,7 +67,7 @@ export default function MethodologyPage() {
           siempre es el de menor precio de lista.
         </P>
         <P>
-          Hoy la mayoría de los productos dominicanos tiene una sola tienda con precio publicado, porque las cadenas
+          Hoy la mayoría de los productos {COUNTRY.isDominican ? 'dominicanos ' : ''}tiene una sola tienda con precio publicado, porque las cadenas
           venden referencias distintas y el emparejamiento entre catálogos todavía es limitado. En esos casos la ficha
           funciona como registro histórico y punto de verificación.
         </P>

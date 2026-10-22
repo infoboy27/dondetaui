@@ -1,3 +1,4 @@
+import { formatCount } from '../../../src/domain/currency'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FlatList, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Stack, useRouter } from 'expo-router'
@@ -176,7 +177,7 @@ export default function SearchScreen() {
             status === 'done' && results.length > 0 ? (
               <View>
                 <Text style={[type.footnote, styles.count]}>
-                  {results.length === 1 ? '1 resultado' : `${results.length.toLocaleString('es-DO')} resultados`} para “{term}”
+                  {results.length === 1 ? '1 resultado' : `${formatCount(results.length)} resultados`} para “{term}”
                 </Text>
               </View>
             ) : null

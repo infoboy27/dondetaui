@@ -1,3 +1,5 @@
+import { hasGuides } from './country'
+import { COUNTRY } from './site'
 import { GUIDES_A } from './guides/batch-a'
 import { GUIDES_B } from './guides/batch-b'
 import { GUIDES_C } from './guides/batch-c'
@@ -6,7 +8,7 @@ import { GUIDES_E } from './guides/batch-e'
 
 export const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
 
-export const MAIN_NAV = [
+const ALL_NAV = [
   { href: '/', label: 'Inicio' },
   { href: '/precios', label: 'Precios' },
   { href: '/black-friday', label: 'Black Friday' },
@@ -15,6 +17,9 @@ export const MAIN_NAV = [
   { href: '/sobre-dondeta', label: 'Sobre DóndeTa' },
   { href: '/contacto', label: 'Contacto' },
 ]
+
+// Guides are DR editorial content: non-DO deployments leave them out.
+export const MAIN_NAV = hasGuides(COUNTRY) ? ALL_NAV : ALL_NAV.filter(item => item.href !== '/guias')
 
 export interface GuideSection {
   title: string

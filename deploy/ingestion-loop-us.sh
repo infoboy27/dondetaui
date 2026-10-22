@@ -1,0 +1,25 @@
+#!/bin/sh
+set -u
+
+INTERVAL_SECONDS=${INGESTION_INTERVAL_SECONDS:-21600}
+
+run() {
+  label=$1
+  shift
+  echo "[worker] starting $label at $(date -u +%FT%TZ)"
+  if "$@"; then
+    echo "[worker] completed $label"
+  else
+    echo "[worker] $label failed; continuing" >&2
+  fi
+}
+
+while true; do
+  run best-buy node dist/ingestion/bestbuy.cli.js
+
+  # Per-retailer summary; posts to Discord when a scraper broke or shrank.
+  run report node dist/ingestion/ingestion-report.cli.js
+
+  echo "[worker] sleeping ${INTERVAL_SECONDS}s"
+  sleep "$INTERVAL_SECONDS"
+done
