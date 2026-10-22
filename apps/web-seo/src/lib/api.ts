@@ -28,6 +28,20 @@ export async function getAllProducts(): Promise<Product[]> {
   return products ?? []
 }
 
+// The full catalog is ~2 MB, over Next's 2 MB data-cache limit, so the fetch
+// above isn't cached and every call would re-download it. Product pages use
+// it for market context, so keep one copy per server process for a few minutes.
+const CATALOG_TTL_MS = 10 * 60 * 1000
+let catalog: { at: number; products: Product[] } | null = null
+
+export async function getCatalog(): Promise<Product[]> {
+  if (catalog && Date.now() - catalog.at < CATALOG_TTL_MS) return catalog.products
+  const products = await getAllProducts()
+  // Don't pin an empty result (API briefly down) for the whole TTL.
+  if (products.length) catalog = { at: Date.now(), products }
+  return products.length ? products : catalog?.products ?? []
+}
+
 export async function getStores(): Promise<Store[]> {
   const stores = await apiFetch<Store[]>('/stores')
   return stores ?? []

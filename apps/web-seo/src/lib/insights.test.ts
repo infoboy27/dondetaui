@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PRODUCT_TYPES, matchesType, topComparisons, topDrops, typeStats } from './insights'
+import { PRODUCT_TYPES, describeMarketPosition, marketPosition, matchesType, topComparisons, topDrops, typeStats } from './insights'
 import type { Offer, Product } from './types'
 
 const offer = (store: string, price: number, available = true): Offer => ({ store, abbr: store.slice(0, 2), color: '#000', price, shipping: 'Gratis', available })
@@ -42,5 +42,26 @@ describe('comparisons, drops and stats', () => {
 
   it('summarizes a type', () => {
     expect(typeStats([a, b, c])).toMatchObject({ count: 3, min: 20_000, max: 50_000, median: 30_000, compared: 2, stores: 3 })
+  })
+})
+
+describe('marketPosition', () => {
+  const fridge = (n: number, price: number, brand = 'Samsung') => ({ ...product(`Nevera ${brand} ${n}`, [offer('Jumbo', price)]), brand })
+  const catalog = [10, 20, 30, 40, 50, 60, 70, 80, 90].map((k, i) => fridge(i, k * 1_000, i < 4 ? 'Samsung' : 'LG'))
+
+  it('places a product against the median of its type and brand', () => {
+    const position = marketPosition(catalog[1]!, catalog)!
+    expect(position.type.slug).toBe('neveras')
+    expect(position.peers).toBe(9)
+    expect(position.median).toBe(50_000)
+    expect(position.pctVsMedian).toBe(-60)
+    expect(position.cheaperCount).toBe(1)
+    expect(position.brandMedian).toBe(30_000)
+    expect(describeMarketPosition(position, 'Samsung', n => `RD$${n}`).join(' ')).toContain('60% por debajo de la mediana')
+  })
+
+  it('says nothing for unknown types or tiny groups', () => {
+    expect(marketPosition(product('Silla de oficina', [offer('Jumbo', 9_000)]), catalog)).toBeNull()
+    expect(marketPosition(catalog[0]!, catalog.slice(0, 5))).toBeNull()
   })
 })
