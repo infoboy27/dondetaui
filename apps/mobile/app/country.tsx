@@ -21,7 +21,7 @@ export default function CountryScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'País', headerLargeTitle: false }} />
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.screen} contentContainerStyle={styles.content}>
         <ListSection
           header="Dónde compras"
           footer="Cada país tiene sus propias tiendas, precios y moneda. Si compras para enviar a otro país, elige el país de las tiendas."
