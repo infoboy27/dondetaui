@@ -35,9 +35,10 @@ async function latestPriceHistory(productId: string): Promise<HistoryPoint[]> {
   return result.rows.map(row => ({ date: row.date, price: Number(row.price) })).reverse()
 }
 
-async function productName(productId: string): Promise<string | null> {
-  const result = await pool.query<{ name: string }>('select name from products where id = $1', [productId])
-  return result.rows[0]?.name ?? null
+async function productInfo(productId: string): Promise<{ name: string; imageUrl: string | null; slug: string | null } | null> {
+  const result = await pool.query<{ name: string; image_url: string | null; slug: string | null }>('select name, image_url, slug from products where id = $1', [productId])
+  const row = result.rows[0]
+  return row ? { name: row.name, imageUrl: row.image_url, slug: row.slug } : null
 }
 
 async function main() {
@@ -58,13 +59,16 @@ async function main() {
     const lastNotifiedPrice = candidate.last_notified_price === null ? null : Number(candidate.last_notified_price)
     if (lastNotifiedPrice !== null && latest.price >= lastNotifiedPrice) continue // already notified at this price or lower
 
-    const name = await productName(candidate.product_id)
-    if (!name) continue
+    const product = await productInfo(candidate.product_id)
+    if (!product) continue
+    const name = product.name
 
     await notifications.notifyPriceDrop(
       { email: candidate.user_email, phone: candidate.user_phone, pushTokens: candidate.push_tokens },
       name,
       latest.price,
+      previous.price,
+      product,
     )
     await alerts.markNotified(candidate.alert_id, latest.price)
     notified += 1
