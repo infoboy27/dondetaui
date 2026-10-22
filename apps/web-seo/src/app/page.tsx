@@ -1,19 +1,20 @@
 import type { Metadata } from 'next'
 import { BUYING_GUIDES } from '../lib/content'
+import { hasGuides, homeDescription, homeTitle } from '../lib/country'
 import { getAllProducts, getStores } from '../lib/api'
 import { SEO_CATEGORIES, matchesCategory } from '../lib/categories'
 import { formatPrice } from '../lib/format'
 import { analyzeHistory, isThinProduct } from '../lib/history'
 import { getBestOffer } from '../lib/offers'
 import { Card, H1, H2, Lead, P, Shell } from '../lib/page'
+import { COUNTRY } from '../lib/site'
 import { colors, fonts } from '../lib/tokens'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'DóndeTa — precios e historial de electrodomésticos en República Dominicana',
-  description:
-    'DóndeTa registra los precios publicados de electrodomésticos, aires, neveras, lavadoras y televisores en tiendas dominicanas y muestra su historial para darte contexto antes de comprar.',
+  title: homeTitle(COUNTRY),
+  description: homeDescription(COUNTRY),
   alternates: { canonical: '/' },
 }
 
@@ -32,22 +33,22 @@ export default async function HomePage() {
     <Shell>
       <section style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(260px, .8fr)', gap: 24, alignItems: 'start' }}>
         <div>
-          <H1>Precios e historial de electrodomésticos en República Dominicana</H1>
+          <H1>Precios e historial de electrodomésticos en {COUNTRY.name}</H1>
           <Lead>
-            DóndeTa revisa periódicamente el precio publicado de electrodomésticos y tecnología en tiendas dominicanas y
+            DóndeTa revisa periódicamente el precio publicado de electrodomésticos y tecnología en tiendas {COUNTRY.adjective} y
             guarda cómo cambia en el tiempo. En cada ficha ves el precio actual, la tienda, su mínimo y su máximo
             registrados, y cuánto se ha movido, para decidir con más contexto.
           </Lead>
           <p style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '0 0 24px' }}>
             <a href="/search" style={{ background: colors.primary, color: '#fff', padding: '12px 18px', borderRadius: 12, fontFamily: fonts.display, fontWeight: 700, textDecoration: 'none' }}>Abrir comparador</a>
-            <a href="/guias" style={{ background: colors.card, color: colors.navy, border: `1px solid ${colors.border}`, padding: '12px 18px', borderRadius: 12, fontFamily: fonts.display, fontWeight: 700, textDecoration: 'none' }}>Guías de compra</a>
+            {hasGuides(COUNTRY) && <a href="/guias" style={{ background: colors.card, color: colors.navy, border: `1px solid ${colors.border}`, padding: '12px 18px', borderRadius: 12, fontFamily: fonts.display, fontWeight: 700, textDecoration: 'none' }}>Guías de compra</a>}
             <a href="/metodologia" style={{ background: colors.card, color: colors.navy, border: `1px solid ${colors.border}`, padding: '12px 18px', borderRadius: 12, fontFamily: fonts.display, fontWeight: 700, textDecoration: 'none' }}>Ver metodología</a>
           </p>
         </div>
         <Card>
           <H2>Qué monitoreamos</H2>
           <P>
-            {products.length} productos con precio publicado en {stores.length || 5} tiendas dominicanas. Hoy la mayoría
+            {products.length} productos con precio publicado en {stores.length || 5} tiendas {COUNTRY.adjective}. Hoy la mayoría
             tiene una sola tienda por producto, así que el valor principal está en el historial de cada precio, no en la
             comparación entre comercios.
           </P>
@@ -92,7 +93,7 @@ export default async function HomePage() {
         </div>
       </Card>
 
-      <Card>
+      {hasGuides(COUNTRY) && <Card>
         <H2>Guías de compra</H2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
           {BUYING_GUIDES.slice(0, 6).map(guide => (
@@ -105,7 +106,7 @@ export default async function HomePage() {
         <p style={{ margin: '14px 0 0' }}>
           <a href="/guias" style={{ color: colors.primary, fontFamily: fonts.body, fontWeight: 700, fontSize: 14 }}>Ver todas las guías →</a>
         </p>
-      </Card>
+      </Card>}
     </Shell>
   )
 }

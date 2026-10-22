@@ -7,7 +7,8 @@ import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/histor
 import { outboundHref, rankOffers } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
-import { SITE_URL } from '../../../lib/site'
+import { currencyCode, hasGuides, productDescription } from '../../../lib/country'
+import { COUNTRY, SITE_URL } from '../../../lib/site'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
 import type { Product } from '../../../lib/types'
 
@@ -40,11 +41,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const thin = isThinProduct(storeCount, product.priceHistory)
 
   const title = `${product.name} — ${best ? formatPrice(best.price) : 'Precio y historial'} | DóndeTa`
-  const description = best
-    ? storeCount >= 2
-      ? `Compara el precio de ${product.name} entre ${storeCount} tiendas en República Dominicana. Precio más bajo: ${formatPrice(best.price)} en ${best.store}. Historial de precios y enlaces para verificar.`
-      : `${product.name} en ${best.store}: ${formatPrice(best.price)}. Historial de precios publicados, ficha básica y enlace para verificar en la tienda. República Dominicana.`
-    : `Ficha e historial de precio de ${product.name} en República Dominicana.`
+  const description = productDescription(
+    COUNTRY,
+    product.name,
+    best && { price: formatPrice(best.price), store: best.store },
+    storeCount,
+  )
 
   return {
     title,
@@ -95,7 +97,7 @@ export default async function ProductPage({ params }: Props) {
     ...(offers.length > 0 && {
       offers: {
         '@type': 'AggregateOffer',
-        priceCurrency: 'DOP',
+        priceCurrency: currencyCode(COUNTRY),
         lowPrice: Math.min(...offers.map(o => o.price)),
         highPrice: Math.max(...offers.map(o => o.price)),
         offerCount: offers.length,
@@ -283,12 +285,16 @@ export default async function ProductPage({ params }: Props) {
       )}
 
       <p style={{ marginTop: 24, fontFamily: fonts.body, fontSize: 12, color: colors.navy200 }}>
-        Precios actualizados regularmente. Verifica disponibilidad en tienda. Para compras grandes, revisa también la
-        guía para{' '}
-        <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>
-          comparar electrodomésticos en RD
-        </a>
-        .
+        Precios actualizados regularmente. Verifica disponibilidad en tienda.
+        {hasGuides(COUNTRY) && (
+          <>
+            {' '}Para compras grandes, revisa también la guía para{' '}
+            <a href="/guias/comprar-electrodomesticos-rd" style={{ color: colors.primary }}>
+              comparar electrodomésticos en RD
+            </a>
+            .
+          </>
+        )}
       </p>
       <SiteFooter />
     </main>

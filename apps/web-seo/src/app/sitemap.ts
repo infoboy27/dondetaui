@@ -4,7 +4,8 @@ import { SEO_CATEGORIES } from '../lib/categories'
 import { PRODUCT_TYPES, matchesType } from '../lib/insights'
 import { BUYING_GUIDES } from '../lib/content'
 import { isThinProduct } from '../lib/history'
-import { SITE_URL } from '../lib/site'
+import { hasGuides } from '../lib/country'
+import { COUNTRY, SITE_URL } from '../lib/site'
 
 // The API isn't reachable at Docker build time (it's a separate container
 // that starts later), and a stale build-time snapshot would defeat the
@@ -23,13 +24,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: SITE_URL, changeFrequency: 'daily', priority: 1 },
-    { url: `${SITE_URL}/guias`, changeFrequency: 'weekly', priority: 0.8 },
+    ...(hasGuides(COUNTRY) ? [{ url: `${SITE_URL}/guias`, changeFrequency: 'weekly' as const, priority: 0.8 }] : []),
     { url: `${SITE_URL}/metodologia`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${SITE_URL}/sobre-dondeta`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/contacto`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/terminos`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'monthly', priority: 0.5 },
-    ...BUYING_GUIDES.map(guide => ({
+    ...(hasGuides(COUNTRY) ? BUYING_GUIDES : []).map(guide => ({
       url: `${SITE_URL}/guias/${guide.slug}`,
       changeFrequency: 'monthly' as const,
       priority: 0.75,

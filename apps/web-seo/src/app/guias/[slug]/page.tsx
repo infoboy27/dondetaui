@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { BUYING_GUIDES, findGuide, guideReadingMinutes } from '../../../lib/content'
 import { H1, H2, H3, Lead, List, P, Shell } from '../../../lib/page'
-import { SITE_URL } from '../../../lib/site'
+import { hasGuides } from '../../../lib/country'
+import { COUNTRY, SITE_URL } from '../../../lib/site'
 import { colors, fonts } from '../../../lib/tokens'
 
 interface Props {
@@ -19,7 +20,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const guide = findGuide(slug)
+  const guide = hasGuides(COUNTRY) ? findGuide(slug) : undefined
   if (!guide) return {}
   return {
     title: `${guide.title} — DóndeTa`,
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GuidePage({ params }: Props) {
   const { slug } = await params
-  const guide = findGuide(slug)
+  const guide = hasGuides(COUNTRY) ? findGuide(slug) : undefined
   if (!guide) notFound()
 
   const related = (guide.related ?? [])

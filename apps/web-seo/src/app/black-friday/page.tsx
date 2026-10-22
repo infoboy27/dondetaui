@@ -6,7 +6,8 @@ import { formatPrice } from '../../lib/format'
 import { formatDateEs } from '../../lib/history'
 import { SiteFooter, SiteHeader } from '../../lib/page'
 import { Breadcrumb, FaqBlock, Section, h1Style, leadStyle, pageMain, type Faq } from '../../lib/seoBlocks'
-import { COUNTRY_NAME, SITE_URL } from '../../lib/site'
+import { countryShortName } from '../../lib/country'
+import { COUNTRY, COUNTRY_NAME, CURRENCY_LOCALE, SITE_URL } from '../../lib/site'
 import { colors, fonts } from '../../lib/tokens'
 import type { PriceCheck } from '../../lib/types'
 
@@ -69,12 +70,12 @@ export default async function BlackFridayPage() {
       a: 'Compara el precio de oferta con el precio más bajo que tuvo ese mismo producto, en esa misma tienda, durante los 30 días anteriores. Si la “oferta” no queda por debajo de ese mínimo, el descuento es sobre un precio que subió antes. Es el mismo criterio que usa la Unión Europea para los descuentos anunciados.',
     },
     {
-      q: '¿Cuándo es Black Friday en República Dominicana?',
-      a: `Este año es el viernes ${bfDate}. Muchas tiendas de RD adelantan las ofertas desde inicios de noviembre y las extienden hasta el Cyber Monday.`,
+      q: `¿Cuándo es Black Friday en ${COUNTRY_NAME}?`,
+      a: `Este año es el viernes ${bfDate}. Muchas tiendas de ${countryShortName(COUNTRY)} adelantan las ofertas desde inicios de noviembre y las extienden hasta el Cyber Monday.`,
     },
     {
       q: '¿De dónde salen estos datos?',
-      a: `DóndeTa registra varias veces al día los precios publicados en las tiendas en línea de ${COUNTRY_NAME}${report ? ` (hoy seguimos ${report.tracked.toLocaleString('es-DO')} precios con al menos una semana de historial)` : ''}. Los veredictos se recalculan con cada actualización.`,
+      a: `DóndeTa registra varias veces al día los precios publicados en las tiendas en línea de ${COUNTRY_NAME}${report ? ` (hoy seguimos ${report.tracked.toLocaleString(CURRENCY_LOCALE)} precios con al menos una semana de historial)` : ''}. Los veredictos se recalculan con cada actualización.`,
     },
     {
       q: '¿Conviene esperar a Black Friday para comprar?',

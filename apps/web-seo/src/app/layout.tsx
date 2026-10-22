@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { colors } from '../lib/tokens'
-import { SITE_URL } from '../lib/site'
+import { htmlLang, isIndexable } from '../lib/country'
+import { COUNTRY, SITE_URL } from '../lib/site'
 
 // Render every page at request time. SITE_URL, GA_MEASUREMENT_ID and
 // ADSENSE_CLIENT_ID only exist in the container's runtime environment, not
@@ -13,6 +14,8 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // New country sites stay out of the index until they have editorial content.
+  ...(isIndexable(COUNTRY, process.env) ? {} : { robots: { index: false, follow: true } }),
 }
 
 const gaId = process.env.GA_MEASUREMENT_ID
@@ -20,7 +23,7 @@ const adsenseClientId = process.env.ADSENSE_CLIENT_ID
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es-DO">
+    <html lang={htmlLang(COUNTRY)}>
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap"

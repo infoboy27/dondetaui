@@ -7,7 +7,8 @@ import { analyzeHistory } from '../../../lib/history'
 import { getBestOffer } from '../../../lib/offers'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
-import { SITE_URL } from '../../../lib/site'
+import { categoryDescription } from '../../../lib/country'
+import { COUNTRY, SITE_URL } from '../../../lib/site'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -46,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const products = (await getAllProducts()).filter(p => matchesCategory(p, category.id))
   const title = `${category.label} — precios e historial | DóndeTa`
-  const description = `Precios publicados e historial de ${category.label.toLowerCase()} en tiendas de República Dominicana. ${products.length} productos monitoreados en DóndeTa.`
+  const description = categoryDescription(COUNTRY, category.label, products.length)
 
   return {
     title,

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { MAIN_NAV } from './content'
-import { SITE_URL } from './site'
+import { hasGuides } from './country'
+import { COUNTRY, SITE_URL } from './site'
 import { colors, fonts } from './tokens'
 
 export function SiteHeader() {
@@ -24,14 +25,18 @@ export function SiteFooter() {
   return (
     <footer style={{ marginTop: 56, paddingTop: 24, borderTop: `1px solid ${colors.border}`, fontFamily: fonts.body, fontSize: 13, color: colors.navy400 }}>
       <p>
-        DóndeTa registra precios publicados por tiendas dominicanas para dar contexto antes de comprar. No vendemos
+        DóndeTa registra precios publicados por tiendas {COUNTRY.adjective} para dar contexto antes de comprar. No vendemos
         productos ni garantizamos precio, inventario ni condiciones finales: verifícalos con la tienda.
       </p>
       <p>
         <a href="/metodologia" style={{ color: colors.primary }}>Metodología</a>
         {' · '}
-        <a href="/guias" style={{ color: colors.primary }}>Guías</a>
-        {' · '}
+        {hasGuides(COUNTRY) && (
+          <>
+            <a href="/guias" style={{ color: colors.primary }}>Guías</a>
+            {' · '}
+          </>
+        )}
         <a href="/privacy" style={{ color: colors.primary }}>Privacidad</a>
         {' · '}
         <a href="/terminos" style={{ color: colors.primary }}>Términos</a>

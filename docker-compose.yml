@@ -156,6 +156,10 @@ services:
       ADSENSE_CLIENT_ID: ${VITE_ADSENSE_CLIENT_ID:-}
       CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-}
       CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
+      # Per-country copy for the server-rendered pages (defaults: DR).
+      COUNTRY_CODE: ${COUNTRY_CODE:-DO}
+      COUNTRY_NAME: ${COUNTRY_NAME:-República Dominicana}
+      COUNTRY_ADJECTIVE: ${COUNTRY_ADJECTIVE:-dominicanas}
     depends_on:
       api:
         condition: service_healthy
@@ -195,6 +199,8 @@ services:
       CORRIPIO_MAX_PRODUCTS: ${CORRIPIO_MAX_PRODUCTS:-2000}
       PRICESMART_MAX_PAGES: ${PRICESMART_MAX_PAGES:-20}
       PRICESMART_MAX_PRODUCTS: ${PRICESMART_MAX_PRODUCTS:-1000}
+      BESTBUY_API_KEY: ${BESTBUY_API_KEY:-}
+      BESTBUY_MAX_PRODUCTS: ${BESTBUY_MAX_PRODUCTS:-1500}
       EXITO_MAX_PRODUCTS: ${EXITO_MAX_PRODUCTS:-500}
       EXITO_REQUEST_DELAY_MS: ${EXITO_REQUEST_DELAY_MS:-500}
       ELEKTRA_MAX_PRODUCTS: ${ELEKTRA_MAX_PRODUCTS:-500}
@@ -206,8 +212,8 @@ services:
     volumes:
       # INGESTION_LOOP_SCRIPT picks which country's retailer set runs --
       # ingestion-loop.sh (DR: Plaza Lama/Jumbo/Sirena/Corripio/PriceSmart),
-      # ingestion-loop-co.sh (Éxito), or ingestion-loop-mx.sh (Elektra).
-      # Same image, same repo, three deployments -- not three codebases.
+      # ingestion-loop-co.sh (Éxito), ingestion-loop-mx.sh (Elektra) or
+      # ingestion-loop-us.sh (Best Buy). Same image, same repo, four deployments.
       - ./deploy:/deploy:ro
     entrypoint: ["/bin/sh", "/deploy/${INGESTION_LOOP_SCRIPT:-ingestion-loop.sh}"]
     depends_on:
