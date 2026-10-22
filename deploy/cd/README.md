@@ -1,8 +1,8 @@
 # Despliegue continuo (CD)
 
 Cada push a `main` → `.github/workflows/deploy.yml` → verifica (typecheck, tests, build)
-→ SSH a 163.245.207.38:1600 → `dondeta-deploy.sh deploy <sha>` en los 3 stacks
-(`~/dondeta`, `~/dondeta-co`, `~/dondeta-mx`). Cada stack: `git reset --hard <sha>`,
+→ SSH a 163.245.207.38:1600 → `dondeta-deploy.sh deploy <sha>` en los 4 stacks
+(`~/dondeta`, `~/dondeta-co`, `~/dondeta-mx`, `~/dondeta-us`). Cada stack: `git reset --hard <sha>`,
 `docker compose build && up -d` (migraciones incluidas), health check de `/healthz`,
 `/api/health` y `/`; si falla, vuelve solo al commit anterior.
 

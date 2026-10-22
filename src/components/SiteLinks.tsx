@@ -2,6 +2,8 @@
 // loads -- they are not SPA routes). AdSense requires the privacy policy and
 // site info to be reachable from the home page; this keeps that a single
 // quiet line inside the existing footer instead of a separate landing page.
+import { COUNTRY_SITES, countryForHost } from '../domain/countries'
+
 const LINKS = [
   { href: '/precios', label: 'Precios' },
   { href: '/comparaciones', label: 'Comparaciones' },
@@ -17,6 +19,7 @@ const LINKS = [
 export const DONATE_URL = 'https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8'
 
 export function SiteLinks({ align = 'left' }: { align?: 'left' | 'center' }) {
+  const currentCode = countryForHost(window.location.hostname).code
   return (
     <nav
       aria-label="Información del sitio"
@@ -34,6 +37,19 @@ export function SiteLinks({ align = 'left' }: { align?: 'left' | 'center' }) {
           {link.label}
         </a>
       ))}
+      <span aria-label="País" style={{ display: 'inline-flex', gap: 8, fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>
+        {COUNTRY_SITES.filter(site => site.live).map(site => (
+          <a
+            key={site.code}
+            href={site.url}
+            title={site.name}
+            aria-current={site.code === currentCode ? 'true' : undefined}
+            style={{ textDecoration: 'none', opacity: site.code === currentCode ? 1 : 0.55 }}
+          >
+            {site.flag}
+          </a>
+        ))}
+      </span>
       <a
         href={DONATE_URL}
         target="_blank"

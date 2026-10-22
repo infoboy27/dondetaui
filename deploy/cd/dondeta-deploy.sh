@@ -22,7 +22,7 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-STACKS=(dondeta dondeta-co dondeta-mx)
+STACKS=(dondeta dondeta-co dondeta-mx dondeta-us)
 LOG="$HERE/deploy.log"
 STATE="$HERE/state"
 mkdir -p "$STATE"
