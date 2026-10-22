@@ -32,7 +32,7 @@ export function adUnit(format: 'native' | 'banner'): string | null {
 }
 
 // Shopping-related hints so AdMob serves ads that fit the app.
-export const AD_KEYWORDS = ['electrodomésticos', 'tecnología', 'hogar', 'ofertas', 'República Dominicana']
+export const AD_KEYWORDS = ['electrodomésticos', 'tecnología', 'hogar', 'ofertas']
 
 // --- Initialization state, shared by every ad slot -------------------------
 

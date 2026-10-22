@@ -1,3 +1,4 @@
+import { formatCount } from '../../src/domain/currency'
 import { useEffect, useState } from 'react'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
@@ -83,7 +84,7 @@ export default function StoreDetailScreen() {
                 <StoreLogo abbr={store.abbr} color={store.color} size={60} />
                 <View style={{ flex: 1 }}>
                   <Text style={[type.subheadline, styles.muted]}>
-                    {store.productCount.toLocaleString('es-DO')} productos{branches.length ? ` · ${branches.length} sucursales` : ''}
+                    {formatCount(store.productCount)} productos{branches.length ? ` · ${branches.length} sucursales` : ''}
                   </Text>
                 </View>
               </View>

@@ -3,14 +3,14 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from '
 import * as Location from 'expo-location'
 import { storesApi, type StoreBranch } from '../src/api/stores'
 import { friendlyError } from '../src/api/errors'
+import { getCountry } from '../src/config/currentCountry'
 import StoreBranchRow from '../src/components/StoreBranchRow'
 import EmptyState from '../src/components/ui/EmptyState'
 import { colors, radii, spacing } from '../src/design/tokens'
 import { type } from '../src/design/type'
 
-// Used when the device can't (or won't) give a location: the app's catalog
-// is Dominican, so Santo Domingo is the sensible default.
-const FALLBACK = { label: 'Santo Domingo', latitude: 18.4861, longitude: -69.9312 }
+// Used when the device can't (or won't) give a location: the country's main
+// city (the catalog only has that country's stores).
 
 type State =
   | { status: 'idle' }
@@ -22,6 +22,7 @@ type State =
   | { status: 'error'; message: string }
 
 export default function NearbyStoresScreen() {
+  const FALLBACK = getCountry().center
   const [state, setState] = useState<State>({ status: 'idle' })
 
   const loadBranches = async (latitude: number, longitude: number, near: string | null) => {

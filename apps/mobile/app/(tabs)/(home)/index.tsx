@@ -21,7 +21,10 @@ import EmptyState from '../../../src/components/ui/EmptyState'
 import SectionHeader from '../../../src/components/ui/SectionHeader'
 import Touchable from '../../../src/components/ui/Touchable'
 import { DealCardSkeleton, ProductRowSkeleton } from '../../../src/components/ui/Skeleton'
-import { formatPrice } from '../../../src/domain/currency'
+import { formatCount, formatPrice } from '../../../src/domain/currency'
+import CountryBanner from '../../../src/components/CountryBanner'
+import { useCountry } from '../../../src/hooks/useCountry'
+import { useCountryPreference } from '../../../src/state/CountryContext'
 import { friendlyError } from '../../../src/api/errors'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
@@ -32,6 +35,8 @@ const BATCH = 24
 
 export default function HomeScreen() {
   const router = useRouter()
+  const country = useCountry()
+  const { pref } = useCountryPreference()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -64,6 +69,11 @@ export default function HomeScreen() {
     void load()
   }, [load])
 
+  // The device region isn't a country we serve: ask once.
+  useEffect(() => {
+    if (pref.needsChoice) router.push('/country')
+  }, [pref.needsChoice, router])
+
   const openProduct = useCallback((product: Product) => {
     router.push(`/product/${encodeURIComponent(product.slug ?? product.id)}`)
   }, [router])
@@ -71,6 +81,7 @@ export default function HomeScreen() {
   const blackFriday = blackFridayBanner()
   const header = (
     <View>
+      <CountryBanner />
       <Touchable onPress={() => router.navigate('/search')} style={styles.searchPill} accessibilityRole="search" accessibilityLabel="Buscar productos">
         <Icon name="search" size={17} color={colors.tertiaryLabel} />
         <Text style={[type.body, styles.searchPillText]}>Neveras, televisores, juegos…</Text>
@@ -81,8 +92,8 @@ export default function HomeScreen() {
         <Text style={[type.brand, styles.heroTitle]}>Antes de comprar,{'\n'}mira DóndeTa.</Text>
         <Text style={[type.subheadline, styles.heroText]}>
           {products.length
-            ? `${products.length.toLocaleString('es-DO')} productos comparados en tiendas dominicanas.`
-            : 'Compara precios de tiendas dominicanas en segundos.'}
+            ? `${formatCount(products.length)} productos comparados en tiendas ${country.storesAdjective}.`
+            : `Compara precios de tiendas ${country.storesAdjective} en segundos.`}
         </Text>
       </View>
 

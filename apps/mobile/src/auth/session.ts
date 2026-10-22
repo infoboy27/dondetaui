@@ -1,10 +1,16 @@
 import * as SecureStore from 'expo-secure-store'
+import { getCountry } from '../config/currentCountry'
 
-const TOKEN_KEY = 'dondeta.authToken'
+// Each country is its own backend with its own accounts, so each keeps its own
+// session. DR keeps the original key so existing logins survive the update.
+function tokenKey(): string {
+  const { code } = getCountry()
+  return code === 'DO' ? 'dondeta.authToken' : `dondeta.authToken.${code}`
+}
 
 export async function getToken(): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(TOKEN_KEY)
+    return await SecureStore.getItemAsync(tokenKey())
   } catch {
     return null
   }
@@ -12,7 +18,7 @@ export async function getToken(): Promise<string | null> {
 
 export async function setToken(token: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(TOKEN_KEY, token)
+    await SecureStore.setItemAsync(tokenKey(), token)
   } catch {
     /* storage unavailable — session just won't persist */
   }
@@ -20,7 +26,7 @@ export async function setToken(token: string): Promise<void> {
 
 export async function clearToken(): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(TOKEN_KEY)
+    await SecureStore.deleteItemAsync(tokenKey())
   } catch {
     /* nothing to clean up if storage was never reachable */
   }

@@ -2,6 +2,7 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from '
 import { Stack, useRouter } from 'expo-router'
 import Constants from 'expo-constants'
 import { useAppState } from '../../../src/state/AppStateContext'
+import { useCountry } from '../../../src/hooks/useCountry'
 import Icon, { type IconName } from '../../../src/components/Icon'
 import Button from '../../../src/components/ui/Button'
 import Touchable from '../../../src/components/ui/Touchable'
@@ -99,8 +100,11 @@ export default function ProfileScreen() {
 
 // Same links as the web footer (src/components/SiteLinks.tsx).
 function SupportLinks() {
+  const router = useRouter()
+  const country = useCountry()
   return (
     <ListSection header="DóndeTa">
+      <ListRow icon="location" title="País" value={`${country.flag} ${country.name}`} onPress={() => router.push('/country')} />
       <ListRow icon="donate" iconColor="#E5383B" title="Apóyanos con una donación" external onPress={() => void Linking.openURL('https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8')} />
       <ListRow icon="chat" iconColor="#5865F2" title="Comunidad en Discord" external onPress={() => void Linking.openURL('https://discord.gg/sxcSngrTZv')} />
       <ListRow icon="lock" iconColor={colors.navy600} title="Política de privacidad" external onPress={() => void Linking.openURL('https://dondeta.com.do/privacy')} />
