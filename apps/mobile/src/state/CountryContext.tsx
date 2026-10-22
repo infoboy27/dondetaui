@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { chooseCountry, dismissCountryBanner, type CountryPreference } from '../config/countryStorage'
-import type { CountryCode } from '../config/countries'
+import type { CountryCode } from '../domain/countries'
 
 interface CountryState {
   pref: CountryPreference

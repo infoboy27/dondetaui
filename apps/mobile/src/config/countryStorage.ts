@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Localization from 'expo-localization'
-import { countryFromRegion, isCountryCode, DEFAULT_COUNTRY, type CountryCode } from './countries'
-import { setCurrentCountry } from './currentCountry'
+import { countryFromRegion, isCountryCode, DEFAULT_COUNTRY, type CountryCode } from '../domain/countries'
+import { setCurrentCountry } from '../domain/currentCountry'
 
 const KEY = 'dondeta.country'
 

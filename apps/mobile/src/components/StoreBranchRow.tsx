@@ -1,4 +1,4 @@
-import { getCountry } from '../config/currentCountry'
+import { getCountry } from '../domain/currentCountry'
 import { Linking, Platform, StyleSheet, Text, View } from 'react-native'
 import type { StoreBranch } from '../api/stores'
 import { colors, spacing } from '../design/tokens'

@@ -14,7 +14,7 @@ describe('formatPrice (app)', () => {
 
 describe('formatPrice per country', () => {
   it('uses the country currency, and keeps cents only where shelf prices have them', async () => {
-    const { setCurrentCountry } = await import('../config/currentCountry')
+    const { setCurrentCountry } = await import('./currentCountry')
     setCurrentCountry('US')
     expect(formatPrice(19.99)).toBe('US$19.99')
     expect(formatPrice(1299)).toBe('US$1,299')

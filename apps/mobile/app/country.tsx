@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet } from 'react-native'
 import { Stack, useRouter } from 'expo-router'
 import { ListRow, ListSection } from '../src/components/ui/GroupedList'
-import { COUNTRY_LIST } from '../src/config/countries'
+import { COUNTRY_LIST } from '../src/domain/countries'
 import { useCountry } from '../src/hooks/useCountry'
 import { useCountryPreference } from '../src/state/CountryContext'
 import { colors, spacing } from '../src/design/tokens'

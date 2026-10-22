@@ -4,7 +4,7 @@ import { useAuth, type AuthApi } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import { usePushNotifications } from '../hooks/usePushNotifications'
-import { getCountry } from '../config/currentCountry'
+import { getCountry } from '../domain/currentCountry'
 import type { User } from '../types'
 
 // Product ids belong to one country's backend, so guest favorites do too.

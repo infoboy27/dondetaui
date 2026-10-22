@@ -1,4 +1,4 @@
-import { getCountry } from '../config/currentCountry'
+import { getCountry } from './currentCountry'
 
 // Whole units, like the design system's RD$24,495: converted prices (Eneba)
 // carry cents that only add noise next to shelf prices. Countries whose shelf

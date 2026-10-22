@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store'
-import { getCountry } from '../config/currentCountry'
+import { getCountry } from '../domain/currentCountry'
 
 // Each country is its own backend with its own accounts, so each keeps its own
 // session. DR keeps the original key so existing logins survive the update.
