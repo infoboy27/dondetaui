@@ -97,7 +97,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - Configurar el pago de Eneba en my.eneba.com/affiliates/overview.
 - Cuenta de Play Console (US$25) y Apple Developer Program (US$99/año).
 - Resend: crear la cuenta, verificar el dominio `dondeta.com.do` (registros DNS) y poner `RESEND_API_KEY` en `~/dondeta/.env`. Sin eso no salen los correos de cuenta (verificación, recuperar contraseña, 2FA por correo) ni las alertas por email.
-- Reaplicar a AdSense hacia noviembre de 2026.
+- Reaplicar a AdSense (rechazo del 2026-10-20: «contenido de bajo valor»): ver el plan de abajo, no antes de cumplirlo.
 - Mergear la rama `kong-memoria` del repo serviciosadsemble (otro proyecto, mismo server).
 
 **Siguientes pasos de producto:**
@@ -106,6 +106,11 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - **Datos:** la búsqueda de "Neveras" trae bebederos primero. (Tiendas cercanas se arregló el 2026-10-12 con la migración 023: 41 sucursales.)
 - **Campañas:** las promos pagadas deben llevar el enlace con `utm_medium=paid`, que se genera en /admin → Instagram → Campañas. El costo y el alcance pagado viven en Meta Ads Manager; traerlos al admin requiere un token de Marketing API con `ads_read`.
 - **SEO:** pedir indexación de los 7 tipos restantes de `/precios`.
+- **Plan para reaplicar a AdSense** (rechazo por contenido de bajo valor, 2026-10-20):
+  - *Contenido:* 19 guías de compra (7 originales + 12 nuevas) y fichas con texto propio (historial + posición frente a su categoría). Solo se indexan fichas con 2+ tiendas, o de una tienda con 5+ mediciones en 14+ días y algún cambio de precio (`isThinProduct`); el resto lleva `noindex` y entra solo cuando acumula historial.
+  - *Antes de reaplicar:* en Search Console, enviar el sitemap, pedir indexación de las guías nuevas y de `/precios/*`, y confirmar que «Páginas indexadas» sube y que no hay «Rastreada: sin indexar» en bloque. Esperar al menos 3–4 semanas con tráfico orgánico real y publicar 1–2 guías nuevas por semana.
+  - *Tráfico:* enlazar cada guía nueva desde Instagram (Stories/Reels con `utm_source=instagram`), y enlazar el sitio desde el perfil, la bio y los comentarios; compartir `/bajas-de-precio` y `/black-friday` cuando haya movimiento real (Black Friday es a finales de noviembre).
+  - *Señales que AdSense mira:* páginas «Sobre», «Metodología», «Contacto», «Privacidad» y «Términos» accesibles desde el menú (ya existen) y sin páginas vacías en el índice.
 
 ## 6. Reglas de trabajo
 
