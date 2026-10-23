@@ -44,7 +44,7 @@ export function SiteLinks({ align = 'left' }: { align?: 'left' | 'center' }) {
             href={site.url}
             title={site.name}
             aria-current={site.code === currentCode ? 'true' : undefined}
-            style={{ textDecoration: 'none', opacity: site.code === currentCode ? 1 : 0.55 }}
+            style={{ textDecoration: 'none', fontSize: 18, lineHeight: 1, opacity: site.code === currentCode ? 1 : 0.55 }}
           >
             {site.flag}
           </a>
