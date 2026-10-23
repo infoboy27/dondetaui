@@ -14,7 +14,7 @@ run() {
   fi
 }
 
-RETAILERS="exito alkosto ktronix falabella-co eneba"
+RETAILERS="exito alkosto ktronix falabella-co jumbo-colombia olimpica panamericana eneba"
 
 while true; do
   # Oldest data first (and close runs a restart cut off) -- deploys restart
@@ -27,6 +27,9 @@ while true; do
       alkosto) run alkosto node dist/ingestion/algolia-api.cli.js alkosto ;;
       ktronix) run ktronix node dist/ingestion/algolia-api.cli.js ktronix ;;
       falabella-co) run falabella-co node dist/ingestion/falabella.cli.js falabella-co ;;
+      jumbo-colombia) run jumbo-colombia env JUMBO_COLOMBIA_MAX_PRODUCTS=2500 node dist/ingestion/vtex-api.cli.js jumbo-colombia ;;
+      olimpica) run olimpica env OLIMPICA_MAX_PRODUCTS=2500 node dist/ingestion/vtex-api.cli.js olimpica ;;
+      panamericana) run panamericana node dist/ingestion/vtex-api.cli.js panamericana ;;
       eneba) run eneba env ENEBA_COUNTRY=co ENEBA_CURRENCY=COP node dist/ingestion/eneba.cli.js ;;
     esac
   done

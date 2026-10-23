@@ -20,6 +20,7 @@ const APPLIANCE_CATEGORY_KEYWORDS = [
   'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
   'dispensador', 'freidora', 'air fryer',
   'extractor', 'procesador', 'barras de sonido', 'electro hogar', 'electro cocina',
+  'nevecon', 'lavavajill', 'minibar', 'calentador',
 ]
 
 function isApplianceCategory(categoryName: string): boolean {
