@@ -19,6 +19,13 @@ const STORE_LOGOS: Record<string, number> = {
   JC: require('../../assets/stores/jumbo-colombia.png'),
   OL: require('../../assets/stores/olimpica.png'),
   PA: require('../../assets/stores/panamericana.svg'),
+  AK: require('../../assets/stores/alkosto.svg'),
+  KT: require('../../assets/stores/ktronix.svg'),
+  FA: require('../../assets/stores/falabella.svg'),
+  EX: require('../../assets/stores/exito.svg'),
+  EL: require('../../assets/stores/elektra.svg'),
+  SR: require('../../assets/stores/sears.svg'),
+  CH: require('../../assets/stores/chedraui.png'),
   EN: require('../../assets/stores/eneba-symbol.png'),
 }
 
