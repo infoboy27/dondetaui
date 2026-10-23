@@ -69,4 +69,20 @@ describe('Eneba catalog', () => {
     expect(parseEnebaPrice('0.00 DOP', 'DOP')).toBeNull()
     expect(parseEnebaPrice('60.42 DOP', 'MXN')).toBeNull()
   })
+
+  it('adds Project Zomboid and the plain Game Pass Ultimate listings, not the look-alikes', () => {
+    const items = selectEnebaItems([
+      row('steam-gift-project-zomboid-steam-gift-global', 'Project Zomboid Steam Gift GLOBAL', '502.31 DOP'),
+      row('xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-one-windows-10-xbox-live-key-latam', 'Xbox Game Pass Ultimate - 1 Month (LATAM)', '229.49 DOP'),
+      row('xbox-xbox-game-pass-ultimate-1-month-trial-subscription-xbox-windows-non-stackable-key-latam', 'Xbox Game Pass Ultimate - 1 Month Trial (LATAM)', '234.53 DOP'),
+      row('xbox-xbox-game-pass-ultimate-1-month-trial-subscription-xbox-windows-for-new-accounts-only-key-global', 'Xbox Game Pass Ultimate Trial, new accounts only', '264.34 DOP'),
+      row('xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-windows-non-stackable-key-global', 'Xbox Game Pass Ultimate - 1 Month (Global)', '263.50 DOP'),
+    ], 'DOP')
+
+    expect(items.map(item => [item.name, item.price]).sort()).toEqual([
+      ['Project Zomboid (PC, Steam)', 502.31],
+      ['Xbox Game Pass Ultimate (1 mes, Global)', 263.5],
+      ['Xbox Game Pass Ultimate (1 mes, LATAM)', 229.49],
+    ])
+  })
 })
