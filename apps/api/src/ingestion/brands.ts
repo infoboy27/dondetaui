@@ -12,7 +12,7 @@ const KNOWN_BRANDS = [
   'Rheem', 'Bosch', 'KitchenAid', 'Maytag', 'Amana', 'Winia', 'Royal', 'Avanti',
   'Magic Chef', 'Hyundai', 'Kenmore', 'Sankey', 'Krups', 'Nespresso', 'Remington', 'Conair',
   'Shark', 'Bissell', 'Dyson', 'Rowenta', 'Proctor Silex', 'Holstein', 'Brentwood', 'Cecotec',
-  'Elegance', 'Argom', 'Tornado', 'Lasko', 'Honeywell', 'Coby', 'Klip Xtreme', 'Nex', 'Infinix', 'Motorola',
+  'KTC', 'Elegance', 'Argom', 'Tornado', 'Lasko', 'Honeywell', 'Coby', 'Klip Xtreme', 'Nex', 'Infinix', 'Motorola',
 ].sort((a, b) => b.length - a.length)
 
 function escapeRegex(value: string): string {

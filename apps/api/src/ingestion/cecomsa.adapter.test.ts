@@ -126,9 +126,16 @@ describe('normalizeCecomsaItem', () => {
     })
   })
 
+  it('knows KTC and defaults unbranded names to it', () => {
+    const seed = CECOMSA_SEEDS[0]!
+    expect(normalizeCecomsaItem({ name: 'ESTUFA KTC 24" CON 4 QUEMADORES (24AMG4G001)', path: '/shop/a', code: 'KTC430', price: 14000 }, seed).brand).toBe('KTC')
+    expect(normalizeCecomsaItem({ name: 'ACONDICIONADOR DE AIRE SPLIT INVERTER SEER20 24000BTU (CEAG15-24CRFN1-R32)', path: '/shop/b', code: 'AIRE30', price: 30000 }, seed).brand).toBe('KTC')
+    expect(normalizeCecomsaItem({ name: 'LAVADORA LG 18KG (WT18)', path: '/shop/c', code: 'LAV2', price: 30000 }, seed).brand).toBe('LG')
+  })
+
   it('falls back to the internal code when the name has no model', () => {
     const item = normalizeCecomsaItem({ name: 'Abanico de pedestal', path: '/shop/y-2', code: 'ABA9', price: 900 }, CECOMSA_SEEDS[0]!)
     expect(item.model).toBe('ABA9')
-    expect(item.brand).toBe('Desconocida')
+    expect(item.brand).toBe('KTC')
   })
 })
