@@ -8,6 +8,14 @@ import electrodom from '../assets/logos/electrodom.png'
 import jumboColombia from '../assets/logos/jumbo-colombia.png'
 import olimpica from '../assets/logos/olimpica.png'
 import panamericana from '../assets/logos/panamericana.svg'
+import eneba from '../assets/logos/eneba-symbol.png'
+import alkosto from '../assets/logos/alkosto.svg'
+import ktronix from '../assets/logos/ktronix.svg'
+import falabella from '../assets/logos/falabella.svg'
+import exito from '../assets/logos/exito.svg'
+import elektra from '../assets/logos/elektra.svg'
+import sears from '../assets/logos/sears.svg'
+import chedraui from '../assets/logos/chedraui.png'
 
 // Official logos, pulled directly from each retailer's own site header
 // (PriceSmart's site-header SVG rendered broken standalone -- missing
@@ -34,4 +42,14 @@ export const STORE_LOGOS: Record<string, string> = {
   JC: jumboColombia,
   OL: olimpica,
   PA: panamericana,
+  // Eneba's official symbol as a store badge, approved by Eneba (2026-10-12); the same
+  // approval the app uses. Any other placement of their brand needs approval again.
+  EN: eneba,
+  AK: alkosto,
+  KT: ktronix,
+  FA: falabella,
+  EX: exito,
+  EL: elektra,
+  SR: sears,
+  CH: chedraui,
 }
