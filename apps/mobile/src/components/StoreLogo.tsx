@@ -14,6 +14,8 @@ const STORE_LOGOS: Record<string, number> = {
   CO: require('../../assets/stores/corripio.svg'),
   JU: require('../../assets/stores/jumbo.svg'),
   PS: require('../../assets/stores/pricesmart.png'),
+  CE: require('../../assets/stores/cecomsa.svg'),
+  ED: require('../../assets/stores/electrodom.png'),
   EN: require('../../assets/stores/eneba-symbol.png'),
 }
 

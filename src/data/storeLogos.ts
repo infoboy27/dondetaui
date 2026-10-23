@@ -3,6 +3,8 @@ import sirena from '../assets/logos/sirena.webp'
 import corripio from '../assets/logos/corripio.svg'
 import jumbo from '../assets/logos/jumbo.svg'
 import priceSmart from '../assets/logos/pricesmart.png'
+import cecomsa from '../assets/logos/cecomsa.svg'
+import electrodom from '../assets/logos/electrodom.png'
 
 // Official logos, pulled directly from each retailer's own site header
 // (PriceSmart's site-header SVG rendered broken standalone -- missing
@@ -24,4 +26,6 @@ export const STORE_LOGOS: Record<string, string> = {
   CO: corripio,
   JU: jumbo,
   PS: priceSmart,
+  CE: cecomsa,
+  ED: electrodom,
 }

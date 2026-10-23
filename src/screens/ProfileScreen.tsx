@@ -1,5 +1,6 @@
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon } from '../components/Icons'
 import { SiteLinks, DONATE_URL } from '../components/SiteLinks'
+import { COUNTRY_SITES, countryForHost } from '../domain/countries'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
@@ -18,6 +19,18 @@ interface Props {
 }
 
 export default function ProfileScreen({ user, favoriteCount, alertCount, onFavorites, onAlerts, onLogin, onLogout }: Props) {
+  const currentCountry = countryForHost(window.location.hostname).code
+  // Each country is its own site (own stores and currency): picking one opens it.
+  const COUNTRY_SECTION = {
+    title: 'País',
+    items: COUNTRY_SITES.filter(site => site.live).map(site => ({
+      icon: ({ size }: { size?: number }) => <span aria-hidden style={{ fontSize: size ?? 18, lineHeight: 1 }}>{site.flag}</span>,
+      label: site.name,
+      value: site.code === currentCountry ? 'Estás aquí' : '',
+      accent: false,
+      onClick: () => { if (site.code !== currentCountry) window.location.href = site.url },
+    })),
+  }
   const MENU_SECTIONS = [
     {
       title: 'Mi cuenta',
@@ -54,6 +67,7 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
         { icon: SettingsIcon, label: 'Moneda', value: CURRENCY_SYMBOL, accent: false },
       ],
     },
+    COUNTRY_SECTION,
     {
       title: 'Soporte',
       items: [
