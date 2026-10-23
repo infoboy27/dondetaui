@@ -88,7 +88,9 @@ export function normalizeCecomsaItem(item: CecomsaListingItem, seed: CecomsaSeed
     externalSku: item.code,
     sourceUrl: `${CECOMSA_ORIGIN}${item.path}`,
     name: item.name,
-    brand: brand ? normalizeBrand(brand) : 'Desconocida',
+    // Cecomsa distributes KTC: the few names that omit the brand ("ACONDICIONADOR DE AIRE SPLIT
+    // INVERTER… CEAG15-24…") are KTC models too.
+    brand: brand ? normalizeBrand(brand) : 'KTC',
     model: extractModelCodes(item.name)[0] ?? item.code,
     categoryName: seed.categoryName,
     categorySlug: seed.categorySlug,
