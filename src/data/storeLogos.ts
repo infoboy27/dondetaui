@@ -5,6 +5,9 @@ import jumbo from '../assets/logos/jumbo.svg'
 import priceSmart from '../assets/logos/pricesmart.png'
 import cecomsa from '../assets/logos/cecomsa.svg'
 import electrodom from '../assets/logos/electrodom.png'
+import jumboColombia from '../assets/logos/jumbo-colombia.png'
+import olimpica from '../assets/logos/olimpica.png'
+import panamericana from '../assets/logos/panamericana.svg'
 
 // Official logos, pulled directly from each retailer's own site header
 // (PriceSmart's site-header SVG rendered broken standalone -- missing
@@ -28,4 +31,7 @@ export const STORE_LOGOS: Record<string, string> = {
   PS: priceSmart,
   CE: cecomsa,
   ED: electrodom,
+  JC: jumboColombia,
+  OL: olimpica,
+  PA: panamericana,
 }
