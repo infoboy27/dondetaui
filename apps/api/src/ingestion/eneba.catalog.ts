@@ -70,6 +70,18 @@ const GAMES: Record<string, string> = {
   'gog-the-witcher-3-wild-hunt-remastered-pc-gog-key-global': 'The Witcher 3: Wild Hunt (PC, GOG)',
   'steam-mortal-kombat-11-ultimate-steam-key-global': 'Mortal Kombat 11 Ultimate (PC, Steam)',
   'steam-dead-by-daylight-steam-key-global': 'Dead by Daylight (PC, Steam)',
+  'steam-gift-project-zomboid-steam-gift-global': 'Project Zomboid (PC, Steam)',
+}
+
+// Game Pass Ultimate: only the plain 1-month listings. The feed is full of
+// look-alikes ("trial", "for new accounts only", "valid for a week after
+// purchase") that cost the same but aren't the product people expect. Which of
+// these exist depends on the country feed (DR has none; CO and MX have theirs).
+const GAME_PASS_ULTIMATE: Record<string, string> = {
+  'xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-one-windows-10-xbox-live-key-latam': 'Xbox Game Pass Ultimate (1 mes, LATAM)',
+  'xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-one-windows-10-xbox-live-key-mexico': 'Xbox Game Pass Ultimate (1 mes, México)',
+  'xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-one-windows-10-xbox-live-key-colombia': 'Xbox Game Pass Ultimate (1 mes, Colombia)',
+  'xbox-xbox-game-pass-ultimate-1-month-subscription-xbox-windows-non-stackable-key-global': 'Xbox Game Pass Ultimate (1 mes, Global)',
 }
 
 const RULES: Rule[] = [
@@ -96,7 +108,10 @@ const RULES: Rule[] = [
   {
     group: 'suscripciones',
     brand: 'Microsoft',
-    name: row => (row.id === 'xbox-xbox-game-pass-for-pc-1-month-windows-store-non-stackable-key-global' ? 'Xbox Game Pass para PC (1 mes)' : null),
+    name: row =>
+      row.id === 'xbox-xbox-game-pass-for-pc-1-month-windows-store-non-stackable-key-global'
+        ? 'Xbox Game Pass para PC (1 mes)'
+        : GAME_PASS_ULTIMATE[row.id] ?? null,
   },
   { group: 'juegos', brand: '', name: row => GAMES[row.id] ?? null },
 ]
