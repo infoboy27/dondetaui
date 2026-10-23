@@ -54,6 +54,33 @@ export const VTEX_RETAILER_CONFIGS: Record<string, VtexRetailerConfig> = {
     ],
     defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
   },
+  // Colombian retailers on VTEX (public catalog API, checked 2026-10). Appliance and TV
+  // subtrees only; ingestion.repository.ts still rejects non-appliance categories.
+  'jumbo-colombia': {
+    key: 'jumbo-colombia', name: 'Jumbo', slug: 'jumbo-colombia', abbr: 'JC', primaryColor: '#00A859',
+    websiteUrl: 'https://www.jumbocolombia.com',
+    categoryPaths: [
+      'electrodomesticos/cocina',
+      'electrodomesticos/lavadoras-y-secadoras',
+      'electrodomesticos/climatizacion',
+      'electrodomesticos/refrigeracion',
+      'electrodomesticos/pequenos-electrodomesticos',
+      'televisores-y-audio/television',
+    ],
+    defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
+  },
+  olimpica: {
+    key: 'olimpica', name: 'Olímpica', slug: 'olimpica', abbr: 'OL', primaryColor: '#E2001A',
+    websiteUrl: 'https://www.olimpica.com',
+    categoryPaths: ['electrodomesticos-y-tecnologia/electro-hogar', 'electrodomesticos-y-tecnologia/tv-audio-y-video'],
+    defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
+  },
+  panamericana: {
+    key: 'panamericana', name: 'Panamericana', slug: 'panamericana', abbr: 'PA', primaryColor: '#D71920',
+    websiteUrl: 'https://www.panamericana.com.co',
+    categoryPaths: ['hogar/electro', 'tecnologia/tv-y-video'],
+    defaultCategory: { name: 'Electrodomésticos', slug: 'electrodomesticos' },
+  },
   chedraui: {
     key: 'chedraui', name: 'Chedraui', slug: 'chedraui', abbr: 'CH', primaryColor: '#EE1C25',
     websiteUrl: 'https://www.chedraui.com.mx',
