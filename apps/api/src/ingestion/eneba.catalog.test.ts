@@ -85,4 +85,16 @@ describe('Eneba catalog', () => {
       ['Xbox Game Pass Ultimate (1 mes, LATAM)', 229.49],
     ])
   })
+
+  it('adds the Modern Warfare 4 Vault Edition but not its DLC or skins', () => {
+    const items = selectEnebaItems([
+      row('steam-call-of-duty-modern-warfare-4-vault-edition-steam-key-pc-global', 'Call of Duty: Modern Warfare 4 - Vault Edition Steam Key (PC) GLOBAL', '7409.38 DOP'),
+      row('xbox-call-of-duty-modern-warfare-4-vault-edition-windows-xbox-series-x-s-xbox-live-key-global', 'Call of Duty: Modern Warfare 4 Vault Edition (Windows/Xbox Series X|S)', '5886.23 DOP'),
+      row('other-call-of-duty-modern-warfare-4-zero-chill-operator-skin-dlc-ps4-ps5-xbox-one-xbox-series-x-pc-official-website-key-global', 'MW4 - Zero Chill Operator Skin (DLC)', '158.24 DOP'),
+    ], 'DOP')
+    expect(items.map(item => item.name).sort()).toEqual([
+      'Call of Duty: Modern Warfare 4 Vault Edition (PC, Steam)',
+      'Call of Duty: Modern Warfare 4 Vault Edition (Xbox / Windows)',
+    ])
+  })
 })
