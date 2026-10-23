@@ -71,6 +71,9 @@ const GAMES: Record<string, string> = {
   'steam-mortal-kombat-11-ultimate-steam-key-global': 'Mortal Kombat 11 Ultimate (PC, Steam)',
   'steam-dead-by-daylight-steam-key-global': 'Dead by Daylight (PC, Steam)',
   'steam-gift-project-zomboid-steam-gift-global': 'Project Zomboid (PC, Steam)',
+  // Only the Vault Edition is listed (the feed's other MW4 rows are DLC and skins).
+  'steam-call-of-duty-modern-warfare-4-vault-edition-steam-key-pc-global': 'Call of Duty: Modern Warfare 4 Vault Edition (PC, Steam)',
+  'xbox-call-of-duty-modern-warfare-4-vault-edition-windows-xbox-series-x-s-xbox-live-key-global': 'Call of Duty: Modern Warfare 4 Vault Edition (Xbox / Windows)',
 }
 
 // Game Pass Ultimate: only the plain 1-month listings. The feed is full of
