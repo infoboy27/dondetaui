@@ -1,15 +1,18 @@
 import type { Product } from '../types'
 import { getBestOffer, getOfferTotal } from './offers'
+import { currentSocialProfile, type SocialProfile } from './socialProfile'
 
 // Content rules for the Instagram autopilot (src/screens/admin/IgRender.tsx).
 // Pure, so they're testable without a canvas.
 
 // A comparison is only worth a post when the gap is something people feel:
 // RD$1,000+, or 10%+ of the price on cheaper items (a RD$400 gap on a
-// RD$3,000 blender still is). A RD$0-50 "comparison" is noise.
-export function isWorthSharing(savings: number, bestPrice: number): boolean {
+// RD$3,000 blender still is). A RD$0-50 "comparison" is noise. Thresholds are
+// in RD$ and scale with the country's currency (SocialProfile.priceScale).
+export function isWorthSharing(savings: number, bestPrice: number, profile: SocialProfile = currentSocialProfile()): boolean {
   if (!(savings > 0) || !(bestPrice > 0)) return false
-  return savings >= 1_000 || (savings >= 300 && savings / bestPrice >= 0.1)
+  const scale = profile.priceScale
+  return savings >= 1_000 * scale || (savings >= 300 * scale && savings / bestPrice >= 0.1)
 }
 
 export function bestPrice(product: Product): number | undefined {
@@ -50,22 +53,23 @@ function normalize(text: string): string {
   return ` ${text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()} `
 }
 
-export function matchesType(product: Product, type: ProductType): boolean {
+export function matchesType(product: Product, type: ProductType, profile: SocialProfile = currentSocialProfile()): boolean {
   const name = normalize(product.name)
   if (!type.keywords.some(keyword => name.includes(normalize(keyword).trim()))) return false
   if (type.exclude?.some(word => name.includes(normalize(word).trim()))) return false
   const price = bestPrice(product)
-  return price !== undefined && price >= type.minPrice
+  return price !== undefined && price >= type.minPrice * profile.priceScale
 }
 
-export function productType(product: Product): ProductType | undefined {
-  return PRODUCT_TYPES.find(type => matchesType(product, type))
+export function productType(product: Product, profile: SocialProfile = currentSocialProfile()): ProductType | undefined {
+  return PRODUCT_TYPES.find(type => matchesType(product, type, profile))
 }
 
 // Few, local and specific: Instagram now recommends 3-5 hashtags.
-export function hashtags(product: Product | null): string {
-  const specific = product ? productType(product)?.hashtag : undefined
-  return ['#DóndeTa', '#OfertasRD', '#SantoDomingo', specific ?? '#Electrodomésticos', '#AhorroRD'].join(' ')
+export function hashtags(product: Product | null, profile: SocialProfile = currentSocialProfile()): string {
+  const specific = product ? productType(product, profile)?.hashtag : undefined
+  const { offers, city, savings } = profile.tags
+  return ['#DóndeTa', offers, city, specific ?? '#Electrodomésticos', savings].join(' ')
 }
 
 // A closing question invites comments, which is what Instagram rewards.
@@ -89,11 +93,32 @@ const QUESTIONS = {
   ],
 }
 
-export function closingQuestion(kind: keyof typeof QUESTIONS, seed: string): string {
+// Same questions in English, same order, for the bilingual (US) profile.
+const QUESTIONS_EN = {
+  comparison: [
+    'Did you know the gap was this big? 👇',
+    'Which store would you have bought it from? 👇',
+    'Tag someone who is looking for one 👇',
+    'What product should we compare next? Tell us below 👇',
+  ],
+  drop: [
+    'Were you waiting for this? 👇',
+    'Tag someone who needs one 👇',
+    'What other product should we watch? 👇',
+  ],
+  top5: [
+    'Which one would you take? 👇',
+    'Save it for when you go shopping 📌',
+    'What should we compare next week? 👇',
+  ],
+}
+
+export function closingQuestion(kind: keyof typeof QUESTIONS, seed: string, profile: SocialProfile = currentSocialProfile()): string {
   let hash = 0
   for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  const list = QUESTIONS[kind]
-  return list[hash % list.length]
+  const index = hash % QUESTIONS[kind].length
+  const spanish = QUESTIONS[kind][index]
+  return profile.bilingual ? `${spanish}\n${QUESTIONS_EN[kind][index]}` : spanish
 }
 
 // Weekly "Top 5" carousel: a different product type each week, the five

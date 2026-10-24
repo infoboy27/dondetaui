@@ -71,6 +71,10 @@ services:
       # refreshes it on its own) and the public base URL Instagram downloads
       # the post image from.
       IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
+      # Facebook Page of this country (cross-post of every feed post; off until switched on in /admin/instagram).
+      FB_PAGE_ID: ${FB_PAGE_ID:-}
+      FB_PAGE_ACCESS_TOKEN: ${FB_PAGE_ACCESS_TOKEN:-}
+      COUNTRY_CODE: ${COUNTRY_CODE:-DO}
       IG_AUTOPILOT_FEED_HOUR: ${IG_AUTOPILOT_FEED_HOUR:-12}
       IG_AUTOPILOT_STORY_HOUR: ${IG_AUTOPILOT_STORY_HOUR:-19}
       SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
@@ -235,6 +239,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-dondeta}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-dondeta}
       IG_ACCESS_TOKEN: ${IG_ACCESS_TOKEN:-}
+      # Facebook Page of this country (cross-post of every feed post; off until switched on in /admin/instagram).
+      FB_PAGE_ID: ${FB_PAGE_ID:-}
+      FB_PAGE_ACCESS_TOKEN: ${FB_PAGE_ACCESS_TOKEN:-}
+      COUNTRY_CODE: ${COUNTRY_CODE:-DO}
       IG_AUTOPILOT_FEED_HOUR: ${IG_AUTOPILOT_FEED_HOUR:-12}
       IG_AUTOPILOT_STORY_HOUR: ${IG_AUTOPILOT_STORY_HOUR:-19}
       DISCORD_WEBHOOK_ALERTS: ${DISCORD_WEBHOOK_ALERTS:-}

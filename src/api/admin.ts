@@ -171,7 +171,21 @@ export interface InstagramAutopilot {
   slots: { target: 'feed' | 'story'; hour: number }[]
 }
 
+export interface FacebookCrossPost {
+  configured: boolean
+  enabled: boolean
+  page?: string
+  error?: string
+  history?: { id: string; format: string; status: 'published' | 'failed'; permalink: string | null; error: string | null; created_at: string }[]
+}
+
 export const adminApi = {
+  igFacebook(): Promise<FacebookCrossPost> {
+    return apiFetch('/admin/instagram/facebook')
+  },
+  igSetFacebook(enabled: boolean): Promise<FacebookCrossPost> {
+    return apiFetch('/admin/instagram/facebook', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) })
+  },
   igAutopilot(): Promise<InstagramAutopilot> {
     return apiFetch('/admin/instagram/autopilot')
   },
