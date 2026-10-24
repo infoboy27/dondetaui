@@ -32,6 +32,17 @@ export class InstagramAdminController {
     return this.instagram.autopilot()
   }
 
+  @Get('facebook')
+  facebook() {
+    return this.instagram.facebook()
+  }
+
+  @Put('facebook')
+  setFacebook(@Body() body: { enabled?: boolean }) {
+    if (typeof body.enabled !== 'boolean') throw new BadRequestException('enabled debe ser true o false')
+    return this.instagram.setFacebook(body.enabled)
+  }
+
   @Put('autopilot')
   setAutopilot(@Body() body: { enabled?: boolean }) {
     if (typeof body.enabled !== 'boolean') throw new BadRequestException('enabled debe ser true o false')

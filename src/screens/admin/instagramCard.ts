@@ -1,5 +1,6 @@
 import { formatPrice } from '../../domain/currency'
 import { closingQuestion, hashtags } from '../../domain/instagram'
+import { currentSocialProfile, englishLine } from '../../domain/socialProfile'
 import { getOfferTotal, getSavingsRange, rankOffers } from '../../domain/offers'
 import type { Product } from '../../types'
 
@@ -190,7 +191,7 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
   ctx.fillText(tag, W - pad - ctx.measureText(tag).width, CARD_HEIGHT - 66)
 }
 
-const LOCATION = '📍 Santo Domingo, República Dominicana'
+const profile = () => currentSocialProfile()
 
 function distinctOffers(product: Product) {
   return rankOffers(product.prices).filter((offer, i, all) => all.findIndex(o => o.store === offer.store) === i)
@@ -211,7 +212,8 @@ export function caption(product: Product, kind: CardKind, site: string): string 
       closingQuestion('comparison', product.id),
       '',
       `🔎 Compara cualquier electrodoméstico gratis en ${site} (link en la bio)`,
-      LOCATION,
+      ...englishLine(profile(), `🔎 Compare any appliance for free at ${site} (link in bio)`),
+      profile().location,
       '',
       hashtags(product),
     ].join('\n')
@@ -223,7 +225,8 @@ export function caption(product: Product, kind: CardKind, site: string): string 
     closingQuestion('drop', product.id),
     '',
     `🔔 Crea una alerta de precio gratis en ${site} (link en la bio)`,
-    LOCATION,
+    ...englishLine(profile(), `🔔 Set a free price alert at ${site} (link in bio)`),
+    profile().location,
     '',
     hashtags(product),
   ].join('\n')
@@ -249,7 +252,7 @@ export function drawStory(story: HTMLCanvasElement, card: HTMLCanvasElement, kin
   ctx.fillText(kind.type === 'comparison' ? "¿Dónde 'ta más barato?" : '¡Bajó de precio!', CARD_WIDTH / 2, 180)
   ctx.font = '500 36px "DM Sans"'
   ctx.globalAlpha = 0.9
-  ctx.fillText('Comparamos precios de las tiendas de RD por ti', CARD_WIDTH / 2, 240)
+  ctx.fillText(`Comparamos precios de ${profile().storesPhrase} por ti`, CARD_WIDTH / 2, 240)
   ctx.globalAlpha = 1
 
   // The card itself, slightly inset, with rounded corners and a shadow.
@@ -342,7 +345,7 @@ export function drawTopCover(canvas: HTMLCanvasElement, type: TopType, dateLabel
   for (const [i, line] of wrap(ctx, type.label, W - 144, 2).entries()) centered(ctx, line, 590 + i * 110, W)
   ctx.font = '700 72px Poppins'
   ctx.fillStyle = C.yellow
-  centered(ctx, `${title.cheapest} de RD`, 590 + Math.min(2, wrap(ctx, type.label, W - 144, 2).length) * 110 + 10, W)
+  centered(ctx, `${title.cheapest} ${profile().cheapestOf}`, 590 + Math.min(2, wrap(ctx, type.label, W - 144, 2).length) * 110 + 10, W)
 
   ctx.fillStyle = '#fff'
   ctx.font = '500 38px "DM Sans"'
@@ -471,14 +474,14 @@ export function topCaption(type: TopType, items: Product[], dateLabel: string, s
     return `${i + 1}. ${product.name} — ${best ? `${formatPrice(getOfferTotal(best))} en ${best.store}` : ''}`
   })
   return [
-    `📌 ${topTitle(type).article} 5 ${type.label} ${topTitle(type).cheapest} de RD esta semana`,
+    `📌 ${topTitle(type).article} 5 ${type.label} ${topTitle(type).cheapest} ${profile().cheapestOf} esta semana`,
     '',
     ...lines,
     '',
     `Precios del ${dateLabel}; pueden cambiar. ${closingQuestion('top5', type.slug + dateLabel)}`,
     '',
     `🔎 Compara ${type.masculine ? 'todos los' : 'todas las'} ${type.label} en ${site}/precios/${type.slug} (link en la bio)`,
-    LOCATION,
+    profile().location,
     '',
     hashtags(items[0] ?? null),
   ].join('\n')
@@ -652,7 +655,7 @@ export function drawReelScenes(product: Product, kind: CardKind, image: HTMLImag
     centered(ctx, site, 1113, REEL_W)
     ctx.font = '500 48px "DM Sans"'
     ctx.fillStyle = C.yellow
-    centered(ctx, 'Síguenos para más ofertas de RD', 1330, REEL_W)
+    centered(ctx, `Síguenos para más ${profile().followLine}`, 1330, REEL_W)
     scenes.push({ canvas, seconds: 2.8, zoom: true })
   }
 

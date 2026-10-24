@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, ServiceUnavailableException } fr
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
 import { instagramSessions } from './google-analytics'
+import { FacebookService } from './facebook.service'
 import { breakdown, byFormat, mediaFormat, series, totals, type InstagramInsights, type MediaRow, type PostStats } from './instagram-insights'
 
 // Publishing through the Instagram API with Instagram Login (graph.instagram.com):
@@ -128,6 +129,16 @@ export class InstagramService {
       [limit],
     )
     return result.rows
+  }
+
+  // The country's Facebook Page, fed by every feed post (see facebook.service.ts).
+  async facebook() {
+    const facebook = new FacebookService(this.pool)
+    return { ...(await facebook.status()), history: await facebook.history() }
+  }
+
+  setFacebook(enabled: boolean) {
+    return new FacebookService(this.pool).setEnabled(enabled)
   }
 
   async autopilot() {
@@ -361,6 +372,14 @@ export class InstagramService {
         `update instagram_posts set status = 'published', ig_media_id = $2, permalink = $3, published_at = now() where id = $1`,
         [postId, media.id, details.permalink ?? null],
       )
+      // The country's Facebook Page gets the same post (feed only; best effort, never fails this one).
+      if (input.target === 'feed') {
+        const photoUrls = input.format === 'carousel' ? [...input.media.keys()].map(mediaUrl) : [`${base}.jpg`]
+        await new FacebookService(this.pool).crossPost({
+          instagramPostId: postId, format: input.format, caption: input.caption, productId: input.productId,
+          photoUrls, videoUrl: input.format === 'reel' ? mediaUrl(0) : null, siteUrl: input.publicBaseUrl,
+        })
+      }
       return { id: postId, status: 'published', permalink: details.permalink ?? null }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)

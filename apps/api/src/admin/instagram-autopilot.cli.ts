@@ -22,7 +22,9 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required')
 const siteUrl = (process.env.SITE_URL ?? '').replace(/\/+$/, '')
 const pool = new Pool({ connectionString: databaseUrl, max: 2 })
 
-const TZ = 'America/Santo_Domingo'
+// Each country's autopilot posts on its own clock (noon / evening local time).
+const TIME_ZONES: Record<string, string> = { DO: 'America/Santo_Domingo', CO: 'America/Bogota', MX: 'America/Mexico_City', US: 'America/New_York' }
+const TZ = TIME_ZONES[process.env.COUNTRY_CODE ?? 'DO'] ?? 'America/Santo_Domingo'
 const MAX_ATTEMPTS = 3
 // Don't repeat a product for this long (feed) / across any target.
 const FEED_REPEAT_DAYS = 14

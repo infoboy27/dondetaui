@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getToken } from '../../auth/session'
 import { productsApi } from '../../api/products'
-import { adminApi, type InstagramAutopilot, type InstagramPost, type InstagramStatus } from '../../api/admin'
+import { adminApi, type FacebookCrossPost, type InstagramAutopilot, type InstagramPost, type InstagramStatus } from '../../api/admin'
 import { appConfig } from '../../config/env'
 import { colors, fonts, radii } from '../../design/tokens'
 import { getTopPriceDrops } from '../../domain/notifications'
@@ -60,6 +60,7 @@ export default function AdminInstagram() {
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 0' }}>
         <ConnectionBanner status={status} />
         {canPublish && <AutopilotSwitch />}
+        {canPublish && <FacebookSwitch />}
         {canPublish && <div style={{ marginTop: 16 }}><CustomPost onPublished={refreshHistory} /></div>}
         {canPublish && <div style={{ marginTop: 16 }}><InstagramMetrics /></div>}
         <div style={{ marginTop: 16 }}><Campaigns /></div>
@@ -174,6 +175,55 @@ function AutopilotSwitch() {
         style={{ ...btn, flex: 'none', background: autopilot.enabled ? colors.background : colors.primary, color: autopilot.enabled ? colors.navy : '#fff' }}
       >
         {saving ? 'Guardando…' : autopilot.enabled ? 'Apagar' : 'Activar'}
+      </button>
+    </div>
+  )
+}
+
+// Cross-post of every feed post to this country's Facebook Page (apps/api/src/admin/facebook.service.ts).
+// Needs FB_PAGE_ID and FB_PAGE_ACCESS_TOKEN in the stack's .env; stories are not cross-posted.
+function FacebookSwitch() {
+  const [facebook, setFacebook] = useState<FacebookCrossPost | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => { adminApi.igFacebook().then(setFacebook).catch(() => {}) }, [])
+  if (!facebook) return null
+
+  const toggle = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      setFacebook(await adminApi.igSetFacebook(!facebook.enabled))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+  const last = facebook.history?.[0]
+
+  return (
+    <div style={{ marginTop: 10, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: radii.md, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', fontSize: 13, fontFamily: fonts.body, color: colors.navy }}>
+      <div style={{ flex: '1 1 260px' }}>
+        <b>Facebook {facebook.configured ? (facebook.enabled ? 'activado' : 'apagado') : 'sin conectar'}.</b>{' '}
+        {!facebook.configured
+          ? 'Falta FB_PAGE_ID y FB_PAGE_ACCESS_TOKEN en la configuración de este país.'
+          : facebook.error
+            ? `Error con la Página: ${facebook.error}`
+            : `Cada post del feed (imagen, carrusel o Reel) también se publica en la Página ${facebook.page ?? ''}, con enlace directo al producto. Las historias no se replican.`}
+        {last && <div style={{ color: last.status === 'failed' ? colors.error : colors.navy400, marginTop: 4 }}>
+          Último: {last.status === 'published' ? 'publicado' : `falló (${last.error ?? 'sin detalle'})`}
+        </div>}
+        {error && <div style={{ color: colors.error, marginTop: 4 }}>{error}</div>}
+      </div>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={saving || !facebook.configured}
+        style={{ ...btn, flex: 'none', background: facebook.enabled ? colors.background : colors.primary, color: facebook.enabled ? colors.navy : '#fff' }}
+      >
+        {saving ? 'Guardando…' : facebook.enabled ? 'Apagar' : 'Activar'}
       </button>
     </div>
   )

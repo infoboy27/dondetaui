@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { productsApi } from '../../api/products'
+import { currentSocialProfile } from '../../domain/socialProfile'
 import { bestPrice, isWorthSharing, weekIndex, weeklyTop } from '../../domain/instagram'
 import { getTopPriceDrops } from '../../domain/notifications'
 import { getTopComparisons } from '../../domain/offers'
@@ -77,7 +78,7 @@ const jpeg = (canvas: HTMLCanvasElement) => canvas.toDataURL('image/jpeg', 0.92)
 
 // "11 de octubre"
 function dateLabel(date = new Date()): string {
-  return new Intl.DateTimeFormat('es-DO', { day: 'numeric', month: 'long', timeZone: 'America/Santo_Domingo' }).format(date)
+  return new Intl.DateTimeFormat(currentSocialProfile().locale, { day: 'numeric', month: 'long', timeZone: currentSocialProfile().timeZone }).format(date)
 }
 
 // Headless counterpart of AdminInstagram for the Instagram autopilot
