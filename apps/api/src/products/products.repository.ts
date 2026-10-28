@@ -20,6 +20,7 @@ interface ProductRow {
   category_id: string
   discount: number | null
   previous_price: string | number | null
+  specs: Record<string, string> | null
 }
 
 const LIST_HISTORY_DAYS = 30
@@ -185,7 +186,8 @@ export class ProductsRepository {
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
-        coalesce(p.previous_price, 0) as previous_price
+        coalesce(p.previous_price, 0) as previous_price,
+        pv.attributes as specs
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
@@ -211,7 +213,8 @@ export class ProductsRepository {
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
-        coalesce(p.previous_price, 0) as previous_price
+        coalesce(p.previous_price, 0) as previous_price,
+        pv.attributes as specs
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
@@ -243,7 +246,8 @@ export class ProductsRepository {
         c.name as category,
         c.slug as category_id,
         coalesce(p.discount, 0) as discount,
-        coalesce(p.previous_price, 0) as previous_price
+        coalesce(p.previous_price, 0) as previous_price,
+        pv.attributes as specs
       from products p
       join product_variants pv on pv.product_id = p.id and pv.is_primary = true
       join categories c on c.id = p.category_id
@@ -421,6 +425,7 @@ export class ProductsRepository {
       previousPrice: Number(row.previous_price ?? 0),
       prices,
       priceHistory,
+      specs: row.specs ?? {},
     }
   }
 

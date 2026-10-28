@@ -30,6 +30,25 @@ interface VtexProduct {
   link: string
   categories?: string[]
   items?: VtexItem[]
+  // Names of the specification fields; each one is also a top-level property
+  // of the product holding its values as a string array.
+  allSpecifications?: string[]
+  [specification: string]: unknown
+}
+
+// Internal codes and placeholders VTEX stores next to the real specifications.
+const IGNORED_SPECS = new Set(['TaxIndicator', 'MaterialGroupCode', 'Modelo', 'Garantía'])
+
+export function extractVtexSpecs(product: VtexProduct): Record<string, string> | undefined {
+  const specs: Record<string, string> = {}
+  for (const name of product.allSpecifications ?? []) {
+    if (IGNORED_SPECS.has(name)) continue
+    const raw = product[name]
+    if (!Array.isArray(raw)) continue
+    const value = raw.filter((v): v is string => typeof v === 'string' && v !== 'defaultValue' && v.trim() !== '').join(', ')
+    if (value) specs[name.trim()] = value.trim()
+  }
+  return Object.keys(specs).length ? specs : undefined
 }
 
 // Strips NFD-decomposed combining diacritical marks (Unicode block
@@ -120,6 +139,7 @@ export class VtexApiAdapter {
       price: offer.price,
       shippingPrice: 0,
       available: offer.available,
+      specs: extractVtexSpecs(product),
       raw: { source: `${this.config.slug}-vtex-api`, fetchedAt: new Date().toISOString(), productId: product.productId, itemId: item.itemId },
     }
   }

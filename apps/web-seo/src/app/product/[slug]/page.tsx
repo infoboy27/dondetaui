@@ -6,6 +6,7 @@ import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
 import { describeMarketPosition, marketPosition } from '../../../lib/insights'
 import { outboundHref, rankOffers } from '../../../lib/offers'
+import { similarProducts } from '../../../lib/specs'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
 import { currencyCode, hasGuides, productDescription } from '../../../lib/country'
@@ -75,6 +76,7 @@ export default async function ProductPage({ params }: Props) {
   const bestOffer = offers[0]
   const storeCount = new Set(offers.map(offer => offer.store)).size
   const category = seoCategoryFor(product)
+  const similar = similarProducts(product, catalog)
   const historyStats = analyzeHistory(product.priceHistory, bestOffer?.price)
 
   const jsonLd = {
@@ -282,6 +284,23 @@ export default async function ProductPage({ params }: Props) {
           recopilamos los datos y qué limitaciones tienen.
         </p>
       </section>
+
+      {similar.length > 0 && (
+        <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 10px' }}>
+            Comparar con similares
+          </h2>
+          <p style={{ fontFamily: fonts.body, fontSize: 13, lineHeight: 1.7, color: colors.navy400, margin: '0 0 10px' }}>
+            Mira las características y el precio de {product.name} junto a productos parecidos.
+          </p>
+          <a
+            href={`/comparar?${[product, ...similar].map(p => `p=${encodeURIComponent(p.slug)}`).join('&')}`}
+            style={{ fontFamily: fonts.body, fontSize: 13, fontWeight: 600, color: colors.primary }}
+          >
+            Comparar con {similar.map(p => p.name).join(' y ')}
+          </a>
+        </section>
+      )}
 
       {reviews.reviews.length > 0 && (
         <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '14px 16px' }}>

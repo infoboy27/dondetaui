@@ -39,6 +39,8 @@ export interface Product {
   priceHistory?: PricePoint[]
   previousPrice?: number
   discount?: number
+  // Technical specs as retailers label them; absent on older API responses.
+  specs?: Record<string, string>
 }
 
 export interface Store {

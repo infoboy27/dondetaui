@@ -22,6 +22,9 @@ export interface NormalizedRetailerItem {
   price: number
   shippingPrice: number
   available: boolean
+  // Technical specifications as the retailer labels them ("Resolución": "4K").
+  // Merged into product_variants.attributes; omitted when the source has none.
+  specs?: Record<string, string>
   raw: Record<string, unknown>
 }
 

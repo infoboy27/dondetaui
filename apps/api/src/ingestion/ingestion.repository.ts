@@ -137,6 +137,14 @@ export class IngestionRepository {
 
       const offerId = await this.upsertOffer(client, retailerId, variantId, item)
 
+      if (item.specs && Object.keys(item.specs).length) {
+        // Newest values win, keys another retailer contributed are kept.
+        await client.query(
+          `update product_variants set attributes = attributes || $2::jsonb where id = $1`,
+          [variantId, JSON.stringify(item.specs)],
+        )
+      }
+
       await client.query(
         `insert into price_observations(offer_id, price, shipping_price, availability)
          values ($1, $2, $3, $4)`,
