@@ -28,6 +28,8 @@ export interface ProductDto {
   previousPrice: number
   prices: OfferDto[]
   priceHistory: Array<{ date: string; price: number }>
+  // Technical specifications as the retailers label them; {} when none captured yet.
+  specs: Record<string, string>
   favorite?: boolean
   alerted?: boolean
 }
