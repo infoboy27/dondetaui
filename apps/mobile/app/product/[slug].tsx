@@ -14,6 +14,7 @@ import { type } from '../../src/design/type'
 import { haptics } from '../../src/design/haptics'
 import ProductImage from '../../src/components/ProductImage'
 import ProductReviews from '../../src/components/ProductReviews'
+import ProductSpecs from '../../src/components/ProductSpecs'
 import BannerSlot from '../../src/ads/BannerSlot'
 import StoreLogo from '../../src/components/StoreLogo'
 import Icon, { type IconName } from '../../src/components/Icon'
@@ -232,6 +233,8 @@ export default function ProductDetailScreen() {
             )
           })}
         </View>
+
+        <ProductSpecs specs={product.specs} />
 
         <ProductReviews productId={product.id} />
         <BannerSlot />
