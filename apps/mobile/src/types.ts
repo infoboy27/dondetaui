@@ -50,6 +50,8 @@ export interface Product {
   previousPrice: number
   prices: StorePrice[]
   priceHistory: { date: string; price: number }[]
+  // Technical specs as the retailers label them; absent from older API builds.
+  specs?: Record<string, string>
   favorite?: boolean
   alerted?: boolean
 
