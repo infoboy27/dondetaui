@@ -8,7 +8,7 @@ insert into card_promotions (retailer_id, bank, card, percent, max_discount, min
 select r.id, v.bank, v.card, v.percent, v.max_discount, v.min_purchase, null, v.starts_on::date, v.ends_on::date, v.terms_url, v.note
 from (values
   ('jumbo',      'Banco Caribe', null,              25, 12000, 4000, '2026-10-30', '2026-11-03', 'https://jumbo.com.do/promo-banco-caribe',
-   'solo tarjetas de crédito; reembolso al estado de cuenta'),
+   'solo crédito; reembolso'),
   ('sirena',     'APAP',         'Visa Sirena',      7, 10000,    0, '2026-10-29', '2026-11-30', 'https://apap.com.do/?p=9059',
    'reembolso'),
   ('corripio',   'BHD',          'Visa Mi País',     6,  2000,    0, '2026-10-29', '2026-11-30', 'https://bhd.com.do/homepage-personal/tarjetas/cards/482058e5-2e50-405b-bf50-e06fe9ef9ab0',
