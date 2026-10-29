@@ -21,6 +21,10 @@ describe('bestCardDeal', () => {
     expect(deal?.total).toBe(18500)
   })
 
+  it('rounds the card price to whole pesos', () => {
+    expect(bestCardDeal(offer({ price: 2954.72 }), [promo({ percent: 6 })], 2)?.total).toBe(2778)
+  })
+
   it('caps the discount at the bank maximum', () => {
     expect(bestCardDeal(offer(), [promo({ maxDiscount: 1500 })], 2)?.discount).toBe(1500)
   })
