@@ -1,3 +1,4 @@
+import type { CardPromotion } from './cardPromotions'
 import type { PriceCheckReport, Product, ReviewSummary, Store } from './types'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001/api'
@@ -16,6 +17,11 @@ async function apiFetch<T>(path: string): Promise<T | null> {
 
 export function getProductBySlug(slug: string): Promise<Product | null> {
   return apiFetch<Product>(`/products/by-slug/${encodeURIComponent(slug)}`)
+}
+
+// Bank card discounts running today; an API failure just hides them.
+export async function getCardPromotions(): Promise<CardPromotion[]> {
+  return (await apiFetch<CardPromotion[]>('/card-promotions').catch(() => null)) ?? []
 }
 
 export function getProductReviews(productId: string): Promise<ReviewSummary> {

@@ -1,6 +1,8 @@
+import type { CardDeal } from '../domain/cardPromotions'
 import { formatPrice } from '../domain/currency'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
+import CardDealLine from './CardDealLine'
 import { ClockIcon, TruckIcon } from './Icons'
 import StoreLogo from './StoreLogo'
 
@@ -8,9 +10,10 @@ interface StoreOfferRowProps {
   offer: StorePrice
   isBest: boolean
   savings: number
+  deal?: CardDeal
 }
 
-export default function StoreOfferRow({ offer, isBest, savings }: StoreOfferRowProps) {
+export default function StoreOfferRow({ offer, isBest, savings, deal }: StoreOfferRowProps) {
   return (
     <div
       style={{
@@ -85,6 +88,7 @@ export default function StoreOfferRow({ offer, isBest, savings }: StoreOfferRowP
             </span>
           </div>
         </div>
+        {deal && <CardDealLine deal={deal} />}
       </div>
 
       <div style={{ textAlign: 'right' }}>

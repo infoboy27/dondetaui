@@ -84,6 +84,13 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
   - propuestas PDF para tiendas;
   - Instagram: publicación de productos, publicación propia (imágenes) y el piloto automático (Reels lun/mié/vie y carrusel Top 5 los domingos);
   - **Campañas**: tráfico y clics a tiendas por `utm_campaign`, más un generador de enlaces para las promociones pagadas.
+  - **Tarjetas** (`/admin/tarjetas`): descuentos con tarjeta por tienda (banco, %, tope, compra mínima, días, fechas). Se cargan a mano.
+- **Descuentos con tarjeta** (tabla `card_promotions`, migración 029):
+  - dónde se ven: en cada tienda del producto (web, `apps/web-seo` y app), como el total con envío menos el mejor descuento que aplica hoy (hora RD);
+  - qué no cambia: el orden de "Más barato";
+  - vencimiento: la fecha de fin es obligatoria; la API oculta la promo al día siguiente y la borra cada 6 h;
+  - Instagram: los posts diarios añaden la línea "💳 Con tarjeta…" o mencionan en qué tiendas hay descuentos hoy;
+  - lanzamiento: el post está en `marketing/tarjetas-2026-11/` y se publica cuando haya promos reales cargadas.
 - Instagram `@dondetard`: lanzamiento Eneba publicado (carrusel, historia y post de alianza).
 - Instagram programado: la tabla `instagram_scheduled` guarda posts para una fecha; el ciclo del piloto automático los publica a su hora (aunque el piloto esté apagado), reintenta 3 veces y descarta lo que llega más de 6 h tarde, avisando por Discord. Campaña Black Friday 2026 (13, 24 y 27 de nov; feed 11:00 e historia 18:00, hora RD) en `marketing/black-friday-2026-11/` (`schedule_sql.py` genera el SQL de carga).
 - **Pendiente 2027:** cargar los posts de feriados comerciales de 2027 (15 momentos, 30 posts: San Valentín, Madres, Padres, regreso a clases, Black Friday, Cyber Monday, Navidad, Fin de año) con `marketing/feriados/` (ver su README) a más tardar a finales de diciembre de 2026, tras revisar textos y diseños. Los de 2026 (Cyber Monday, Navidad, Fin de año) se cargan con `--skip bf-1,bf-2,bf-3`.

@@ -6,6 +6,8 @@ import { productsApi } from '../../src/api/products'
 import { friendlyError } from '../../src/api/errors'
 import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offers'
 import { isGaming } from '../../src/domain/gaming'
+import { bestCardDeal, cardDealConditions, cardName } from '../../src/domain/cardPromotions'
+import { useCardPromotions } from '../../src/hooks/useCardPromotions'
 import { offerUrl, openInApp, productWebUrl } from '../../src/domain/links'
 import DiscountCode from '../../src/components/DiscountCode'
 import { formatPrice } from '../../src/domain/currency'
@@ -33,6 +35,7 @@ export default function ProductDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const promotions = useCardPromotions()
 
   useEffect(() => {
     let cancelled = false
@@ -196,6 +199,8 @@ export default function ProductDetailScreen() {
             const url = offerUrl(product, offer)
             const storeSlug = STORE_SLUGS[offer.abbr]
             const isBest = index === 0 && !singleStore
+            const deal = bestCardDeal(offer, promotions)
+            const conditions = deal ? cardDealConditions(deal.promotion) : ''
             return (
               <View key={`${offer.store}-${index}`}>
                 <Touchable
@@ -203,7 +208,7 @@ export default function ProductDetailScreen() {
                   disabled={!url}
                   style={styles.offerRow}
                   accessibilityRole="link"
-                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}. Ver oferta`}
+                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}${deal ? `, ${formatPrice(deal.total)} con tarjeta ${cardName(deal.promotion)}` : ''}. Ver oferta`}
                 >
                   <Touchable
                     onPress={() => storeSlug && router.push(`/store/${storeSlug}`)}
@@ -222,6 +227,13 @@ export default function ProductDetailScreen() {
                     <Text style={[type.footnote, offer.available ? styles.offerMeta : styles.offerUnavailable]} numberOfLines={1}>
                       {offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}
                     </Text>
+                    {deal && (
+                      <Text style={[type.footnote, styles.offerMeta]}>
+                        💳 Con {cardName(deal.promotion)} −{deal.promotion.percent}%:{' '}
+                        <Text style={styles.cardDealPrice}>{formatPrice(deal.total)}</Text>
+                        {conditions ? ` · ${conditions}` : ''}
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.offerRight}>
                     <Text style={[type.price(17, 'semibold'), isBest ? styles.offerPriceBest : styles.offerPrice]}>{formatPrice(offer.price)}</Text>
@@ -295,6 +307,7 @@ const styles = StyleSheet.create({
   offerStore: { color: colors.navy, flexShrink: 1 },
   bestTag: { color: colors.primaryDark, backgroundColor: colors.primaryLight, borderRadius: 4, overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 1, letterSpacing: 0.4 },
   offerMeta: { color: colors.secondaryLabel },
+  cardDealPrice: { color: colors.accent, fontWeight: '700' },
   offerUnavailable: { color: colors.tertiaryLabel },
   offerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   offerPrice: { color: colors.navy },

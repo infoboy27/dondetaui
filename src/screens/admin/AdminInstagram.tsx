@@ -11,6 +11,7 @@ import { getTopPriceDrops } from '../../domain/notifications'
 import { getTopComparisons } from '../../domain/offers'
 import type { Product } from '../../types'
 import InstagramMetrics from './InstagramMetrics'
+import { useCardPromotions } from '../../hooks/useCardPromotions'
 import { CARD_HEIGHT, CARD_WIDTH, caption, drawCard, drawStory, ensureFonts, type CardKind } from './instagramCard'
 
 interface Item {
@@ -281,7 +282,8 @@ function CardPreview({ item, canPublish, publishedToday, onPublished }: {
       setConfirming(null)
     }
   }
-  const text = caption(item.product, item.kind, SITE)
+  const promotions = useCardPromotions()
+  const text = caption(item.product, item.kind, SITE, promotions)
 
   useEffect(() => {
     let cancelled = false
@@ -289,11 +291,11 @@ function CardPreview({ item, canPublish, publishedToday, onPublished }: {
       await ensureFonts()
       const image = await loadProductImage(item.product.id)
       if (cancelled || !canvasRef.current) return
-      drawCard(canvasRef.current, item.product, item.kind, image, SITE)
+      drawCard(canvasRef.current, item.product, item.kind, image, SITE, promotions)
       setReady(true)
     })()
     return () => { cancelled = true }
-  }, [item])
+  }, [item, promotions])
 
   const download = (target: 'feed' | 'story') => {
     const canvas = canvasRef.current

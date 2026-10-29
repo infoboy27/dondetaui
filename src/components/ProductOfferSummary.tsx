@@ -1,7 +1,10 @@
+import { bestCardDeal } from '../domain/cardPromotions'
 import { formatPrice } from '../domain/currency'
 import { rankOffers } from '../domain/offers'
 import { colors, fonts, radii } from '../design/tokens'
 import type { StorePrice } from '../types'
+import { useCardPromotions } from '../hooks/useCardPromotions'
+import CardDealLine from './CardDealLine'
 import { ClockIcon, MapPinIcon, TruckIcon } from './Icons'
 import StoreLogo from './StoreLogo'
 
@@ -14,6 +17,8 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
   const bestOffer = rankedOffers[0]
   const highestListPrice = rankedOffers.reduce((max, offer) => Math.max(max, offer.price), bestOffer?.price ?? 0)
   const savings = bestOffer ? Math.max(0, highestListPrice - bestOffer.price) : 0
+  const promotions = useCardPromotions()
+  const anyDeal = rankedOffers.some(offer => bestCardDeal(offer, promotions))
 
   return (
     <div
@@ -34,7 +39,9 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
         </div>
       </div>
 
-      {rankedOffers.length > 0 ? rankedOffers.map((offer, index) => (
+      {rankedOffers.length > 0 ? rankedOffers.map((offer, index) => {
+        const deal = bestCardDeal(offer, promotions)
+        return (
         <div
           key={`${offer.store}-${offer.storeId ?? 'default'}`}
           style={{
@@ -93,6 +100,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
                 <span style={{ fontSize: 9, color: colors.error, fontFamily: fonts.body }}>Sin stock</span>
               )}
             </div>
+            {deal && <CardDealLine deal={deal} />}
           </div>
 
           <div style={{ textAlign: 'right' }}>
@@ -114,7 +122,8 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
             )}
           </div>
         </div>
-      )) : (
+        )
+      }) : (
         <div style={{ padding: '20px 16px', fontSize: 12, color: '#9AAABB', fontFamily: fonts.body }}>
           No hay ofertas disponibles para este producto.
         </div>
@@ -126,6 +135,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
             <ClockIcon size={12} color="#9AAABB" />
             <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: fonts.body }}>
               Actualizado hace {bestOffer.updated} · Disponibilidad puede variar
+              {anyDeal && ' · Descuentos con tarjeta sujetos a condiciones del banco'}
             </span>
           </div>
         </div>

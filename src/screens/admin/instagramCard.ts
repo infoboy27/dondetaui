@@ -1,3 +1,4 @@
+import { appliesOn, bestCardDeal, bestCardDealAcross, cardName, dominicanWeekday, type CardDeal, type CardPromotion } from '../../domain/cardPromotions'
 import { formatPrice } from '../../domain/currency'
 import { closingQuestion, hashtags } from '../../domain/instagram'
 import { currentSocialProfile, englishLine } from '../../domain/socialProfile'
@@ -63,12 +64,13 @@ export async function ensureFonts() {
     document.fonts.load('700 64px Poppins'),
     document.fonts.load('600 40px Poppins'),
     document.fonts.load('500 36px "DM Sans"'),
+    document.fonts.load('600 34px "DM Sans"'),
   ]).catch(() => undefined)
 }
 
 // Draws the card. `image` is the product photo already loaded from a
 // same-origin blob URL (see AdminInstagram), so the canvas stays exportable.
-export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: CardKind, image: HTMLImageElement | null, site: string) {
+export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: CardKind, image: HTMLImageElement | null, site: string, promotions: CardPromotion[] = []) {
   canvas.width = CARD_WIDTH
   canvas.height = CARD_HEIGHT
   const ctx = canvas.getContext('2d')!
@@ -138,7 +140,9 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
 
   if (kind.type === 'comparison') {
     // Store rows, cheapest first
-    const offers = rankOffers(product.prices).filter((offer, i, all) => all.findIndex(o => o.store === offer.store) === i).slice(0, 4)
+    // A card deal takes the last row, so the card keeps its height.
+    const deal = bestCardDealAcross(product.prices, promotions)
+    const offers = rankOffers(product.prices).filter((offer, i, all) => all.findIndex(o => o.store === offer.store) === i).slice(0, deal ? 3 : 4)
     offers.forEach((offer, i) => {
       const rowH = 82
       const best = i === 0
@@ -151,7 +155,8 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
         ctx.stroke()
       }
       ctx.fillStyle = C.navy
-      ctx.font = `${best ? 700 : 500} 34px "DM Sans"`
+      // DM Sans is only served up to 600; 700 fell back to a serif face.
+      ctx.font = `${best ? 600 : 500} 34px "DM Sans"`
       // Out-of-stock offers rank after in-stock ones, so a cheaper but sold-out
       // store can sit below a pricier one -- say why.
       ctx.fillText(offer.store + (best ? '  ✓ más barato' : offer.available ? '' : '  (agotado)'), pad + 48, y + 48)
@@ -161,6 +166,7 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
       ctx.fillText(price, W - pad - 48 - ctx.measureText(price).width, y + 50)
       y += rowH
     })
+    if (deal) drawCardDealRow(ctx, deal, deal.offer.store, pad + 20, y, W - 2 * (pad + 20))
   } else {
     const best = rankOffers(product.prices)[0]
     ctx.font = '700 84px Poppins'
@@ -178,6 +184,8 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
       ctx.font = '500 36px "DM Sans"'
       ctx.fillStyle = C.navy
       ctx.fillText(`en ${best.store}`, pad + 20, y + 150)
+      const deal = bestCardDeal(best, promotions)
+      if (deal) drawCardDealRow(ctx, deal, best.store, pad + 20, y + 190, W - 2 * (pad + 20))
     }
   }
 
@@ -191,16 +199,54 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
   ctx.fillText(tag, W - pad - ctx.measureText(tag).width, CARD_HEIGHT - 66)
 }
 
+// Orange row: "💳 Con BHD −10% en Plaza Lama ... RD$22,495".
+function drawCardDealRow(ctx: CanvasRenderingContext2D, deal: CardDeal, store: string, x: number, y: number, w: number) {
+  roundRect(ctx, x, y, w, 70, 20)
+  ctx.fillStyle = '#FFF3E0'
+  ctx.fill()
+  ctx.font = '700 38px Poppins'
+  const price = formatPrice(deal.total)
+  const priceW = ctx.measureText(price).width
+  ctx.fillStyle = C.orange
+  ctx.fillText(price, x + w - 28 - priceW, y + 50)
+  ctx.font = '600 30px "DM Sans"'
+  ctx.fillStyle = C.navy
+  const label = wrap(ctx, `💳 Con ${cardName(deal.promotion)} −${deal.promotion.percent}% en ${store}`, w - priceW - 76, 1)[0] ?? ''
+  ctx.fillText(label, x + 28, y + 46)
+}
+
 const profile = () => currentSocialProfile()
+
+// When the product itself has no card deal today, still point at the ones
+// running: "💳 Hoy hay descuentos con tarjeta en Plaza Lama y Sirena".
+function cardPromotionsHint(promotions: CardPromotion[]): string[] {
+  const weekday = dominicanWeekday()
+  const stores = [...new Set(promotions.filter(p => appliesOn(p, weekday)).map(p => p.store))].sort()
+  if (stores.length === 0) return []
+  const list = stores.length === 1 ? stores[0] : `${stores.slice(0, -1).join(', ')} y ${stores[stores.length - 1]}`
+  return ['', `💳 Hoy hay descuentos con tarjeta en ${list}: mira el precio con tu banco en cada producto.`]
+}
+
+// "💳 Con tarjeta BHD −10% en Plaza Lama: RD$22,495 (tope RD$5,000, solo martes)."
+function cardDealSentence(deal: CardDeal, store: string): string {
+  const { promotion } = deal
+  const extra = [
+    promotion.maxDiscount !== null ? `tope ${formatPrice(promotion.maxDiscount)}` : null,
+    promotion.weekdays ? 'solo hoy' : null,
+  ].filter(Boolean).join(', ')
+  return `💳 Con tarjeta ${cardName(promotion)} −${promotion.percent}% en ${store}: ${formatPrice(deal.total)}${extra ? ` (${extra})` : ''}. Sujeto a condiciones del banco.`
+}
 
 function distinctOffers(product: Product) {
   return rankOffers(product.prices).filter((offer, i, all) => all.findIndex(o => o.store === offer.store) === i)
 }
 
 // The first line is all most people read in the feed: lead with the money.
-export function caption(product: Product, kind: CardKind, site: string): string {
+export function caption(product: Product, kind: CardKind, site: string, promotions: CardPromotion[] = []): string {
   const offers = distinctOffers(product)
   const best = offers[0]
+  const across = bestCardDealAcross(product.prices, promotions)
+  const bestDeal = best ? bestCardDeal(best, promotions) : undefined
   if (kind.type === 'comparison') {
     return [
       `💰 ${formatPrice(kind.savings)} de diferencia por el mismo modelo`,
@@ -208,6 +254,7 @@ export function caption(product: Product, kind: CardKind, site: string): string 
       '',
       `✅ ${best.store}: ${formatPrice(getOfferTotal(best))}`,
       ...offers.slice(1).map(o => `▫️ ${o.store}: ${formatPrice(getOfferTotal(o))}${o.available ? '' : ' (agotado)'}`),
+      ...(across ? ['', cardDealSentence(across, across.offer.store)] : cardPromotionsHint(promotions)),
       '',
       closingQuestion('comparison', product.id),
       '',
@@ -222,6 +269,7 @@ export function caption(product: Product, kind: CardKind, site: string): string 
     `📉 ¡Bajó ${kind.pct}%! ${product.name}`,
     '',
     `Ahora ${formatPrice(getOfferTotal(best))} en ${best.store} (antes ${formatPrice(Math.round(kind.oldPrice))}).`,
+    ...(bestDeal ? [cardDealSentence(bestDeal, best.store)] : cardPromotionsHint(promotions)),
     closingQuestion('drop', product.id),
     '',
     `🔔 Crea una alerta de precio gratis en ${site} (link en la bio)`,
@@ -468,10 +516,12 @@ export function drawTopEnd(canvas: HTMLCanvasElement, type: TopType, stores: str
   centered(ctx, 'Guarda este post 📌', 1080, W)
 }
 
-export function topCaption(type: TopType, items: Product[], dateLabel: string, site: string): string {
+export function topCaption(type: TopType, items: Product[], dateLabel: string, site: string, promotions: CardPromotion[] = []): string {
   const lines = items.map((product, i) => {
     const best = distinctOffers(product)[0]
-    return `${i + 1}. ${product.name} — ${best ? `${formatPrice(getOfferTotal(best))} en ${best.store}` : ''}`
+    const deal = bestCardDealAcross(product.prices, promotions)
+    const card = deal ? ` (💳 ${formatPrice(deal.total)} con ${cardName(deal.promotion)} en ${deal.offer.store})` : ''
+    return `${i + 1}. ${product.name} — ${best ? `${formatPrice(getOfferTotal(best))} en ${best.store}` : ''}${card}`
   })
   return [
     `📌 ${topTitle(type).article} 5 ${type.label} ${topTitle(type).cheapest} ${profile().cheapestOf} esta semana`,

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
-import { getCatalog, getProductBySlug, getProductReviews } from '../../../lib/api'
+import { getCardPromotions, getCatalog, getProductBySlug, getProductReviews } from '../../../lib/api'
+import { bestCardDeal, cardDealConditions, cardName } from '../../../lib/cardPromotions'
 import { SEO_CATEGORIES, matchesCategory } from '../../../lib/categories'
 import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
@@ -69,7 +70,7 @@ export default async function ProductPage({ params }: Props) {
   // Old slug of a product merged into this one.
   if (product.slug !== slug) permanentRedirect(`/product/${product.slug}`)
 
-  const [reviews, catalog] = await Promise.all([getProductReviews(product.id), getCatalog()])
+  const [reviews, catalog, promotions] = await Promise.all([getProductReviews(product.id), getCatalog(), getCardPromotions()])
   const offers = rankOffers(product.prices)
   const position = marketPosition(product, catalog)
   const positionProse = position ? describeMarketPosition(position, product.brand, formatPrice) : []
@@ -202,7 +203,9 @@ export default async function ProductPage({ params }: Props) {
         <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: 0, padding: '14px 16px', borderBottom: `1px solid ${colors.border}` }}>
           {storeCount >= 2 ? `Comparación de precios (${storeCount} tiendas)` : 'Precio publicado'}
         </h2>
-        {offers.map((offer, i) => (
+        {offers.map((offer, i) => {
+          const deal = bestCardDeal(offer, promotions)
+          return (
           <div
             key={`${offer.store}-${i}`}
             style={{
@@ -220,6 +223,13 @@ export default async function ProductPage({ params }: Props) {
               <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400 }}>
                 {offer.available ? 'Disponible' : 'No disponible'} · Envío {offer.shipping}
               </div>
+              {deal && (
+                <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400, marginTop: 2 }}>
+                  💳 Con {cardName(deal.promotion)} −{deal.promotion.percent}%:{' '}
+                  <strong style={{ color: colors.accent }}>{formatPrice(deal.total)}</strong>
+                  {cardDealConditions(deal.promotion) && ` · ${cardDealConditions(deal.promotion)}`}
+                </div>
+              )}
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: colors.navy }}>
@@ -238,7 +248,8 @@ export default async function ProductPage({ params }: Props) {
               )}
             </div>
           </div>
-        ))}
+          )
+        })}
       </section>
 
       <PriceHistoryCard

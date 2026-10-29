@@ -7,6 +7,8 @@ import type { Product } from '../types'
 import { CheckIcon, ChevronDown, HeartIcon } from './Icons'
 import ProductImage from './ProductImage'
 import StoreOfferRow from './StoreOfferRow'
+import { bestCardDeal } from '../domain/cardPromotions'
+import { useCardPromotions } from '../hooks/useCardPromotions'
 
 interface ProductComparisonCardProps {
   product: Product
@@ -18,6 +20,7 @@ interface ProductComparisonCardProps {
 export default function ProductComparisonCard({ product, onProduct, isFavorite, onToggleFavorite }: ProductComparisonCardProps) {
   const [expanded, setExpanded] = useState(false)
   const rankedOffers = rankOffers(product.prices)
+  const promotions = useCardPromotions()
   const bestOffer = rankedOffers[0]
   const highestListPrice = rankedOffers.reduce((max, offer) => Math.max(max, offer.price), bestOffer?.price ?? 0)
   const savings = bestOffer ? Math.max(0, highestListPrice - bestOffer.price) : 0
@@ -122,7 +125,7 @@ export default function ProductComparisonCard({ product, onProduct, isFavorite, 
 
       <div style={{ borderTop: `1px solid ${colors.background}` }}>
         {displayPrices.map((offer, index) => (
-          <StoreOfferRow key={`${offer.store}-${offer.storeId ?? 'default'}`} offer={offer} isBest={index === 0 && rankedOffers.length > 1} savings={savings} />
+          <StoreOfferRow key={`${offer.store}-${offer.storeId ?? 'default'}`} offer={offer} isBest={index === 0 && rankedOffers.length > 1} savings={savings} deal={bestCardDeal(offer, promotions)} />
         ))}
       </div>
 
