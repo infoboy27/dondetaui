@@ -10,6 +10,7 @@ import AdminDashboard from './AdminDashboard'
 import AdminReport from './AdminReport'
 import AdminInstagram from './AdminInstagram'
 import AdminMfa from './AdminMfa'
+import AdminCardPromotions from './AdminCardPromotions'
 import { setToken } from '../../auth/session'
 
 interface Props {
@@ -93,6 +94,7 @@ export default function AdminApp({ user, authLoading, authError, onLogin, onRegi
     <Routes>
       <Route path="reporte/:slug" element={<AdminReport />} />
       <Route path="instagram" element={<AdminInstagram />} />
+      <Route path="tarjetas" element={<AdminCardPromotions />} />
       <Route path="*" element={<AdminDashboard user={user} onLogout={onLogout} />} />
     </Routes>
   )

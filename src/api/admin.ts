@@ -1,3 +1,4 @@
+import type { CardPromotion } from '../domain/cardPromotions'
 import { apiFetch } from './http'
 
 export interface ClickSeries {
@@ -179,7 +180,30 @@ export interface FacebookCrossPost {
   history?: { id: string; format: string; status: 'published' | 'failed'; permalink: string | null; error: string | null; created_at: string }[]
 }
 
+export interface CardPromotionForm {
+  retailerSlug: string
+  bank: string
+  card: string
+  percent: string
+  maxDiscount: string
+  minPurchase: string
+  weekdays: number[]
+  startsOn: string
+  endsOn: string
+  termsUrl: string
+  note: string
+}
+
 export const adminApi = {
+  cardPromotions(): Promise<CardPromotion[]> {
+    return apiFetch('/admin/card-promotions')
+  },
+  createCardPromotion(form: CardPromotionForm): Promise<CardPromotion> {
+    return apiFetch('/admin/card-promotions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+  },
+  deleteCardPromotion(id: string): Promise<{ ok: true }> {
+    return apiFetch(`/admin/card-promotions/${id}`, { method: 'DELETE' })
+  },
   igFacebook(): Promise<FacebookCrossPost> {
     return apiFetch('/admin/instagram/facebook')
   },

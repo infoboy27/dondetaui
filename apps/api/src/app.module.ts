@@ -5,6 +5,7 @@ import { AdminModule } from './admin/admin.module'
 import { AlertsModule } from './alerts/alerts.module'
 import { AlertingThrottlerGuard } from './common/alerting-throttler.guard'
 import { AuthModule } from './auth/auth.module'
+import { CardPromotionsModule } from './card-promotions/card-promotions.module'
 import { DatabaseModule } from './database/database.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
@@ -27,6 +28,7 @@ import { StoresModule } from './stores/stores.module'
     AdminModule,
     ProductsModule,
     StoresModule,
+    CardPromotionsModule,
     AlertsModule,
     FavoritesModule,
     SearchHistoryModule,

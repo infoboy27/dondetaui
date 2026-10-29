@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import { cardPromotionsApi } from '../../api/cardPromotions'
 import { productsApi } from '../../api/products'
+import type { CardPromotion } from '../../domain/cardPromotions'
 import { currentSocialProfile } from '../../domain/socialProfile'
 import { bestPrice, isWorthSharing, weekIndex, weeklyTop } from '../../domain/instagram'
 import { getTopPriceDrops } from '../../domain/notifications'
@@ -91,6 +93,9 @@ export default function IgRender() {
   useEffect(() => {
     let products: Product[] | null = null
     const load = async () => (products ??= await productsApi.list())
+    // Card discounts are a bonus line: a failure must not stop the daily post.
+    let promotions: CardPromotion[] | null = null
+    const loadPromotions = async () => (promotions ??= await cardPromotionsApi.active().catch(() => []))
     const find = async (productId: string) => {
       const product = (await load()).find(p => p.id === productId)
       if (!product) throw new Error(`Producto ${productId} no está en el catálogo`)
@@ -112,10 +117,10 @@ export default function IgRender() {
         const product = await find(productId)
         await ensureFonts()
         const card = document.createElement('canvas')
-        drawCard(card, product, kind, await loadImage(imageDataUrl), site)
+        drawCard(card, product, kind, await loadImage(imageDataUrl), site, await loadPromotions())
         const story = document.createElement('canvas')
         drawStory(story, card, kind, site)
-        return { caption: caption(product, kind, site), feed: jpeg(card), story: jpeg(story) }
+        return { caption: caption(product, kind, site, await loadPromotions()), feed: jpeg(card), story: jpeg(story) }
       },
       async weekly() {
         const top = weeklyTop(await load(), weekIndex())
@@ -142,14 +147,14 @@ export default function IgRender() {
         const stores = [...new Set((await load()).flatMap(p => p.prices.map(o => o.store)))].sort()
         drawTopEnd(canvas, top.type, stores, site)
         slides.push(jpeg(canvas))
-        return { caption: topCaption(top.type, top.items, label, site), slides }
+        return { caption: topCaption(top.type, top.items, label, site, await loadPromotions()), slides }
       },
       async renderReel(productId, kind, imageDataUrl, site) {
         const product = await find(productId)
         await ensureFonts()
         const scenes = drawReelScenes(product, kind, await loadImage(imageDataUrl), site)
         return {
-          caption: caption(product, kind, site),
+          caption: caption(product, kind, site, await loadPromotions()),
           scenes: scenes.map(scene => ({ image: jpeg(scene.canvas), seconds: scene.seconds, zoom: scene.zoom })),
         }
       },
