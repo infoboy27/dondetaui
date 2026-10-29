@@ -27,7 +27,7 @@ export interface CardPromotion {
 export interface CardDeal {
   promotion: CardPromotion
   discount: number
-  /** Purchase total (price + shipping) minus the card discount. */
+  /** Purchase total (price + shipping) minus the card discount, in whole pesos. */
   total: number
 }
 
@@ -55,7 +55,8 @@ export function bestCardDeal(offer: StorePrice, promotions: CardPromotion[], wee
     const raw = Math.round(offer.price * promotion.percent) / 100
     const discount = Math.round(promotion.maxDiscount === null ? raw : Math.min(raw, promotion.maxDiscount))
     if (discount <= 0 || (best && discount <= best.discount)) continue
-    best = { promotion, discount, total: getOfferTotal(offer) - discount }
+    // Whole pesos: the card price is an estimate, cents would add false precision.
+    best = { promotion, discount, total: Math.round(getOfferTotal(offer) - discount) }
   }
   return best
 }
