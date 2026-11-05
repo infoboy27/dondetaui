@@ -93,6 +93,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
   - lanzamiento: el post está en `marketing/tarjetas-2026-11/` y se publica cuando haya promos reales cargadas.
 - Instagram `@dondetard`: lanzamiento Eneba publicado (carrusel, historia y post de alianza).
 - Instagram programado: la tabla `instagram_scheduled` guarda posts para una fecha; el ciclo del piloto automático los publica a su hora (aunque el piloto esté apagado), reintenta 3 veces y descarta lo que llega más de 6 h tarde, avisando por Discord. Campaña Black Friday 2026 (13, 24 y 27 de nov; feed 11:00 e historia 18:00, hora RD) en `marketing/black-friday-2026-11/` (`schedule_sql.py` genera el SQL de carga).
+  - Una fila con `video` (migración 030) se publica como Reel en el feed y su `image` es la portada. Reels de Eneba de noviembre: FC 27 (7 nov) y Black Friday gamer (26 nov), ambos a las 19:00, hora RD; se cargan con `marketing/eneba-reels-2026-11.py`. Los videos originales de Eneba quedan en `marketing/*/source/` (fuera de git).
 - **Pendiente 2027:** cargar los posts de feriados comerciales de 2027 (15 momentos, 30 posts: San Valentín, Madres, Padres, regreso a clases, Black Friday, Cyber Monday, Navidad, Fin de año) con `marketing/feriados/` (ver su README) a más tardar a finales de diciembre de 2026, tras revisar textos y diseños. Los de 2026 (Cyber Monday, Navidad, Fin de año) se cargan con `--skip bf-1,bf-2,bf-3`.
   - Piezas y textos en `marketing/eneba-lanzamiento-2026-10/`.
   - Logos en `marketing/brand/`.

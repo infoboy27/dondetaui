@@ -13,3 +13,9 @@ export function dueDecision(publishAt: Date, now: Date): Due {
   if (late < 0) return 'wait'
   return late > LATE_LIMIT_MS ? 'missed' : 'publish'
 }
+
+// How a scheduled row is published: with a video it's a Reel (always feed)
+// and the image is its cover; otherwise the image goes to its own target.
+export function scheduledFormat(row: { target: 'feed' | 'story'; video: Uint8Array | null }): { target: 'feed' | 'story'; format: 'image' | 'reel' } {
+  return row.video ? { target: 'feed', format: 'reel' } : { target: row.target, format: 'image' }
+}

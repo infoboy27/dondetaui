@@ -4,7 +4,7 @@ import { chromium } from 'playwright'
 import { feedFormat, pickCandidate, type Candidate, type Kind, type Target } from './instagram-autopilot'
 import { buildReel } from './instagram-reel'
 import { AUTOPILOT_SLOTS, InstagramService } from './instagram.service'
-import { MAX_ATTEMPTS as SCHEDULED_MAX_ATTEMPTS, dueDecision } from './instagram-scheduled'
+import { MAX_ATTEMPTS as SCHEDULED_MAX_ATTEMPTS, dueDecision, scheduledFormat } from './instagram-scheduled'
 
 // Instagram autopilot, run every few minutes by deploy/instagram-autopilot-loop.sh.
 // Does nothing unless switched on from /admin/instagram (app_settings
@@ -238,8 +238,8 @@ async function publishSlot(instagram: InstagramService, target: Target): Promise
 // Campaign posts queued in instagram_scheduled: published when their time
 // comes, independent of the daily autopilot switch.
 async function runScheduled(instagram: InstagramService) {
-  const due = await pool.query<{ id: string; label: string; target: 'feed' | 'story'; caption: string; image: Buffer; publish_at: Date; attempts: number }>(
-    `select id::text, label, target, caption, image, publish_at, attempts
+  const due = await pool.query<{ id: string; label: string; target: 'feed' | 'story'; caption: string; image: Buffer; video: Buffer | null; publish_at: Date; attempts: number }>(
+    `select id::text, label, target, caption, image, video, publish_at, attempts
      from instagram_scheduled
      where status = 'scheduled' and publish_at <= now() and attempts < $1
      order by publish_at`,
@@ -255,11 +255,10 @@ async function runScheduled(instagram: InstagramService) {
       const result = await instagram.publishPost({
         productId: null,
         kind: 'promo',
-        target: post.target,
-        format: 'image',
+        ...scheduledFormat(post),
         caption: post.target === 'story' ? post.caption || 'Historia' : post.caption,
         cover: post.image,
-        media: [],
+        media: post.video ? [{ contentType: 'video/mp4', data: post.video }] : [],
         publicBaseUrl: siteUrl,
         source: 'manual',
       })
