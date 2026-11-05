@@ -1,13 +1,17 @@
-"""GTA VI Reel from the Eneba ad (used with Eneba's permission): the original 16:9 video, unmodified,
+"""Reel from a 16:9 Eneba ad (used with Eneba's permission): the original video, unmodified,
 centred on a blurred 9:16 canvas with DóndeTa's logo above and the call to action below.
-Run: python3 make_reel.py <eneba-video.mp4>   (needs Pillow and ffmpeg)"""
-import subprocess, sys
+Also used for the other Eneba ads (e.g. ../black-friday-2026-11).
+Run: python3 make_reel.py <eneba-video.mp4> [out.mp4] [cover-second]   (needs Pillow and ffmpeg)
+Writes out.mp4 (default: gta6-reel.mp4 here) and out-cover.jpg next to it."""
+import subprocess, sys, tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = Path(__file__).resolve().parent
 SRC = Path(sys.argv[1]).expanduser()
+VIDEO = Path(sys.argv[2]).expanduser().resolve() if len(sys.argv) > 2 else Path(__file__).resolve().parent / "gta6-reel.mp4"
+COVER = VIDEO.with_name(VIDEO.stem + "-cover.jpg")
+OVERLAY = Path(tempfile.mkdtemp()) / "overlay.png"
 FONTS = ROOT / "apps/mobile/node_modules/@expo-google-fonts"
 NAVY, GREEN, ORANGE = (15, 29, 45), (0, 184, 148), (255, 159, 28)
 MUTED = (186, 198, 210)
@@ -43,17 +47,17 @@ d.text((W / 2, base + 190), "Usa el código DONDETA: 5% de descuento en Eneba", 
 d.rounded_rectangle((76, base + 260, W - 76, base + 356), radius=48, fill=GREEN)
 d.text((W / 2, base + 308), "dondeta.com.do · Gaming", font=poppins(40), fill=NAVY, anchor="mm")
 d.text((W / 2, H - 140), "Publicidad de Eneba", font=dm(28), fill=MUTED, anchor="mm")
-overlay.save(OUT / "overlay.png")
+overlay.save(OVERLAY)
 
 subprocess.run([
-    "ffmpeg", "-v", "error", "-y", "-i", str(SRC), "-i", str(OUT / "overlay.png"),
+    "ffmpeg", "-v", "error", "-y", "-i", str(SRC), "-i", str(OVERLAY),
     "-filter_complex",
     f"[0:v]split[a][b];[a]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=40:5[bg];"
     f"[b]scale={W}:{VIDEO_H}[fg];[bg][fg]overlay=0:{top}[v];[v][1:v]overlay=0:0[out]",
     "-map", "[out]", "-map", "0:a", "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-pix_fmt", "yuv420p",
-    "-r", "30", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(OUT / "gta6-reel.mp4"),
+    "-r", "30", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(VIDEO),
 ], check=True)
 
 # Cover: a frame from the middle of the clip, same layout.
-subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "5", "-i", str(OUT / "gta6-reel.mp4"), "-frames:v", "1", "-q:v", "2", str(OUT / "gta6-reel-cover.jpg")], check=True)
+subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", sys.argv[3] if len(sys.argv) > 3 else "5", "-i", str(VIDEO), "-frames:v", "1", "-q:v", "2", str(COVER)], check=True)
 print("ok")
