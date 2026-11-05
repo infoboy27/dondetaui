@@ -26,3 +26,4 @@ docker-compose.override.yml
 
 # Original ad videos from partners (large; kept locally, not committed)
 marketing/**/source/
+.DS_Store
