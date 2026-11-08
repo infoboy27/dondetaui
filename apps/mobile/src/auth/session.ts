@@ -8,6 +8,21 @@ function tokenKey(): string {
   return code === 'DO' ? 'dondeta.authToken' : `dondeta.authToken.${code}`
 }
 
+// The owner panel's admin token (see src/api/admin.ts). Dropped whenever the
+// session changes -- sign in, sign out, expiry -- so it never outlives the
+// account that unlocked it.
+export function adminTokenKey(): string {
+  return `dondeta.adminToken.${getCountry().code}`
+}
+
+async function dropAdminToken(): Promise<void> {
+  try {
+    await SecureStore.deleteItemAsync(adminTokenKey())
+  } catch {
+    /* nothing stored */
+  }
+}
+
 export async function getToken(): Promise<string | null> {
   try {
     return await SecureStore.getItemAsync(tokenKey())
@@ -17,6 +32,7 @@ export async function getToken(): Promise<string | null> {
 }
 
 export async function setToken(token: string): Promise<void> {
+  await dropAdminToken()
   try {
     await SecureStore.setItemAsync(tokenKey(), token)
   } catch {
@@ -25,6 +41,7 @@ export async function setToken(token: string): Promise<void> {
 }
 
 export async function clearToken(): Promise<void> {
+  await dropAdminToken()
   try {
     await SecureStore.deleteItemAsync(tokenKey())
   } catch {
