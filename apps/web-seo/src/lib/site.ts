@@ -1,3 +1,4 @@
+import { amazonConfig } from './amazon'
 import { buildCountry } from './country'
 
 // Server-only: each deployment (dev on dondeta.jfmcss.com, production on
@@ -18,3 +19,6 @@ export const COUNTRY_NAME = COUNTRY.name
 // docker-compose.yml) rather than a build-time Vite define.
 export const CURRENCY_SYMBOL = process.env.CURRENCY_SYMBOL || 'RD$'
 export const CURRENCY_LOCALE = process.env.CURRENCY_LOCALE || 'es-DO'
+
+// Amazon Associates comparison link on product pages; off until AMAZON_TAG is set.
+export const AMAZON = amazonConfig(process.env)
