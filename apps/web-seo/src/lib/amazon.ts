@@ -5,6 +5,11 @@
 
 type Env = Record<string, string | undefined>
 
+// The disclosure Amazon's Operating Agreement requires, word for word (Spanish
+// version), wherever Associates links appear. Shown on the card, in the
+// footer and in the privacy policy while AMAZON_TAG is set.
+export const AMAZON_DISCLOSURE = 'Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.'
+
 export interface AmazonConfig {
   tag: string
   domain: string

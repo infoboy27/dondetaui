@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { colors, fonts } from '../../lib/tokens'
-import { COUNTRY, SITE_URL } from '../../lib/site'
+import { AMAZON, COUNTRY, SITE_URL } from '../../lib/site'
+import { AMAZON_DISCLOSURE } from '../../lib/amazon'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad — DóndeTa',
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
-const LAST_UPDATED = '12 de agosto de 2026'
+const LAST_UPDATED = '8 de noviembre de 2026'
 const SITE_HOSTNAME = new URL(SITE_URL).hostname
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -78,6 +79,15 @@ export default function PrivacyPolicyPage() {
           Usamos proveedores externos únicamente para operar funciones que activas: Resend para enviar correos de
           alerta, Twilio para SMS, y Expo para notificaciones push en Android. Estos proveedores procesan los datos
           mínimos necesarios (tu correo, teléfono o token de dispositivo) solo para entregar esas notificaciones.
+        </p>
+      </Section>
+
+      <Section title="Enlaces de afiliado">
+        <p>
+          Algunos enlaces hacia tiendas son de afiliado (por ejemplo, Eneba{AMAZON ? ' y Amazon' : ''}). Si haces clic, esa
+          tienda puede guardar una cookie en tu navegador para atribuirnos la compra y pagarnos una comisión, sin costo
+          adicional para ti. DóndeTa no recibe tus datos de compra, y las comisiones no cambian el orden de los precios.
+          {AMAZON && ` ${AMAZON_DISCLOSURE}`}
         </p>
       </Section>
 
