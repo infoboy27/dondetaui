@@ -109,6 +109,9 @@ services:
         VITE_CURRENCY_SYMBOL: ${VITE_CURRENCY_SYMBOL:-}
         VITE_CURRENCY_LOCALE: ${VITE_CURRENCY_LOCALE:-es-DO}
         VITE_COUNTRY_FLAG: ${VITE_COUNTRY_FLAG:-}
+        # Same Amazon Associates id as web-seo ("¿Y en Amazon?"); empty = hidden.
+        VITE_AMAZON_TAG: ${AMAZON_TAG:-}
+        VITE_AMAZON_DOMAIN: ${AMAZON_DOMAIN:-}
     restart: unless-stopped
     networks:
       - default

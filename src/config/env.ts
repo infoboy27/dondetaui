@@ -7,6 +7,9 @@ const useApi = import.meta.env.VITE_USE_API?.trim().toLowerCase() === 'true'
 const adsenseClientId = import.meta.env.VITE_ADSENSE_CLIENT_ID?.trim() || undefined
 
 export const appConfig = {
+  // Amazon Associates ("¿Y en Amazon?"); empty = hidden.
+  amazonTag: import.meta.env.VITE_AMAZON_TAG?.trim() || undefined,
+  amazonDomain: import.meta.env.VITE_AMAZON_DOMAIN?.trim() || undefined,
   apiBaseUrl: apiBaseUrl.replace(/\/$/, ''),
   useApi,
   adsenseClientId,

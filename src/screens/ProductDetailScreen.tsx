@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { trackOfferClick } from '../analytics'
 import PriceHistoryChart from '../components/PriceHistoryChart'
 import DiscountCode from '../components/DiscountCode'
+import AmazonCard from '../components/AmazonCard'
 import { isGaming } from '../domain/gaming'
 import ProductOfferSummary from '../components/ProductOfferSummary'
 import {
@@ -255,6 +256,9 @@ export default function ProductDetailScreen({
           </div>
         </div>
       )}
+
+      {/* Amazon Associates comparison (hidden until configured) */}
+      <AmazonCard product={product} style={{ margin: '12px 16px 0' }} />
 
       {/* Price History */}
       <div style={{ margin: '12px 16px 0' }}>
