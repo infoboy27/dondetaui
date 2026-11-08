@@ -11,7 +11,8 @@ import { similarProducts } from '../../../lib/specs'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
 import { currencyCode, hasGuides, productDescription } from '../../../lib/country'
-import { COUNTRY, SITE_URL } from '../../../lib/site'
+import { AMAZON, COUNTRY, SITE_URL } from '../../../lib/site'
+import { amazonSearchUrl } from '../../../lib/amazon'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
 import type { Product } from '../../../lib/types'
 
@@ -128,6 +129,8 @@ export default async function ProductPage({ params }: Props) {
       },
     ],
   }
+
+  const amazonUrl = amazonSearchUrl(product, AMAZON)
 
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 64px' }}>
@@ -251,6 +254,32 @@ export default async function ProductPage({ params }: Props) {
           )
         })}
       </section>
+
+      {amazonUrl && (
+        <section style={{ marginTop: 20, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16 }}>
+          <h2 style={{ fontFamily: fonts.display, fontSize: 15, color: colors.navy, margin: '0 0 6px' }}>
+            ¿Y en Amazon?
+          </h2>
+          <p style={{ fontFamily: fonts.body, fontSize: 13, color: colors.navy400, margin: '0 0 12px', lineHeight: 1.5 }}>
+            {COUNTRY.isDominican
+              ? 'Si lo traes por courier, compara el total: precio en Amazon + envío por libra + impuestos si pasa de US$200. '
+              : 'Compara el precio en Amazon con el envío y los impuestos de importación. '}
+            {COUNTRY.isDominican && <a href="/guias/comprar-en-amazon-desde-rd" style={{ color: colors.primary }}>Cómo calcularlo</a>}
+          </p>
+          <a
+            href={amazonUrl}
+            data-store="Amazon"
+            rel="nofollow sponsored noopener"
+            target="_blank"
+            style={{ fontFamily: fonts.body, fontSize: 14, fontWeight: 600, color: colors.primary, textDecoration: 'none' }}
+          >
+            Buscar en Amazon ↗
+          </a>
+          <div style={{ fontFamily: fonts.body, fontSize: 11, color: colors.navy400, marginTop: 8 }}>
+            Enlace de afiliado: si compras, DóndeTa puede ganar una comisión sin costo para ti.
+          </div>
+        </section>
+      )}
 
       <PriceHistoryCard
         history={product.priceHistory}

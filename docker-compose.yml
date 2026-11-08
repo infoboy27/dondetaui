@@ -162,6 +162,9 @@ services:
       CURRENCY_LOCALE: ${CURRENCY_LOCALE:-es-DO}
       # Per-country copy for the server-rendered pages (defaults: DR).
       COUNTRY_CODE: ${COUNTRY_CODE:-DO}
+      # Amazon Associates tracking id: shows "¿Y en Amazon?" on product pages (empty = hidden).
+      AMAZON_TAG: ${AMAZON_TAG:-}
+      AMAZON_DOMAIN: ${AMAZON_DOMAIN:-}
       COUNTRY_NAME: ${COUNTRY_NAME:-República Dominicana}
       COUNTRY_ADJECTIVE: ${COUNTRY_ADJECTIVE:-dominicanas}
     depends_on:
