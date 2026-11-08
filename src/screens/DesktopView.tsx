@@ -3,6 +3,7 @@ import { trackOfferClick, trackSearch } from '../analytics'
 import { SiteLinks } from '../components/SiteLinks'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import { getTopPriceDrops } from '../domain/notifications'
+import AmazonCard from '../components/AmazonCard'
 import { ENEBA_DISCOUNT_CODE, gamingKind, gamingShowcase, isGaming } from '../domain/gaming'
 import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
@@ -445,6 +446,7 @@ function DesktopProductRow({ product, isAlerted, onToggleAlert, isFavorite, onTo
             </div>
           ))}
         </div>
+        <AmazonCard product={product} style={{ margin: '12px 20px 0' }} />
         <DesktopReviews productId={product.id} isLoggedIn={isLoggedIn} onRequireLogin={onRequireLogin} />
         </>
       )}
