@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Stack, useRouter } from 'expo-router'
 import Constants from 'expo-constants'
 import { useAppState } from '../../../src/state/AppStateContext'
+import { adminAccess } from '../../../src/api/admin'
 import { useCountry } from '../../../src/hooks/useCountry'
 import Icon, { type IconName } from '../../../src/components/Icon'
 import Button from '../../../src/components/ui/Button'
@@ -21,6 +23,16 @@ const MFA_LABEL = { email: 'Correo', totp: 'App autenticadora' } as const
 export default function ProfileScreen() {
   const router = useRouter()
   const { user, authLoading, auth, favoriteIds, alertedIds } = useAppState()
+  // The owner's metrics row: only when the server says this account is the
+  // admin (ADMIN_EMAILS). Anyone else -- or any error -- never sees it.
+  const [isOwner, setIsOwner] = useState(false)
+  useEffect(() => {
+    setIsOwner(false)
+    if (!user) return
+    let alive = true
+    void adminAccess().then(access => { if (alive) setIsOwner(access !== 'none') })
+    return () => { alive = false }
+  }, [user?.id])
 
   return (
     <>
@@ -63,6 +75,12 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/profile/security')}
               />
             </ListSection>
+
+            {isOwner && (
+              <ListSection>
+                <ListRow icon="sparkles" iconColor={colors.accent} title="Métricas de DóndeTa" onPress={() => router.push('/profile/admin')} />
+              </ListSection>
+            )}
 
             <SupportLinks />
 
