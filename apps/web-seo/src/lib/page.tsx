@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 import { MAIN_NAV } from './content'
 import { hasGuides } from './country'
-import { COUNTRY, SITE_URL } from './site'
+import { AMAZON, COUNTRY, SITE_URL } from './site'
+import { AMAZON_DISCLOSURE } from './amazon'
 import { colors, fonts } from './tokens'
 
 export function SiteHeader() {
@@ -27,6 +28,10 @@ export function SiteFooter() {
       <p>
         DóndeTa registra precios publicados por tiendas {COUNTRY.adjective} para dar contexto antes de comprar. No vendemos
         productos ni garantizamos precio, inventario ni condiciones finales: verifícalos con la tienda.
+      </p>
+      <p>
+        Algunos enlaces son de afiliado: si compras a través de ellos, DóndeTa puede recibir una comisión sin costo
+        para ti, y eso no cambia el orden de los precios.{AMAZON && ` ${AMAZON_DISCLOSURE}`}
       </p>
       <p>
         <a href="/metodologia" style={{ color: colors.primary }}>Metodología</a>

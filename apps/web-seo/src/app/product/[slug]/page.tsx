@@ -12,7 +12,7 @@ import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
 import { currencyCode, hasGuides, productDescription } from '../../../lib/country'
 import { AMAZON, COUNTRY, SITE_URL } from '../../../lib/site'
-import { amazonSearchUrl } from '../../../lib/amazon'
+import { AMAZON_DISCLOSURE, amazonSearchUrl } from '../../../lib/amazon'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
 import type { Product } from '../../../lib/types'
 
@@ -276,7 +276,7 @@ export default async function ProductPage({ params }: Props) {
             Buscar en Amazon ↗
           </a>
           <div style={{ fontFamily: fonts.body, fontSize: 11, color: colors.navy400, marginTop: 8 }}>
-            Enlace de afiliado: si compras, DóndeTa puede ganar una comisión sin costo para ti.
+            {AMAZON_DISCLOSURE} Comprar por este enlace no te cuesta más.
           </div>
         </section>
       )}
