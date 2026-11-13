@@ -104,6 +104,27 @@ export async function PriceCheckPage({ id }: { id: SalesEventId }) {
         </div>
       </div>
 
+      {COUNTRY.isDominican && bf.phase !== 'after' && (
+        <a
+          href={`/cuenta/black-friday?activar=1&utm_source=web&utm_medium=cta&utm_campaign=black-friday-${year}`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 16px', padding: '14px 16px',
+            background: colors.primaryLight, border: `1px solid ${colors.primary}`, borderRadius: 16, textDecoration: 'none',
+          }}
+        >
+          <span aria-hidden style={{ fontSize: 24 }}>📩</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontFamily: fonts.display, fontSize: 15, fontWeight: 700, color: colors.navy }}>
+              Te avisamos solo de las ofertas reales
+            </span>
+            <span style={{ display: 'block', fontFamily: fonts.body, fontSize: 13, color: colors.navy400, marginTop: 2 }}>
+              Crea tu cuenta gratis y recibe por correo lo que de verdad bajó, el miércoles, el viernes y el Cyber Monday.
+            </span>
+          </span>
+          <span aria-hidden style={{ fontFamily: fonts.display, fontSize: 14, fontWeight: 700, color: colors.primary }}>Activar</span>
+        </a>
+      )}
+
       <p style={leadStyle}>
         Algunas tiendas suben el precio unas semanas antes y luego lo “rebajan”. Por eso comparamos cada precio con{' '}
         <b>el más bajo que tuvo en esa misma tienda en los últimos 30 días</b>. Si la oferta no rompe ese mínimo, no es una oferta.
