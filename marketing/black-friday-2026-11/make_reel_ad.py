@@ -139,6 +139,19 @@ def scene_cta(line):
     subtitle(d, line)
     return img
 
+def script_lines(ref, cur):
+    """(spoken, subtitle) per scene."""
+    return [
+        ("¿Esa oferta de Black Friday… es real?", "¿Esa oferta de Black Friday es real?"),
+        (f"Mira esta plancha: hace unas semanas costaba {SPOKEN_NUMBERS[ref]} pesos. Hoy cuesta más del doble. "
+         "Si el viernes la rebajan… eso no es oferta.",
+         f"Hace unas semanas costaba {rd(ref)}. Hoy, más del doble. Si el viernes la “rebajan”, no es oferta."),
+        ("En DóndeTa comparamos cada precio con sus últimos treinta días, en las tiendas de aquí.",
+         "En DóndeTa comparamos cada precio con sus últimos 30 días."),
+        ("Crea tu cuenta gratis… y te avisamos solo de las ofertas reales.",
+         "Crea tu cuenta gratis y te avisamos solo de las ofertas reales."),
+    ]
+
 def clip(img, audio, index, tail=0.45):
     """One scene: a slow push-in on the still, with its voice line."""
     WORK.mkdir(parents=True, exist_ok=True)
@@ -161,16 +174,7 @@ if __name__ == "__main__":
         raise SystemExit(f"example changed ({item['productName']}: {ref} -> {cur}): update scene 2 text and SPOKEN_NUMBERS")
     photo = Image.open(io.BytesIO(urllib.request.urlopen(item["image"], timeout=30).read())).convert("RGB")
 
-    lines = [
-        ("¿Esa oferta de Black Friday… es real?", "¿Esa oferta de Black Friday es real?"),
-        (f"Mira esta plancha: hace unas semanas costaba {SPOKEN_NUMBERS[ref]} pesos. Hoy cuesta más del doble. "
-         "Si el viernes la rebajan… eso no es oferta.",
-         f"Hace unas semanas costaba {rd(ref)}. Hoy, más del doble. Si el viernes la “rebajan”, no es oferta."),
-        ("En DóndeTa comparamos cada precio con sus últimos treinta días, en las tiendas de aquí.",
-         "En DóndeTa comparamos cada precio con sus últimos 30 días."),
-        ("Crea tu cuenta gratis… y te avisamos solo de las ofertas reales.",
-         "Crea tu cuenta gratis y te avisamos solo de las ofertas reales."),
-    ]
+    lines = script_lines(ref, cur)
     scenes = [scene_hook(lines[0][1]), scene_product(lines[1][1], item, photo), scene_how(lines[2][1]), scene_cta(lines[3][1])]
     clips = [clip(img, tts(spoken), n, tail=0.3 if n == 0 else 0.5 if n < 3 else 1.6)
              for n, (img, (spoken, _)) in enumerate(zip(scenes, lines))]
