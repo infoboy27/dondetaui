@@ -39,6 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/comparaciones`, changeFrequency: 'daily', priority: 0.85 },
     { url: `${SITE_URL}/bajas-de-precio`, changeFrequency: 'daily', priority: 0.85 },
     { url: `${SITE_URL}/black-friday`, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${SITE_URL}/cyber-monday`, changeFrequency: 'daily', priority: 0.8 },
+    ...(COUNTRY.isDominican ? [{ url: `${SITE_URL}/calculadora-amazon`, changeFrequency: 'monthly' as const, priority: 0.7 }] : []),
     ...PRODUCT_TYPES
       .filter(type => products.filter(p => matchesType(p, type)).length >= 3)
       .map(type => ({ url: `${SITE_URL}/precios/${type.slug}`, changeFrequency: 'daily' as const, priority: 0.85 })),

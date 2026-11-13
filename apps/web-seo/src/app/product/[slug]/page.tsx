@@ -264,7 +264,14 @@ export default async function ProductPage({ params }: Props) {
             {COUNTRY.isDominican
               ? 'Si lo traes por courier, compara el total: precio en Amazon + envío por libra + impuestos si pasa de US$200. '
               : 'Compara el precio en Amazon con el envío y los impuestos de importación. '}
-            {COUNTRY.isDominican && <a href="/guias/comprar-en-amazon-desde-rd" style={{ color: colors.primary }}>Cómo calcularlo</a>}
+            {COUNTRY.isDominican && (
+              <a
+                href={`/calculadora-amazon?q=${encodeURIComponent(product.name)}${bestOffer?.price ? `&local=${Math.round(bestOffer.price)}` : ''}`}
+                style={{ color: colors.primary }}
+              >
+                Calcula el total con courier
+              </a>
+            )}
           </p>
           <a
             href={amazonUrl}

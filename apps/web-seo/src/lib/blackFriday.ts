@@ -17,3 +17,20 @@ export function blackFridayPhase(now = new Date()): BlackFridayPhase {
   if (days >= -3) return { phase: 'during', date }
   return { phase: 'after', date }
 }
+
+export type SalesEventId = 'black-friday' | 'cyber-monday'
+
+export type SalesEvent = BlackFridayPhase & { id: SalesEventId; name: string; weekday: string; path: string }
+
+// Cyber Monday is three days after Black Friday. Each page counts down to its
+// own day; both are "during" from Black Friday through Cyber Monday.
+export function salesEvent(id: SalesEventId, now = new Date()): SalesEvent {
+  const bf = blackFridayPhase(now)
+  const meta = id === 'black-friday'
+    ? { id, name: 'Black Friday', weekday: 'viernes', path: '/black-friday' }
+    : { id, name: 'Cyber Monday', weekday: 'lunes', path: '/cyber-monday' }
+  if (id === 'black-friday') return { ...bf, ...meta }
+  const date = new Date(bf.date.getTime() + 3 * 86_400_000)
+  if (bf.phase === 'before') return { ...meta, phase: 'before', days: bf.days + 3, date }
+  return { ...meta, phase: bf.phase, date }
+}
