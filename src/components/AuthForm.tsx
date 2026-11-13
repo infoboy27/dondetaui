@@ -16,13 +16,15 @@ interface Props {
   onSuccess: () => void
   loading: boolean
   error: string | null
+  /** Which tab opens first (sign-up landing pages start on "register"). */
+  initialTab?: 'login' | 'register'
 }
 
 // Shared by LoginScreen (mobile, full-page) and AuthModal (desktop,
 // centered overlay) -- the fields/tabs/submit logic is identical, only the
 // chrome around it differs.
-export default function AuthForm({ onLogin, onRegister, onSuccess, loading, error }: Props) {
-  const [tab, setTab] = useState<'login' | 'register'>('login')
+export default function AuthForm({ onLogin, onRegister, onSuccess, loading, error, initialTab = 'login' }: Props) {
+  const [tab, setTab] = useState<'login' | 'register'>(initialTab)
   // Extra steps: two-step sign-in, and password recovery (email, then code).
   const [step, setStep] = useState<'form' | 'mfa' | 'forgot' | 'reset'>('form')
   const [challenge, setChallenge] = useState<MfaChallenge | null>(null)

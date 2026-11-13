@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { digestsApi } from '../api/digests'
 import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon } from '../components/Icons'
 import { SiteLinks, DONATE_URL } from '../components/SiteLinks'
 import { COUNTRY_SITES, countryForHost } from '../domain/countries'
@@ -19,6 +21,13 @@ interface Props {
 }
 
 export default function ProfileScreen({ user, favoriteCount, alertCount, onFavorites, onAlerts, onLogin, onLogout }: Props) {
+  const [blackFridayDigest, setBlackFridayDigest] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    digestsApi.status('black-friday').then(on => { if (!cancelled) setBlackFridayDigest(on) }, () => {})
+    return () => { cancelled = true }
+  }, [user])
   const currentCountry = countryForHost(window.location.hostname).code
   // Each country is its own site (own stores and currency): picking one opens it.
   const COUNTRY_SECTION = {
@@ -56,6 +65,12 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
               value: user.emailVerified === false ? 'Confirma tu correo' : user.mfaMethod ? '2FA activa' : '',
               accent: false,
               onClick: () => { window.location.href = '/cuenta/seguridad' },
+            }, {
+              icon: BellIcon,
+              label: 'Ofertas reales de Black Friday por correo',
+              value: blackFridayDigest === null ? '' : blackFridayDigest ? 'Activado' : 'Desactivado',
+              accent: false,
+              onClick: () => { window.location.href = '/cuenta/black-friday' },
             }]
           : []),
       ],
