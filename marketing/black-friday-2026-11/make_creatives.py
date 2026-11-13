@@ -105,13 +105,17 @@ def render(w, h, v, shift=0):
     by = h - (230 if story else 118)
     cf = poppins(40, "700Bold")
     d.rounded_rectangle((m, by, w - m, by + 96), radius=48, fill=GREEN)
-    d.text((w / 2, by + 48), "dondeta.com.do/black-friday", font=cf, fill=NAVY, anchor="mm")
+    d.text((w / 2, by + 48), v.get("cta", "dondeta.com.do/black-friday"), font=cf, fill=NAVY, anchor="mm")
     return img, y
 
-for key, v in VARIANTS.items():
-    render(1080, 1350, v)[0].save(OUT / f"bf-{key}-feed.jpg", quality=92)
+def save_both(key, v, prefix="bf"):
+    render(1080, 1350, v)[0].save(OUT / f"{prefix}-{key}-feed.jpg", quality=92)
     # Story: centre the text block between the logo and the button.
     _, end = render(1080, 1920, v)
     shift = max(0, (1920 - 230 - 150 - 156 - 90 - (end - 150 - 156 - 90)) // 2 - 40)
-    render(1080, 1920, v, shift)[0].save(OUT / f"bf-{key}-story.jpg", quality=92)
-print("ok")
+    render(1080, 1920, v, shift)[0].save(OUT / f"{prefix}-{key}-story.jpg", quality=92)
+
+if __name__ == "__main__":
+    for key, v in VARIANTS.items():
+        save_both(key, v)
+    print("ok")
