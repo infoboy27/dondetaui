@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Resend } from 'resend'
+import { assertSent } from './email-result'
 
 @Injectable()
 export class EmailProvider {
@@ -21,13 +22,11 @@ export class EmailProvider {
       return
     }
 
-    // The Resend SDK reports failures (unverified domain, bad key, rate limit)
-    // in the result instead of throwing: surface them, or a broken setup is
-    // invisible and callers think the email went out.
-    const { error } = await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) })
-    if (error) {
-      this.logger.error(`Resend rejected the email (${error.name}): ${error.message}`)
-      throw new Error(`email not sent: ${error.message}`)
+    try {
+      assertSent(await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) }))
+    } catch (error) {
+      this.logger.error(String(error))
+      throw error
     }
   }
 }
