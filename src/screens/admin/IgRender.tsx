@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
 import { cardPromotionsApi } from '../../api/cardPromotions'
+import { apiFetch } from '../../api/http'
 import { productsApi } from '../../api/products'
 import type { CardPromotion } from '../../domain/cardPromotions'
 import { currentSocialProfile } from '../../domain/socialProfile'
 import { bestPrice, isWorthSharing, weekIndex, weeklyTop } from '../../domain/instagram'
 import { getTopPriceDrops } from '../../domain/notifications'
 import { getTopComparisons } from '../../domain/offers'
+import { pickVoicedPlan, voicedCaption, voicedScript, type PriceCheckReport, type VoicedPlan, type VoicedSeason } from '../../domain/voicedReel'
 import type { Product } from '../../types'
+import { drawVoicedScenes } from './voicedReelCard'
 import {
   caption,
   drawCard,
@@ -49,12 +52,20 @@ export interface IgReel {
   scenes: Array<{ image: string; seconds: number; zoom: boolean }>
 }
 
+// Voiced Reel (Wednesday/Friday): transparent overlays + what the voice says.
+export interface IgVoicedReel {
+  caption: string
+  scenes: Array<{ png: string; spoken: string; subtitle: string; scene: string }>
+}
+
 export interface IgBridge {
   candidates(): Promise<IgCandidate[]>
   render(productId: string, kind: CardKind, imageDataUrl: string | null, site: string): Promise<IgRendered>
   weekly(): Promise<IgWeekly | null>
   renderCarousel(slug: string, images: Record<string, string | null>, site: string): Promise<IgCarousel>
   renderReel(productId: string, kind: CardKind, imageDataUrl: string | null, site: string): Promise<IgReel>
+  voicedPlan(slot: number, exclude: string[]): Promise<VoicedPlan | null>
+  renderVoiced(plan: VoicedPlan, imageDataUrl: string | null, site: string, season: VoicedSeason): Promise<IgVoicedReel>
 }
 
 declare global {
@@ -74,6 +85,9 @@ async function loadImage(dataUrl: string | null): Promise<HTMLImageElement | nul
     return null
   }
 }
+
+// Logo for dark backgrounds (same origin, so the canvas stays exportable).
+const LOGO_DARK = '/social/dondeta-logo-dark.png'
 
 // Instagram only takes JPEG.
 const jpeg = (canvas: HTMLCanvasElement) => canvas.toDataURL('image/jpeg', 0.92)
@@ -148,6 +162,24 @@ export default function IgRender() {
         drawTopEnd(canvas, top.type, stores, site)
         slides.push(jpeg(canvas))
         return { caption: topCaption(top.type, top.items, label, site, await loadPromotions()), slides }
+      },
+      async voicedPlan(slot, exclude) {
+        const report = await apiFetch<PriceCheckReport>('/price-check').catch(() => null)
+        return pickVoicedPlan(slot, report, await load(), new Set(exclude), (product, savings) => isWorthSharing(savings, bestPrice(product) ?? 0))
+      },
+      async renderVoiced(plan, imageDataUrl, site, season) {
+        await ensureFonts()
+        await document.fonts.load('700 104px Poppins').catch(() => undefined)
+        const lines = voicedScript(plan, season)
+        // The stores with the most products first (the line under "cómo comparamos").
+        const counts = new Map<string, number>()
+        for (const p of await load()) if (p.categoryId !== 'gaming') for (const o of p.prices) counts.set(o.store, (counts.get(o.store) ?? 0) + 1)
+        const stores = [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([store]) => store)
+        const canvases = drawVoicedScenes(plan, lines, await loadImage(imageDataUrl), await loadImage(LOGO_DARK), site, season, stores)
+        return {
+          caption: voicedCaption(plan, site, season),
+          scenes: canvases.map((canvas, i) => ({ png: canvas.toDataURL('image/png'), spoken: lines[i].spoken, subtitle: lines[i].subtitle, scene: lines[i].scene })),
+        }
       },
       async renderReel(productId, kind, imageDataUrl, site) {
         const product = await find(productId)

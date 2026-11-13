@@ -32,6 +32,20 @@ export class InstagramAdminController {
     return this.instagram.autopilot()
   }
 
+  // Queued posts (campaigns, voiced Reels) and cancelling one before it goes out.
+  @Get('scheduled')
+  scheduled() {
+    return this.instagram.scheduled()
+  }
+
+  @Post('scheduled/:id/cancel')
+  async cancelScheduled(@Param('id') id: string) {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new BadRequestException('id inválido')
+    const result = await this.instagram.cancelScheduled(id)
+    if (!result.ok) throw new NotFoundException('No está programado (ya salió o se canceló)')
+    return result
+  }
+
   @Get('facebook')
   facebook() {
     return this.instagram.facebook()
