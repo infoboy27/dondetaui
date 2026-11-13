@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const send = vi.fn()
 vi.mock('resend', () => ({ Resend: class { emails = { send } } }))
+// The root vitest run (CI "validate") doesn't install the API's Nest deps.
+vi.mock('@nestjs/common', () => ({
+  Injectable: () => () => undefined,
+  Logger: class { log() {} warn() {} error() {} },
+}))
 
 import { EmailProvider } from './email.provider'
 
