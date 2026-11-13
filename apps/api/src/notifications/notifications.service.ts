@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { EmailProvider } from './email.provider'
 import { SmsProvider } from './sms.provider'
 import { PushProvider } from './push.provider'
@@ -8,6 +8,8 @@ import type { NotificationRecipient } from './notifier.types'
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name)
+
   constructor(
     private readonly email: EmailProvider,
     private readonly sms: SmsProvider,
@@ -25,7 +27,9 @@ export class NotificationsService {
       path: product?.slug ? `/product/${product.slug}` : null,
     }
     const email = priceDropEmail(productName, formatPrice(newPrice), details)
+    // A failed email must not stop the WhatsApp/push copies of the same alert.
     await this.email.send(recipient.email, email.subject, email.text, email.html)
+      .catch(error => this.logger.warn(`price-drop email failed: ${String(error)}`))
 
     if (recipient.phone) {
       await this.sms.sendWhatsApp(recipient.phone, body)

@@ -21,6 +21,13 @@ export class EmailProvider {
       return
     }
 
-    await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) })
+    // The Resend SDK reports failures (unverified domain, bad key, rate limit)
+    // in the result instead of throwing: surface them, or a broken setup is
+    // invisible and callers think the email went out.
+    const { error } = await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) })
+    if (error) {
+      this.logger.error(`Resend rejected the email (${error.name}): ${error.message}`)
+      throw new Error(`email not sent: ${error.message}`)
+    }
   }
 }
