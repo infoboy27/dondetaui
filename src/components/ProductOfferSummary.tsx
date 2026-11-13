@@ -135,7 +135,7 @@ export default function ProductOfferSummary({ offers }: ProductOfferSummaryProps
             <ClockIcon size={12} color="#9AAABB" />
             <span style={{ fontSize: 11, color: '#9AAABB', fontFamily: fonts.body }}>
               Actualizado hace {bestOffer.updated} · Disponibilidad puede variar
-              {anyDeal && ' · Descuentos con tarjeta sujetos a condiciones del banco'}
+              {anyDeal && ' · Promociones con tarjeta sujetas a condiciones del banco'}
             </span>
           </div>
         </div>

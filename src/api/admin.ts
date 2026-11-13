@@ -1,4 +1,4 @@
-import type { CardPromotion } from '../domain/cardPromotions'
+import type { CardPromotion, CardPromotionKind } from '../domain/cardPromotions'
 import { apiFetch } from './http'
 
 export interface ClickSeries {
@@ -182,6 +182,7 @@ export interface FacebookCrossPost {
 
 export interface CardPromotionForm {
   retailerSlug: string
+  kind: CardPromotionKind
   bank: string
   card: string
   percent: string

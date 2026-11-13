@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { Pool } from 'pg'
 import { DATABASE_POOL } from '../database/database.module'
-import type { CardPromotionInput } from './card-promotion-input'
+import type { CardPromotionInput, CardPromotionKind } from './card-promotion-input'
 
 export interface CardPromotionDto {
   id: string
   retailerId: string
   retailerSlug: string
   store: string
+  kind: CardPromotionKind
   bank: string
   card: string | null
   percent: number
@@ -25,6 +26,7 @@ interface Row {
   retailer_id: string
   retailer_slug: string
   retailer_name: string
+  kind: CardPromotionKind
   bank: string
   card: string | null
   percent: string
@@ -42,6 +44,7 @@ const SELECT = `select
     r.id::text as retailer_id,
     r.slug as retailer_slug,
     r.name as retailer_name,
+    p.kind,
     p.bank,
     p.card,
     p.percent,
@@ -81,11 +84,11 @@ export class CardPromotionsRepository {
   async create(input: CardPromotionInput): Promise<CardPromotionDto | null> {
     const inserted = await this.pool.query<{ id: string }>(
       `insert into card_promotions
-        (retailer_id, bank, card, percent, max_discount, min_purchase, weekdays, starts_on, ends_on, terms_url, note)
-      select r.id, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11 from retailers r where r.slug = $1
+        (retailer_id, bank, card, percent, max_discount, min_purchase, weekdays, starts_on, ends_on, terms_url, note, kind)
+      select r.id, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 from retailers r where r.slug = $1
       returning id::text`,
       [input.retailerSlug, input.bank, input.card, input.percent, input.maxDiscount, input.minPurchase,
-        input.weekdays, input.startsOn, input.endsOn, input.termsUrl, input.note],
+        input.weekdays, input.startsOn, input.endsOn, input.termsUrl, input.note, input.kind],
     )
     const id = inserted.rows[0]?.id
     if (!id) return null
@@ -110,6 +113,7 @@ function toDto(row: Row): CardPromotionDto {
     retailerId: row.retailer_id,
     retailerSlug: row.retailer_slug,
     store: row.retailer_name,
+    kind: row.kind === 'cashback' ? 'cashback' : 'discount',
     bank: row.bank,
     card: row.card,
     percent: Number(row.percent),

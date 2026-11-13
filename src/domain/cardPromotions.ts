@@ -4,8 +4,14 @@ import { getOfferTotal } from './offers'
 
 // A bank card discount a store runs, as served by GET /card-promotions (only
 // promotions running today; the API hides and deletes expired ones).
+// 'discount' comes off the price at checkout; 'cashback' is money the bank
+// credits weeks later, so it is never shown as the price you pay.
+export type CardPromotionKind = 'discount' | 'cashback'
+
 export interface CardPromotion {
   id: string
+  /** Missing on responses from an API older than migration 032: 'discount'. */
+  kind?: CardPromotionKind
   retailerId: string
   retailerSlug: string
   store: string
@@ -24,8 +30,10 @@ export interface CardPromotion {
 
 export interface CardDeal {
   promotion: CardPromotion
+  kind: CardPromotionKind
+  /** Discount at checkout, or money back for cashback. */
   discount: number
-  /** Purchase total (price + shipping) minus the card discount, in whole pesos. */
+  /** Purchase total (price + shipping) minus the discount or cashback, in whole pesos. */
   total: number
 }
 
@@ -52,9 +60,12 @@ export function bestCardDeal(offer: StorePrice, promotions: CardPromotion[], wee
     if (!sameStore(promotion, offer) || !appliesOn(promotion, weekday) || offer.price < promotion.minPurchase) continue
     const raw = Math.round(offer.price * promotion.percent) / 100
     const discount = Math.round(promotion.maxDiscount === null ? raw : Math.min(raw, promotion.maxDiscount))
-    if (discount <= 0 || (best && discount <= best.discount)) continue
+    const kind = promotionKind(promotion)
+    if (discount <= 0) continue
+    // Same amount: money off now beats money back later.
+    if (best && (discount < best.discount || (discount === best.discount && (kind === 'cashback' || best.kind === 'discount')))) continue
     // Whole pesos: the card price is an estimate, cents would add false precision.
-    best = { promotion, discount, total: Math.round(getOfferTotal(offer) - discount) }
+    best = { promotion, kind, discount, total: Math.round(getOfferTotal(offer) - discount) }
   }
   return best
 }
@@ -64,7 +75,9 @@ export function bestCardDealAcross(offers: StorePrice[], promotions: CardPromoti
   let best: (CardDeal & { offer: StorePrice }) | undefined
   for (const offer of offers) {
     const deal = bestCardDeal(offer, promotions, weekday)
-    if (deal && (!best || deal.total < best.total)) best = { ...deal, offer }
+    if (!deal) continue
+    const tieGoesToDiscount = best && deal.total === best.total && deal.kind === 'discount' && best.kind === 'cashback'
+    if (!best || deal.total < best.total || tieGoesToDiscount) best = { ...deal, offer }
   }
   return best
 }
@@ -75,6 +88,10 @@ export function weekdaysLabel(weekdays: number[] | null): string | null {
   if (!weekdays || weekdays.length === 0 || weekdays.length === 7) return null
   const names = weekdays.map(day => DAYS[day])
   return names.length === 1 ? `solo ${names[0]}` : `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`
+}
+
+export function promotionKind(promotion: CardPromotion): CardPromotionKind {
+  return promotion.kind === 'cashback' ? 'cashback' : 'discount'
 }
 
 /** "Popular Visa" or just "BHD". */
@@ -90,4 +107,23 @@ export function cardDealConditions(promotion: CardPromotion): string {
     weekdaysLabel(promotion.weekdays),
     promotion.note,
   ].filter(Boolean).join(' · ')
+}
+
+/**
+ * How a deal reads under a store's price, split so each UI can bold the amount.
+ * Discount: "Con BHD −10%:" RD$22,495 (what you pay at checkout).
+ * Cashback: "Con BHD, 20% de cashback: te devuelven" RD$4,000 "(te queda en RD$16,000)".
+ */
+export function cardDealParts(deal: CardDeal): { lead: string; amount: number; tail: string } {
+  const name = cardName(deal.promotion)
+  if (deal.kind === 'cashback') {
+    return { lead: `Con ${name}, ${deal.promotion.percent}% de cashback: te devuelven`, amount: deal.discount, tail: `después (te queda en ${formatPrice(deal.total)})` }
+  }
+  return { lead: `Con ${name} −${deal.promotion.percent}%:`, amount: deal.total, tail: '' }
+}
+
+/** The same in one plain sentence, for accessibility labels and captions. */
+export function cardDealSentence(deal: CardDeal): string {
+  const { lead, amount, tail } = cardDealParts(deal)
+  return `${lead} ${formatPrice(amount)}${tail ? ` ${tail}` : ''}`
 }

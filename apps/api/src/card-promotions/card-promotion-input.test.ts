@@ -14,6 +14,12 @@ describe('parseCardPromotion', () => {
     expect(parseCardPromotion({ ...valid, weekdays: [0, 1, 2, 3, 4, 5, 6] }, '2026-10-29').weekdays).toBeNull()
   })
 
+  it('defaults to an instant discount and accepts cashback', () => {
+    expect(parseCardPromotion(valid, '2026-10-29').kind).toBe('discount')
+    expect(parseCardPromotion({ ...valid, kind: 'cashback' }, '2026-10-29').kind).toBe('cashback')
+    expect(() => parseCardPromotion({ ...valid, kind: 'coupon' }, '2026-10-29')).toThrow('Tipo')
+  })
+
   it('rejects bad input', () => {
     expect(() => parseCardPromotion({ ...valid, percent: '0' }, '2026-10-29')).toThrow()
     expect(() => parseCardPromotion({ ...valid, endsOn: '' }, '2026-10-29')).toThrow('fin')
