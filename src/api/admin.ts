@@ -208,7 +208,39 @@ export interface CardPromotionForm {
   note: string
 }
 
+export interface ModeratedReview {
+  id: string
+  productName: string
+  productSlug: string | null
+  rating: number
+  comment: string | null
+  authorName: string
+  authorEmail: string
+  authorBanned: boolean
+  reports: number
+  reasons: string[]
+  hiddenAt: string | null
+  hiddenReason: string | null
+  createdAt: string
+  lastReportAt: string | null
+}
+
 export const adminApi = {
+  reviewQueue(): Promise<ModeratedReview[]> {
+    return apiFetch('/admin/reviews')
+  },
+  hideReview(id: string): Promise<{ hidden: boolean }> {
+    return apiFetch(`/admin/reviews/${id}/hide`, { method: 'POST' })
+  },
+  unhideReview(id: string): Promise<{ hidden: boolean }> {
+    return apiFetch(`/admin/reviews/${id}/unhide`, { method: 'POST' })
+  },
+  deleteReview(id: string): Promise<{ deleted: boolean }> {
+    return apiFetch(`/admin/reviews/${id}`, { method: 'DELETE' })
+  },
+  banReviewAuthor(id: string, banned: boolean): Promise<{ banned: boolean }> {
+    return apiFetch(`/admin/reviews/${id}/ban`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banned }) })
+  },
   cardPromotions(): Promise<CardPromotion[]> {
     return apiFetch('/admin/card-promotions')
   },

@@ -4,7 +4,7 @@ import { H1, H2, Lead, P, Shell } from '../../lib/page'
 export const metadata: Metadata = {
   title: 'Términos de uso — DóndeTa',
   description:
-    'Condiciones de uso de DóndeTa y aclaraciones sobre precios, disponibilidad, historial, enlaces externos y uso permitido del sitio.',
+    'Condiciones de uso de DóndeTa: precios, disponibilidad, historial, enlaces externos, reseñas (tolerancia cero con el contenido ofensivo) y uso permitido.',
   alternates: { canonical: '/terminos' },
 }
 
@@ -39,7 +39,28 @@ export default function TermsPage() {
         <H2>Enlaces externos</H2>
         <P>
           Algunas fichas enlazan a tiendas externas. Cada tienda es responsable de su propio contenido, proceso de
-          compra, garantía y servicio al cliente. DóndeTa no participa en la transacción ni obtiene comisión por ella.
+          compra, garantía y servicio al cliente. DóndeTa no participa en la transacción. Algunos enlaces son de
+          afiliado (por ejemplo, Eneba y Amazon): si compras a través de ellos, DóndeTa puede recibir una comisión sin
+          costo adicional para ti, y eso no cambia qué opción mostramos como más barata.
+        </P>
+      </section>
+
+      <section style={{ marginBottom: 22 }}>
+        <H2>Cuentas y reseñas</H2>
+        <P>
+          Con una cuenta puedes publicar reseñas de productos en el sitio y en la app. Eres responsable de lo que
+          publicas, que debe ser tu experiencia real con el producto.
+        </P>
+        <P>
+          <strong>Tolerancia cero con el contenido ofensivo y los usuarios abusivos.</strong> No se permiten insultos,
+          lenguaje discriminatorio u ofensivo, amenazas, contenido sexual, datos personales de otras personas, spam,
+          publicidad ni reseñas falsas. Filtramos automáticamente el lenguaje ofensivo antes de publicar.
+        </P>
+        <P>
+          Cualquier persona puede reportar una reseña (opción «Reportar») u ocultar las reseñas de un usuario («Ocultar
+          reseñas de este usuario»). Revisamos los reportes en menos de 24 horas: retiramos el contenido que incumple
+          estas reglas y podemos impedir que su autor publique más reseñas o cerrar su cuenta. Una reseña con varios
+          reportes se oculta mientras la revisamos.
         </P>
       </section>
 

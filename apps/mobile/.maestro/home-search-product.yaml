@@ -1,4 +1,4 @@
-appId: com.jfmcss.dondeta
+appId: com.dondeta.app
 name: Home, search and product page
 ---
 - runFlow: common/open.yaml

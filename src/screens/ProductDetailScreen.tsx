@@ -20,6 +20,7 @@ import { CURRENCY_SYMBOL } from '../domain/currency'
 import { appConfig } from '../config/env'
 import { getBestOffer, getOutboundUrl } from '../domain/offers'
 import { useProductReviews } from '../hooks/useProductReviews'
+import ReviewActions from '../components/ReviewActions'
 import type { Product } from '../types'
 
 interface Props {
@@ -367,6 +368,13 @@ export default function ProductDetailScreen({
                       {review.comment}
                     </p>
                   )}
+                  <ReviewActions
+                    authorKey={review.authorKey}
+                    isLoggedIn={isLoggedIn}
+                    onRequireLogin={onRequireLogin}
+                    onReport={reason => reviews.report(review.id, reason)}
+                    onHideAuthor={reviews.hideAuthor}
+                  />
                 </div>
               ))}
             </div>

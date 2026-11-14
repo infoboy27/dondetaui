@@ -1,4 +1,5 @@
-import { IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator'
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator'
+import { REPORT_REASONS } from './review-moderation'
 
 export class SubmitReviewDto {
   @IsUUID()
@@ -15,9 +16,27 @@ export class SubmitReviewDto {
   comment?: string
 }
 
+export class ReportReviewDto {
+  @IsOptional()
+  @IsIn(REPORT_REASONS as unknown as string[])
+  reason?: string
+}
+
+export class BlockAuthorDto {
+  @Matches(/^[0-9a-f]{16}$/)
+  authorKey!: string
+}
+
+export class ReviewBanDto {
+  @IsBoolean()
+  banned!: boolean
+}
+
 export interface ReviewDto {
   id: string
   userName: string
+  /** Same for all of an author's reviews; used to hide that author. Not the user id. */
+  authorKey: string
   rating: number
   comment: string | null
   createdAt: string

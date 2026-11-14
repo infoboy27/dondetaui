@@ -1,0 +1,22 @@
+appId: com.dondeta.app
+name: Golden path - search "lavadora", open a product, see stores and prices, go back
+---
+- runFlow: common/open.yaml
+- tapOn: "Buscar"
+- tapOn: "Productos, marcas o modelos"
+- inputText: "lavadora"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: ".*resultados para “lavadora”"
+    timeout: 15000
+- takeScreenshot: 20-search-lavadora
+- tapOn:
+    text: ".*RD\\$.*"
+    index: 0
+- extendedWaitUntil:
+    visible: "Precios en .* tiendas|Disponible en"
+    timeout: 15000
+- assertVisible: ".*RD\\$.*"
+- takeScreenshot: 21-product-stores
+- back
+- assertVisible: ".*resultados para “lavadora”"

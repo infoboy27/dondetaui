@@ -23,6 +23,7 @@ const MFA_LABEL = { email: 'Correo', totp: 'App autenticadora' } as const
 export default function ProfileScreen() {
   const router = useRouter()
   const { user, authLoading, auth, favoriteIds, alertedIds } = useAppState()
+  const country = useCountry()
   // The owner's metrics row: only when the server says this account is the
   // admin (ADMIN_EMAILS). Anyone else -- or any error -- never sees it.
   const [isOwner, setIsOwner] = useState(false)
@@ -65,6 +66,12 @@ export default function ProfileScreen() {
               <ListRow icon="heartFill" iconColor={colors.accent} title="Favoritos" value={String(favoriteIds.size)} onPress={() => router.navigate('/alerts')} />
               <ListRow icon="bellFill" iconColor={colors.primary} title="Alertas de precio" value={String(alertedIds.size)} onPress={() => router.navigate('/alerts')} />
             </ListSection>
+
+            {country.code === 'DO' && (
+              <ListSection footer="El miércoles, el viernes y el Cyber Monday: solo los precios que de verdad bajaron.">
+                <ListRow icon="tag" iconColor={colors.navy} title="Ofertas reales de Black Friday" onPress={() => router.push('/black-friday-alerts')} />
+              </ListSection>
+            )}
 
             <ListSection>
               <ListRow
@@ -126,6 +133,7 @@ function SupportLinks() {
       <ListRow icon="donate" iconColor="#E5383B" title="Apóyanos con una donación" external onPress={() => void Linking.openURL('https://www.paypal.com/donate/?hosted_button_id=V7TJW93WQCTE8')} />
       <ListRow icon="chat" iconColor="#5865F2" title="Comunidad en Discord" external onPress={() => void Linking.openURL('https://discord.gg/sxcSngrTZv')} />
       <ListRow icon="lock" iconColor={colors.navy600} title="Política de privacidad" external onPress={() => void Linking.openURL('https://dondeta.com.do/privacy')} />
+      <ListRow icon="info" iconColor={colors.navy600} title="Términos de uso" external onPress={() => void Linking.openURL('https://dondeta.com.do/terminos')} />
     </ListSection>
   )
 }

@@ -1,0 +1,38 @@
+appId: com.dondeta.app
+name: Signed out - sign-up card, Black Friday emails, auth sheet with terms, deep link
+---
+- runFlow: common/open.yaml
+# Home card for guests (Black Friday copy in the DR during the campaign).
+- runFlow:
+    when:
+      visible: "Te avisamos solo de las ofertas reales|Crea tu cuenta gratis"
+    commands:
+      - takeScreenshot: 30-home-signup-card
+      - tapOn: "Crear cuenta gratis"
+      - runFlow:
+          when:
+            visible: "Black Friday"
+          commands:
+            - assertVisible: "Te avisamos solo de las ofertas reales"
+            - takeScreenshot: 31-black-friday-guest
+            - tapOn: "Crear cuenta gratis"
+      - extendedWaitUntil:
+          visible: "Crear cuenta"
+          timeout: 10000
+      - assertVisible: ".*Términos de uso.*"
+      - takeScreenshot: 32-auth-register
+      - tapOn: "Cerrar"
+# Profile (signed out): the account card and the legal links.
+- tapOn: "Perfil"
+- assertVisible: "Tu cuenta DóndeTa"
+- scrollUntilVisible:
+    element: "Términos de uso"
+    direction: DOWN
+- assertVisible: "Política de privacidad"
+# Web link to the Black Friday sign-up opens the in-app screen (dondeta://
+# scheme; https universal links need the published apple-app-site-association).
+- openLink: "dondeta://cuenta/black-friday?activar=1"
+- extendedWaitUntil:
+    visible: "Te avisamos solo de las ofertas reales|Por ahora este correo es solo para República Dominicana"
+    timeout: 15000
+- takeScreenshot: 33-black-friday-deeplink

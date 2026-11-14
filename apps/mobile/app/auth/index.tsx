@@ -26,7 +26,7 @@ const REASONS: Record<AccountReason | 'default', { icon: IconName; title: string
 export default function AuthScreen() {
   const router = useRouter()
   const close = useCloseAuth()
-  const { reason, mode: initialMode } = useLocalSearchParams<{ reason?: AccountReason; mode?: 'login' | 'register' }>()
+  const { reason, mode: initialMode, landing } = useLocalSearchParams<{ reason?: AccountReason; mode?: 'login' | 'register'; landing?: string }>()
   const { auth } = useAppState()
   const [mode, setMode] = useState<'login' | 'register'>(initialMode === 'register' ? 'register' : 'login')
   const [name, setName] = useState('')
@@ -51,7 +51,7 @@ export default function AuthScreen() {
         if (outcome === 'mfa') router.push('/auth/mfa')
         else close()
       } else {
-        await auth.register(email, password, name)
+        await auth.register(email, password, name, landing)
         haptics.success()
         router.replace({ pathname: '/auth/verify-email', params: { onboarding: '1' } })
       }
@@ -152,7 +152,9 @@ export default function AuthScreen() {
             />
           ) : (
             <Text style={[type.footnote, styles.legal]}>
-              Al crear tu cuenta aceptas nuestra{' '}
+              Al crear tu cuenta aceptas los{' '}
+              <Text style={styles.link} onPress={() => void Linking.openURL('https://dondeta.com.do/terminos')}>Términos de uso</Text>
+              {' '}y la{' '}
               <Text style={styles.link} onPress={() => void Linking.openURL('https://dondeta.com.do/privacy')}>Política de privacidad</Text>.
             </Text>
           )}
