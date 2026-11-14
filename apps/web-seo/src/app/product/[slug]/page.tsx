@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 import { getCardPromotions, getCatalog, getProductBySlug, getProductReviews } from '../../../lib/api'
-import { bestCardDeal, cardDealConditions, cardName } from '../../../lib/cardPromotions'
+import { bestCardDeal, cardDealConditions, cardDealParts } from '../../../lib/cardPromotions'
 import { SEO_CATEGORIES, matchesCategory } from '../../../lib/categories'
 import { formatPrice } from '../../../lib/format'
 import { analyzeHistory, formatDateEs, isThinProduct } from '../../../lib/history'
@@ -228,8 +228,9 @@ export default async function ProductPage({ params }: Props) {
               </div>
               {deal && (
                 <div style={{ fontFamily: fonts.body, fontSize: 12, color: colors.navy400, marginTop: 2 }}>
-                  💳 Con {cardName(deal.promotion)} −{deal.promotion.percent}%:{' '}
-                  <strong style={{ color: colors.accent }}>{formatPrice(deal.total)}</strong>
+                  💳 {cardDealParts(deal).lead}{' '}
+                  <strong style={{ color: colors.accent }}>{formatPrice(cardDealParts(deal).amount)}</strong>
+                  {cardDealParts(deal).tail && ` ${cardDealParts(deal).tail}`}
                   {cardDealConditions(deal.promotion) && ` · ${cardDealConditions(deal.promotion)}`}
                 </div>
               )}
@@ -264,7 +265,14 @@ export default async function ProductPage({ params }: Props) {
             {COUNTRY.isDominican
               ? 'Si lo traes por courier, compara el total: precio en Amazon + envío por libra + impuestos si pasa de US$200. '
               : 'Compara el precio en Amazon con el envío y los impuestos de importación. '}
-            {COUNTRY.isDominican && <a href="/guias/comprar-en-amazon-desde-rd" style={{ color: colors.primary }}>Cómo calcularlo</a>}
+            {COUNTRY.isDominican && (
+              <a
+                href={`/calculadora-amazon?q=${encodeURIComponent(product.name)}${bestOffer?.price ? `&local=${Math.round(bestOffer.price)}` : ''}`}
+                style={{ color: colors.primary }}
+              >
+                Calcula el total con courier
+              </a>
+            )}
           </p>
           <a
             href={amazonUrl}

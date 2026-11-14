@@ -32,6 +32,7 @@ const EquipaHogarScreen = lazy(() => import('./screens/EquipaHogarScreen'))
 const NotificationsScreen = lazy(() => import('./screens/NotificationsScreen'))
 const LoginScreen = lazy(() => import('./screens/LoginScreen'))
 const AccountSecurityScreen = lazy(() => import('./screens/AccountSecurityScreen'))
+const BlackFridayDigestScreen = lazy(() => import('./screens/BlackFridayDigestScreen'))
 
 // Owner-only portal, split into its own chunk so the public app doesn't ship it.
 const AdminApp = lazy(() => import('./screens/admin/AdminApp'))
@@ -291,6 +292,24 @@ export default function App() {
     } else {
       void priceAlerts.create(productId)
     }
+  }
+
+  // "Las ofertas reales de Black Friday" by email: sign-up landing for the
+  // Instagram ad and /black-friday (?activar=1), managed from Perfil, and the
+  // email's one-click unsubscribe (?baja=TOKEN). Full page, like security.
+  if (location.pathname === '/cuenta/black-friday') {
+    return (
+      <Suspense fallback={null}>
+        <BlackFridayDigestScreen
+          user={user}
+          onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
+          onLogin={login}
+          onRegister={register}
+          authLoading={authLoading}
+          authError={authError}
+        />
+      </Suspense>
+    )
   }
 
   // Account security (also the "delete your account" link for Google Play),

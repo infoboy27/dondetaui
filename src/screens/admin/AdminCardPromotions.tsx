@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom'
 import { adminApi, type CardPromotionForm } from '../../api/admin'
 import { storesApi, type Store } from '../../api/stores'
 import { colors, fonts, radii } from '../../design/tokens'
-import { cardDealConditions, cardName, type CardPromotion } from '../../domain/cardPromotions'
+import { cardDealConditions, cardName, promotionKind, type CardPromotion } from '../../domain/cardPromotions'
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
 const EMPTY: CardPromotionForm = {
-  retailerSlug: '', bank: '', card: '', percent: '', maxDiscount: '', minPurchase: '',
+  retailerSlug: '', kind: 'discount', bank: '', card: '', percent: '', maxDiscount: '', minPurchase: '',
   weekdays: [], startsOn: '', endsOn: '', termsUrl: '', note: '',
 }
 
@@ -92,12 +92,18 @@ export default function AdminCardPromotions() {
               {stores.map(store => <option key={store.slug} value={store.slug}>{store.name}</option>)}
             </select>
           </Field>
+          <Field label="Tipo">
+            <select value={form.kind} onChange={set('kind')} style={input}>
+              <option value="discount">Descuento en caja (baja el precio a pagar)</option>
+              <option value="cashback">Cashback (el banco devuelve el dinero después)</option>
+            </select>
+          </Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Field label="Banco"><input required value={form.bank} onChange={set('bank')} placeholder="BHD" style={input} /></Field>
             <Field label="Tarjeta (opcional)"><input value={form.card} onChange={set('card')} placeholder="Visa" style={input} /></Field>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <Field label="Descuento %"><input required type="number" min={1} max={90} step="0.5" value={form.percent} onChange={set('percent')} style={input} /></Field>
+            <Field label={form.kind === 'cashback' ? 'Cashback %' : 'Descuento %'}><input required type="number" min={1} max={90} step="0.5" value={form.percent} onChange={set('percent')} style={input} /></Field>
             <Field label="Tope RD$"><input type="number" min={1} value={form.maxDiscount} onChange={set('maxDiscount')} placeholder="Sin tope" style={input} /></Field>
             <Field label="Compra mín. RD$"><input type="number" min={1} value={form.minPurchase} onChange={set('minPurchase')} style={input} /></Field>
           </div>
@@ -138,7 +144,7 @@ export default function AdminCardPromotions() {
             return (
               <div key={promotion.id} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${colors.border}` }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{promotion.store} · {cardName(promotion)} −{promotion.percent}%</div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{promotion.store} · {cardName(promotion)} {promotionKind(promotion) === 'cashback' ? `${promotion.percent}% cashback` : `−${promotion.percent}%`}</div>
                   <div style={{ fontSize: 12, color: colors.navy400 }}>
                     {promotion.startsOn} → {promotion.endsOn}{conditions && ` · ${conditions}`}
                     {promotion.termsUrl && <> · <a href={promotion.termsUrl} target="_blank" rel="noreferrer">condiciones</a></>}

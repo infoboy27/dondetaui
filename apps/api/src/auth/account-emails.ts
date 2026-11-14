@@ -33,14 +33,23 @@ function layout(opts: {
   cta?: { label: string; url: string }
   // HTML-only deal card that replaces the first paragraph (the text body keeps it).
   highlight?: { badge: string; title: string; value: string; oldValue?: string; savings?: string; imageUrl?: string }
+  // Product rows (digest emails), after the paragraphs.
+  deals?: DealRow[]
   preheader?: string
   footer?: string
+  // Plain link under the footer, e.g. one-click unsubscribe.
+  footerLink?: { label: string; url: string }
 }): { text: string; html: string } {
   const lines = [greeting(opts.name), '', ...opts.paragraphs]
   if (opts.code) lines.push('', `Tu código: ${opts.code}`, '')
+  if (opts.deals?.length) {
+    lines.push('')
+    for (const d of opts.deals) lines.push(`• ${d.name} — ${d.price} en ${d.store} (${d.note})`, `  ${d.url}`)
+  }
   if (opts.after) lines.push(...opts.after)
   if (opts.cta) lines.push('', `${opts.cta.label}: ${opts.cta.url}`)
   lines.push('', '— El equipo de DóndeTa', 'https://dondeta.com.do')
+  if (opts.footerLink) lines.push('', `${opts.footerLink.label}: ${opts.footerLink.url}`)
   const text = lines.join('\n')
 
   const p = (value: string) => `<p style="margin:0 0 14px;font-size:15px;line-height:22px;color:${NAVY}">${escape(value)}</p>`
@@ -59,6 +68,15 @@ ${opts.highlight.imageUrl ? `<div style="margin:14px 0 0;text-align:center;backg
 ${opts.highlight.savings ? `<div style="margin-top:4px;font-size:14px;font-weight:700;color:#007A63">${escape(opts.highlight.savings)}</div>` : ''}
 </div>`
     : ''
+  const deals = (opts.deals ?? []).map(d => {
+    const image = d.imageUrl && /^https:\/\//.test(d.imageUrl)
+      ? `<td width="64" style="padding:10px 12px 10px 0;vertical-align:middle"><img src="${escape(d.imageUrl)}" alt="" width="56" height="56" style="display:block;border:0;width:56px;height:56px;object-fit:contain;background:#ffffff;border-radius:8px"></td>`
+      : ''
+    return `<a href="${escape(d.url)}" style="display:block;text-decoration:none;border:1px solid #E8EDF2;border-radius:12px;margin:0 0 10px;padding:0 12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${image}<td style="padding:10px 0;vertical-align:middle">
+<div style="font-size:14px;line-height:19px;font-weight:600;color:${NAVY}">${escape(d.name)}</div>
+<div style="font-size:12px;line-height:17px;color:#007A63;font-weight:700">${escape(d.note)}</div></td>
+<td style="padding:10px 0 10px 10px;text-align:right;vertical-align:middle;white-space:nowrap"><div style="font-size:15px;font-weight:800;color:${NAVY}">${escape(d.price)}</div><div style="font-size:12px;color:${MUTED}">${escape(d.store)}</div></td></tr></table></a>`
+  }).join('\n')
   const paragraphs = opts.highlight ? opts.paragraphs.slice(1) : opts.paragraphs
   const preheader = opts.preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escape(opts.preheader)}</div>`
@@ -70,12 +88,24 @@ ${preheader}<div style="max-width:480px;margin:0 auto;padding:28px 16px">
 ${p(greeting(opts.name))}
 ${highlight}${paragraphs.map(p).join('\n')}
 ${code}
+${deals}
 ${(opts.after ?? []).map(p).join('\n')}
 ${cta}
 </div>
 <p style="font-size:12px;line-height:18px;color:${MUTED};margin:16px 4px 0">${escape(opts.footer ?? 'Recibes este correo porque tienes una cuenta en DóndeTa. Si no fuiste tú, ignóralo o escríbenos respondiendo a este mensaje.')}</p>
+${opts.footerLink ? `<p style="font-size:12px;line-height:18px;margin:6px 4px 0"><a href="${escape(opts.footerLink.url)}" style="color:${MUTED}">${escape(opts.footerLink.label)}</a></p>` : ''}
 </div></body></html>`
   return { text, html }
+}
+
+export interface DealRow {
+  name: string
+  price: string
+  store: string
+  /** Short verdict, e.g. "12 % bajo su mínimo de 30 días". */
+  note: string
+  url: string
+  imageUrl?: string | null
 }
 
 const CODE_NOTE = 'El código vence en 10 minutos. Si no lo pediste, puedes ignorar este correo.'
@@ -192,6 +222,30 @@ export function priceDropEmail(productName: string, price: string, details: Pric
       preheader: `${productName} ahora cuesta ${price}. Míralo antes de que vuelva a subir.`,
       cta: { label: 'Ver la oferta', url },
       footer: 'Recibes este correo porque guardaste este producto en DóndeTa y activaste las alertas de precio. Puedes quitarlo de tus favoritos cuando quieras.',
+    }),
+  }
+}
+
+// "Las ofertas reales de Black Friday": products that today cost clearly less
+// than at any point in the previous 30 days in that store (price-check
+// 'lowest'), sent to shoppers who opted in at /cuenta/black-friday.
+export function dealDigestEmail(opts: { name: string | null; deals: DealRow[]; pageUrl: string; unsubscribeUrl: string; eventName?: string }): EmailContent {
+  const eventName = opts.eventName ?? 'Black Friday'
+  const count = opts.deals.length
+  const lead = count === 1 ? 'Hoy encontramos 1 oferta real' : `Hoy encontramos ${count} ofertas reales`
+  return {
+    subject: `${eventName}: ${count === 1 ? '1 oferta real' : `${count} ofertas reales`} de hoy (comparadas con 30 días)`,
+    ...layout({
+      name: opts.name,
+      paragraphs: [
+        `${lead}: productos que hoy cuestan menos que en cualquier día de los últimos 30 días en esa misma tienda. Nada de rebajas infladas.`,
+      ],
+      deals: opts.deals,
+      after: ['Los precios cambian varias veces al día: confirma el precio final, el envío y la garantía con la tienda antes de comprar.'],
+      cta: { label: `Ver todas las ofertas de ${eventName}`, url: opts.pageUrl },
+      preheader: `${lead}, verificadas contra su historial de precios.`,
+      footer: `Recibes este correo porque pediste las ofertas reales de ${eventName} en DóndeTa. Es como mucho un correo al día y solo durante la temporada de ofertas.`,
+      footerLink: { label: 'Dejar de recibir estos correos', url: opts.unsubscribeUrl },
     }),
   }
 }

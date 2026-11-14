@@ -2,8 +2,12 @@
 // imports: the root test run (CI's web job) loads it before apps/api's own
 // dependencies are installed.
 
+export type CardPromotionKind = 'discount' | 'cashback'
+
 export interface CardPromotionInput {
   retailerSlug: string
+  /** 'discount' = off the price at checkout; 'cashback' = money back later. */
+  kind: CardPromotionKind
   bank: string
   card: string | null
   percent: number
@@ -44,6 +48,8 @@ export function parseCardPromotion(body: Record<string, unknown>, today: string)
   if (!retailerSlug) throw new Error('Elige la tienda')
   const bank = text(body.bank, 60)
   if (!bank) throw new Error('Escribe el banco')
+  const kind = body.kind === undefined || body.kind === null || body.kind === '' ? 'discount' : body.kind
+  if (kind !== 'discount' && kind !== 'cashback') throw new Error('Tipo de promoción inválido')
   const percent = Number(body.percent)
   if (!Number.isFinite(percent) || percent <= 0 || percent > 90) throw new Error('El descuento debe estar entre 1% y 90%')
 
@@ -61,6 +67,7 @@ export function parseCardPromotion(body: Record<string, unknown>, today: string)
 
   return {
     retailerSlug,
+    kind,
     bank,
     card: text(body.card, 60),
     percent,

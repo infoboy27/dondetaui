@@ -6,7 +6,7 @@ import { productsApi } from '../../src/api/products'
 import { friendlyError } from '../../src/api/errors'
 import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offers'
 import { isGaming } from '../../src/domain/gaming'
-import { bestCardDeal, cardDealConditions, cardName } from '../../src/domain/cardPromotions'
+import { bestCardDeal, cardDealConditions, cardDealParts, cardDealSentence } from '../../src/domain/cardPromotions'
 import { useCardPromotions } from '../../src/hooks/useCardPromotions'
 import { offerUrl, openInApp, productWebUrl } from '../../src/domain/links'
 import DiscountCode from '../../src/components/DiscountCode'
@@ -208,7 +208,7 @@ export default function ProductDetailScreen() {
                   disabled={!url}
                   style={styles.offerRow}
                   accessibilityRole="link"
-                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}${deal ? `, ${formatPrice(deal.total)} con tarjeta ${cardName(deal.promotion)}` : ''}. Ver oferta`}
+                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}${deal ? `, ${cardDealSentence(deal)}` : ''}. Ver oferta`}
                 >
                   <Touchable
                     onPress={() => storeSlug && router.push(`/store/${storeSlug}`)}
@@ -229,8 +229,9 @@ export default function ProductDetailScreen() {
                     </Text>
                     {deal && (
                       <Text style={[type.footnote, styles.offerMeta]}>
-                        💳 Con {cardName(deal.promotion)} −{deal.promotion.percent}%:{' '}
-                        <Text style={styles.cardDealPrice}>{formatPrice(deal.total)}</Text>
+                        💳 {cardDealParts(deal).lead}{' '}
+                        <Text style={styles.cardDealPrice}>{formatPrice(cardDealParts(deal).amount)}</Text>
+                        {cardDealParts(deal).tail ? ` ${cardDealParts(deal).tail}` : ''}
                         {conditions ? ` · ${conditions}` : ''}
                       </Text>
                     )}
