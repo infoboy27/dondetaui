@@ -7,6 +7,7 @@ import { AlertingThrottlerGuard } from './common/alerting-throttler.guard'
 import { AuthModule } from './auth/auth.module'
 import { CardPromotionsModule } from './card-promotions/card-promotions.module'
 import { DatabaseModule } from './database/database.module'
+import { DigestsModule } from './digests/digests.module'
 import { FavoritesModule } from './favorites/favorites.module'
 import { HealthController } from './health/health.controller'
 import { NotificationsModule } from './notifications/notifications.module'
@@ -31,6 +32,7 @@ import { StoresModule } from './stores/stores.module'
     CardPromotionsModule,
     AlertsModule,
     FavoritesModule,
+    DigestsModule,
     SearchHistoryModule,
     ReviewsModule,
     NotificationsModule,
