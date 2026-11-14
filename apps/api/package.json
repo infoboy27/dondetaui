@@ -14,7 +14,8 @@
     "ingest:jumbo": "tsx src/ingestion/retailer.cli.ts jumbo",
     "ingest:sirena": "tsx src/ingestion/retailer.cli.ts sirena",
     "ingest:corripio": "tsx src/ingestion/retailer.cli.ts corripio",
-    "ingest:pricesmart": "tsx src/ingestion/pricesmart.cli.ts"
+    "ingest:pricesmart": "tsx src/ingestion/pricesmart.cli.ts",
+    "ingest:hifi": "tsx src/ingestion/hifi.cli.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
