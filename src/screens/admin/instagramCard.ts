@@ -199,41 +199,50 @@ export function drawCard(canvas: HTMLCanvasElement, product: Product, kind: Card
   ctx.fillText(tag, W - pad - ctx.measureText(tag).width, CARD_HEIGHT - 66)
 }
 
-// Orange row: "💳 Con BHD −10% en Plaza Lama ... RD$22,495".
+// Orange row: "💳 Con BHD −10% en Plaza Lama ... RD$22,495", or for cashback
+// "💳 BHD 20% cashback en Plaza Lama ... +RD$4,000" (money back, not a price).
 function drawCardDealRow(ctx: CanvasRenderingContext2D, deal: CardDeal, store: string, x: number, y: number, w: number) {
   roundRect(ctx, x, y, w, 70, 20)
   ctx.fillStyle = '#FFF3E0'
   ctx.fill()
   ctx.font = '700 38px Poppins'
-  const price = formatPrice(deal.total)
+  const cashback = deal.kind === 'cashback'
+  const price = cashback ? `+${formatPrice(deal.discount)}` : formatPrice(deal.total)
   const priceW = ctx.measureText(price).width
   ctx.fillStyle = C.orange
   ctx.fillText(price, x + w - 28 - priceW, y + 50)
   ctx.font = '600 30px "DM Sans"'
   ctx.fillStyle = C.navy
-  const label = wrap(ctx, `💳 Con ${cardName(deal.promotion)} −${deal.promotion.percent}% en ${store}`, w - priceW - 76, 1)[0] ?? ''
+  const text = cashback
+    ? `💳 ${cardName(deal.promotion)} ${deal.promotion.percent}% cashback en ${store}`
+    : `💳 Con ${cardName(deal.promotion)} −${deal.promotion.percent}% en ${store}`
+  const label = wrap(ctx, text, w - priceW - 76, 1)[0] ?? ''
   ctx.fillText(label, x + 28, y + 46)
 }
 
 const profile = () => currentSocialProfile()
 
 // When the product itself has no card deal today, still point at the ones
-// running: "💳 Hoy hay descuentos con tarjeta en Plaza Lama y Sirena".
+// running: "💳 Hoy hay descuentos o cashback con tarjeta en Plaza Lama y Sirena".
 function cardPromotionsHint(promotions: CardPromotion[]): string[] {
   const weekday = dominicanWeekday()
   const stores = [...new Set(promotions.filter(p => appliesOn(p, weekday)).map(p => p.store))].sort()
   if (stores.length === 0) return []
   const list = stores.length === 1 ? stores[0] : `${stores.slice(0, -1).join(', ')} y ${stores[stores.length - 1]}`
-  return ['', `💳 Hoy hay descuentos con tarjeta en ${list}: mira el precio con tu banco en cada producto.`]
+  return ['', `💳 Hoy hay descuentos o cashback con tarjeta en ${list}: mira la promo de tu banco en cada producto.`]
 }
 
 // "💳 Con tarjeta BHD −10% en Plaza Lama: RD$22,495 (tope RD$5,000, solo martes)."
+// Cashback: "💳 Con tarjeta BHD, 20% de cashback en Plaza Lama: te devuelven RD$4,000 después (…)."
 function cardDealSentence(deal: CardDeal, store: string): string {
   const { promotion } = deal
   const extra = [
     promotion.maxDiscount !== null ? `tope ${formatPrice(promotion.maxDiscount)}` : null,
     promotion.weekdays ? 'solo hoy' : null,
   ].filter(Boolean).join(', ')
+  if (deal.kind === 'cashback') {
+    return `💳 Con tarjeta ${cardName(promotion)}, ${promotion.percent}% de cashback en ${store}: te devuelven ${formatPrice(deal.discount)} después de la compra${extra ? ` (${extra})` : ''}. Sujeto a condiciones del banco.`
+  }
   return `💳 Con tarjeta ${cardName(promotion)} −${promotion.percent}% en ${store}: ${formatPrice(deal.total)}${extra ? ` (${extra})` : ''}. Sujeto a condiciones del banco.`
 }
 
@@ -520,7 +529,11 @@ export function topCaption(type: TopType, items: Product[], dateLabel: string, s
   const lines = items.map((product, i) => {
     const best = distinctOffers(product)[0]
     const deal = bestCardDealAcross(product.prices, promotions)
-    const card = deal ? ` (💳 ${formatPrice(deal.total)} con ${cardName(deal.promotion)} en ${deal.offer.store})` : ''
+    const card = !deal
+      ? ''
+      : deal.kind === 'cashback'
+        ? ` (💳 ${deal.promotion.percent}% de cashback con ${cardName(deal.promotion)} en ${deal.offer.store})`
+        : ` (💳 ${formatPrice(deal.total)} con ${cardName(deal.promotion)} en ${deal.offer.store})`
     return `${i + 1}. ${product.name} — ${best ? `${formatPrice(getOfferTotal(best))} en ${best.store}` : ''}${card}`
   })
   return [

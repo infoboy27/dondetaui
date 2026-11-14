@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bestCardDeal, bestCardDealAcross, cardDealConditions, dominicanWeekday, weekdaysLabel, type CardPromotion } from './cardPromotions'
+import { bestCardDeal, bestCardDealAcross, cardDealConditions, cardDealSentence, dominicanWeekday, weekdaysLabel, type CardPromotion } from './cardPromotions'
 import type { StorePrice } from '../types'
 
 function offer(overrides: Partial<StorePrice> = {}): StorePrice {
@@ -70,5 +70,41 @@ describe('labels', () => {
   it('uses the Dominican weekday', () => {
     // Wednesday 02:00 UTC is still Tuesday in Santo Domingo.
     expect(dominicanWeekday(new Date('2026-10-28T02:00:00Z'))).toBe(2)
+  })
+})
+
+describe('cashback promotions', () => {
+  it('expose their kind, and missing kind means an instant discount', () => {
+    expect(bestCardDeal(offer(), [promo()], 2)?.kind).toBe('discount')
+    const deal = bestCardDeal(offer(), [promo({ kind: 'cashback', percent: 20 })], 2)
+    expect(deal).toMatchObject({ kind: 'cashback', discount: 4000, total: 16000 })
+  })
+
+  it('a bigger cashback still wins over a smaller discount', () => {
+    expect(bestCardDeal(offer(), [promo({ id: 'a', percent: 10 }), promo({ id: 'b', kind: 'cashback', percent: 20 })], 2)?.promotion.id).toBe('b')
+  })
+
+  it('on the same amount, money off now wins over money back later, in either order', () => {
+    const cash = promo({ id: 'c', kind: 'cashback' })
+    const off = promo({ id: 'd' })
+    expect(bestCardDeal(offer(), [cash, off], 2)?.promotion.id).toBe('d')
+    expect(bestCardDeal(offer(), [off, cash], 2)?.promotion.id).toBe('d')
+  })
+
+  it('across stores, ties also go to the instant discount', () => {
+    const offers = [offer(), offer({ store: 'Sirena', retailerId: 'si' })]
+    const promos = [promo({ id: 'c', kind: 'cashback' }), promo({ id: 'd', retailerId: 'si', store: 'Sirena' })]
+    expect(bestCardDealAcross(offers, promos, 2)?.promotion.id).toBe('d')
+  })
+})
+
+describe('cardDealSentence', () => {
+  it('shows the checkout price for a discount', () => {
+    expect(cardDealSentence(bestCardDeal(offer(), [promo()], 2)!)).toBe('Con BHD −10%: RD$18,000')
+  })
+
+  it('shows cashback as money back later, never as the price you pay', () => {
+    expect(cardDealSentence(bestCardDeal(offer(), [promo({ kind: 'cashback', percent: 20 })], 2)!))
+      .toBe('Con BHD, 20% de cashback: te devuelven RD$4,000 después (te queda en RD$16,000)')
   })
 })
