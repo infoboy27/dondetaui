@@ -37,6 +37,18 @@ export interface MediaFile {
   data: Buffer
 }
 
+export interface ScheduledRow {
+  id: string
+  label: string
+  target: 'feed' | 'story'
+  caption: string
+  status: string
+  publish_at: Date
+  published_at: Date | null
+  error: string | null
+  has_video: boolean
+}
+
 export interface InstagramPostRow {
   id: string
   product_id: string | null
@@ -129,6 +141,26 @@ export class InstagramService {
       [limit],
     )
     return result.rows
+  }
+
+  // Posts queued in instagram_scheduled (campaigns, Wednesday/Friday voiced
+  // Reels): upcoming ones and the last few days, without the media bytes.
+  async scheduled(): Promise<ScheduledRow[]> {
+    const result = await this.pool.query<ScheduledRow>(
+      `select id::text, label, target, caption, status, publish_at, published_at, error, (video is not null) as has_video
+       from instagram_scheduled
+       where status = 'scheduled' or publish_at > now() - interval '3 days'
+       order by publish_at desc limit 40`,
+    )
+    return result.rows
+  }
+
+  // Cancelling keeps the row (status 'cancelled'): that's what tells the
+  // autopilot not to make the day's voiced Reel again, and to post the
+  // regular one instead.
+  async cancelScheduled(id: string): Promise<{ ok: boolean }> {
+    const result = await this.pool.query("update instagram_scheduled set status = 'cancelled' where id = $1 and status = 'scheduled'", [id])
+    return { ok: (result.rowCount ?? 0) > 0 }
   }
 
   // The country's Facebook Page, fed by every feed post (see facebook.service.ts).

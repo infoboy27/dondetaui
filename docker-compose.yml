@@ -254,8 +254,19 @@ services:
       IG_AUTOPILOT_STORY_HOUR: ${IG_AUTOPILOT_STORY_HOUR:-19}
       DISCORD_WEBHOOK_ALERTS: ${DISCORD_WEBHOOK_ALERTS:-}
       SITE_URL: ${SITE_URL:-https://dondeta.jfmcss.com}
+      # Voiced Reels (Wed/Fri, DO): ElevenLabs voice over stock footage in BROLL_DIR.
+      # Without ELEVENLABS_API_KEY those days fall back to the silent Reel.
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
+      # Only for broll-fetch.cli.js (run by hand after editing broll-library.json).
+      PIXABAY_API_KEY: ${PIXABAY_API_KEY:-}
+      BROLL_DIR: /data/broll
+      # 1 once the Black Friday email sign-up is live: the Black Friday week
+      # Reels then invite to sign up instead of pointing to /black-friday.
+      VOICED_REEL_SIGNUP: ${VOICED_REEL_SIGNUP:-}
     volumes:
       - ./deploy:/deploy:ro
+      - dondeta_broll:/data/broll
     entrypoint: ["/bin/sh", "/deploy/instagram-autopilot-loop.sh"]
     depends_on:
       migrate:
@@ -305,6 +316,8 @@ volumes:
   dondeta_postgres:
   dondeta_redis:
   dondeta_backups:
+  # Stock clips + cached voice lines for the voiced Reels.
+  dondeta_broll:
 
 networks:
   default:

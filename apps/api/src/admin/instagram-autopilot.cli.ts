@@ -1,8 +1,28 @@
 import 'reflect-metadata'
+import { access } from 'node:fs/promises'
+import { join } from 'node:path'
 import { Pool } from 'pg'
 import { chromium } from 'playwright'
+import brollLibrary from './broll-library.json'
+import { speak, ttsConfig } from './elevenlabs'
 import { feedFormat, pickCandidate, type Candidate, type Kind, type Target } from './instagram-autopilot'
-import { buildReel } from './instagram-reel'
+import { buildReel, buildVoicedReel, frameJpeg } from './instagram-reel'
+import {
+  DISCORD_MAX_ATTACHMENT,
+  SCENE_TAILS,
+  VOICED_MAX_ATTEMPTS,
+  feedSlotAction,
+  isVoicedDay,
+  pickClips,
+  publishAt,
+  shouldMakeVoiced,
+  voicedLabel,
+  voicedSeason,
+  voicedSlot,
+  type BrollClip,
+  type SceneName,
+  type ScheduledStatus,
+} from './voiced-reel'
 import { AUTOPILOT_SLOTS, InstagramService } from './instagram.service'
 import { MAX_ATTEMPTS as SCHEDULED_MAX_ATTEMPTS, dueDecision, scheduledFormat } from './instagram-scheduled'
 
@@ -116,6 +136,21 @@ interface Bridge {
   weekly(): Promise<{ slug: string; label: string; items: Array<{ productId: string; name: string; imageUrl: string | null }> } | null>
   renderCarousel(slug: string, images: Record<string, string | null>, site: string): Promise<{ caption: string; slides: string[] }>
   renderReel(productId: string, kind: Kind, image: string | null, site: string): Promise<{ caption: string; scenes: Array<{ image: string; seconds: number; zoom: boolean }> }>
+  voicedPlan(slot: number, exclude: string[]): Promise<VoicedPlan | null>
+  renderVoiced(plan: VoicedPlan, image: string | null, site: string, season: string | null): Promise<{ caption: string; scenes: Array<{ png: string; spoken: string; subtitle: string; scene: SceneName }> }>
+}
+
+// src/domain/voicedReel.ts VoicedPlan, the fields the worker reads.
+interface VoicedPlan {
+  kind: string
+  productId: string
+  name: string
+  categoryId: string
+  imageUrl: string | null
+  store: string
+  current: number
+  before: number
+  pct: number
 }
 
 function bridge<K extends keyof Bridge>(page: Page, method: K, ...args: Parameters<Bridge[K]>): Promise<Awaited<ReturnType<Bridge[K]>>> {
@@ -129,6 +164,7 @@ function bridge<K extends keyof Bridge>(page: Page, method: K, ...args: Paramete
 }
 
 const jpegBuffer = (dataUrl: string) => Buffer.from(dataUrl.replace(/^data:image\/jpeg;base64,/, ''), 'base64')
+const pngBuffer = (dataUrl: string) => Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64')
 
 interface Published {
   label: string
@@ -235,6 +271,153 @@ async function publishSlot(instagram: InstagramService, target: Target): Promise
   }
 }
 
+// ---------------------------------------------------------------------------
+// Voiced Reels (Wednesday/Friday, DO stack): made in the morning, queued in
+// instagram_scheduled for 19:00 and previewed on Discord, so there's time to
+// cancel it in /admin/instagram. See voiced-reel.ts for the rules.
+
+const COUNTRY = process.env.COUNTRY_CODE ?? 'DO'
+const BROLL_DIR = process.env.BROLL_DIR || '/data/broll'
+const VOICED_FAILED_KEY = 'ig_voiced_failed'
+const RECENT_CLIPS_KEY = 'ig_voiced_recent_clips'
+const RECENT_PRODUCTS_KEY = 'ig_voiced_recent_products'
+
+async function setting(key: string): Promise<string | null> {
+  const result = await pool.query<{ value: string }>('select value from app_settings where key = $1', [key])
+  return result.rows[0]?.value ?? null
+}
+
+async function saveSetting(key: string, value: string) {
+  await pool.query(
+    `insert into app_settings(key, value, updated_at) values ($1, $2, now())
+     on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [key, value],
+  )
+}
+
+async function recentList(key: string): Promise<string[]> {
+  try {
+    const list = JSON.parse((await setting(key)) ?? '[]')
+    return Array.isArray(list) ? list.map(String) : []
+  } catch {
+    return []
+  }
+}
+
+async function voicedFailures(): Promise<number> {
+  const [date, count] = ((await setting(VOICED_FAILED_KEY)) ?? '').split(':')
+  return date === today() ? Number(count) || 0 : 0
+}
+
+async function voicedStatus(): Promise<ScheduledStatus | null> {
+  const result = await pool.query<{ status: ScheduledStatus }>(
+    'select status from instagram_scheduled where label = $1 order by created_at desc limit 1',
+    [voicedLabel(today())],
+  )
+  return result.rows[0]?.status ?? null
+}
+
+// Discord message with the video (or its cover when the video is too big).
+async function notifyWithFile(content: string, file: { name: string; type: string; data: Buffer }) {
+  const webhook = process.env.DISCORD_WEBHOOK_ALERTS
+  if (!webhook) return
+  const form = new FormData()
+  form.append('payload_json', JSON.stringify({ content: content.slice(0, 1_900) }))
+  form.append('files[0]', new Blob([new Uint8Array(file.data)], { type: file.type }), file.name)
+  const response = await fetch(webhook, { method: 'POST', body: form }).catch(() => null)
+  if (!response?.ok) await notify(content.slice(0, 1_900))
+}
+
+async function availableClips(): Promise<BrollClip[]> {
+  const clips: BrollClip[] = []
+  for (const clip of brollLibrary as BrollClip[]) {
+    const ok = await access(join(BROLL_DIR, clip.file)).then(() => true, () => false)
+    if (ok) clips.push(clip)
+  }
+  return clips
+}
+
+const rd = (n: number) => `RD$${Math.round(n).toLocaleString('en-US')}`
+
+async function makeVoicedReel(weekday: number) {
+  const tts = ttsConfig(process.env)
+  if (!tts) throw new Error('falta ELEVENLABS_API_KEY en el .env')
+  const library = await availableClips()
+  if (library.length < 4) throw new Error(`hay ${library.length} clips en ${BROLL_DIR}; corre broll-fetch.cli.js`)
+
+  const date = today()
+  const slot = voicedSlot(date, weekday)
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
+    args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  })
+  try {
+    const page = await browser.newPage()
+    await page.goto(`${siteUrl}/ig-render`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await page.waitForFunction(() => Boolean((window as unknown as { __ig?: unknown }).__ig), null, { timeout: 60_000 })
+    const site = new URL(siteUrl).host.replace(/^www\./, '')
+
+    const exclude = [...await recentlyPosted('feed'), ...await recentList(RECENT_PRODUCTS_KEY)]
+    const plan = await bridge(page, 'voicedPlan', slot, exclude)
+    if (!plan) throw new Error('no hay producto para el Reel con voz')
+    const season = voicedSeason(date, process.env.VOICED_REEL_SIGNUP === '1')
+    const rendered = await bridge(page, 'renderVoiced', plan, await imageDataUrl(plan.imageUrl), site, season)
+
+    const recentClips = await recentList(RECENT_CLIPS_KEY)
+    const clips = pickClips(library, rendered.scenes.map(s => ({ scene: s.scene, categoryId: plan.categoryId })), recentClips, slot, date)
+    if (!clips) throw new Error('no hay clips para todas las escenas')
+
+    let billed = 0
+    const scenes = []
+    for (const [i, scene] of rendered.scenes.entries()) {
+      const voice = await speak(tts, scene.spoken)
+      billed += voice.billed
+      scenes.push({ png: pngBuffer(scene.png), audio: voice.file, clip: join(BROLL_DIR, clips[i].file), tail: SCENE_TAILS[scene.scene] })
+    }
+    const video = await buildVoicedReel(scenes)
+    const cover = await frameJpeg(video, 1)
+
+    const at = publishAt(date)
+    await pool.query(
+      `insert into instagram_scheduled (label, target, caption, image, video, publish_at)
+       values ($1, 'feed', $2, $3, $4, $5)`,
+      [voicedLabel(date), rendered.caption, cover, video, at],
+    )
+    await saveSetting(RECENT_CLIPS_KEY, JSON.stringify([...clips.map(c => c.id), ...recentClips].slice(0, 8)))
+    await saveSetting(RECENT_PRODUCTS_KEY, JSON.stringify([plan.productId, ...await recentList(RECENT_PRODUCTS_KEY)].slice(0, 10)))
+    console.log(`[ig-voiced] queued ${plan.kind} ${plan.name} for ${at.toISOString()} (${video.length} bytes, ${billed} chars billed)`)
+
+    const message = [
+      `🎙️ Reel con voz listo para hoy a las 19:00 — ${plan.name}`,
+      `Tipo: ${plan.kind} · ${plan.store}: ${rd(plan.before)} → ${rd(plan.current)}${season ? ` · temporada ${season}` : ''}`,
+      `Clips: ${clips.map(c => c.id).join(', ')} · voz: ${billed} caracteres de ElevenLabs`,
+      'Para no publicarlo: /admin/instagram → Programados → Cancelar (ese día se publica el Reel normal).',
+      '',
+      rendered.caption,
+    ].join('\n')
+    const small = video.length <= DISCORD_MAX_ATTACHMENT
+    await notifyWithFile(message, small ? { name: 'reel.mp4', type: 'video/mp4', data: video } : { name: 'portada.jpg', type: 'image/jpeg', data: cover })
+  } finally {
+    await browser.close()
+  }
+}
+
+async function runVoiced(weekday: number) {
+  const failures = await voicedFailures()
+  if (!shouldMakeVoiced({ voicedDay: isVoicedDay(weekday, COUNTRY), hour: localHour(), existing: await voicedStatus(), failures })) return
+  try {
+    await makeVoicedReel(weekday)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const attempt = failures + 1
+    await saveSetting(VOICED_FAILED_KEY, `${today()}:${attempt}`)
+    console.error(`[ig-voiced] attempt ${attempt} failed:`, message)
+    if (attempt >= VOICED_MAX_ATTEMPTS) {
+      await notify(`⚠️ Reel con voz: no se pudo hacer hoy (${message}). Se publica el Reel normal, sin voz.`)
+    }
+  }
+}
+
 // Campaign posts queued in instagram_scheduled: published when their time
 // comes, independent of the daily autopilot switch.
 async function runScheduled(instagram: InstagramService) {
@@ -288,11 +471,19 @@ async function main() {
   if (!enabled) return
   if (!/^https:\/\//.test(siteUrl)) throw new Error('SITE_URL (https) is required')
 
+  const weekday = localWeekday()
+  await runVoiced(weekday)
+
   const hour = localHour()
   for (const slot of AUTOPILOT_SLOTS) {
     if (hour < slot.hour) continue
     const failed = await failedAttempts(slot.target)
     if (failed >= MAX_ATTEMPTS || await publishedToday(slot.target)) continue
+    // On a voiced day the queued voiced Reel is the feed post.
+    if (slot.target === 'feed') {
+      const action = feedSlotAction({ voicedDay: isVoicedDay(weekday, COUNTRY), existing: await voicedStatus(), failures: await voicedFailures() })
+      if (action !== 'post') continue
+    }
 
     const label = slot.target === 'story' ? 'historia' : 'post'
     try {

@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { feedFormat } from './instagram-autopilot'
-import { ffmpegArgs, totalSeconds } from './instagram-reel'
+import { concatArgs, ffmpegArgs, totalSeconds, voicedSceneArgs } from './instagram-reel'
+
+describe('voicedSceneArgs', () => {
+  const args = voicedSceneArgs({ clip: 'clip.mp4', overlay: 'o.png', audio: 'v.mp3', seconds: 3.5 }, 'scene.mp4')
+  const graph = args[args.indexOf('-filter_complex') + 1]
+
+  it('loops the footage, darkens it with the brand navy and lays the overlay on top', () => {
+    expect(args.slice(0, 5)).toEqual(['-y', '-stream_loop', '-1', '-i', 'clip.mp4'])
+    expect(graph).toContain('scale=-2:2074,crop=1166:2074,zoompan=')
+    expect(graph).toContain('drawbox=x=0:y=0:w=iw:h=ih:color=0x0F1D2D@0.62:t=fill[bg]')
+    expect(graph).toContain('[bg][1:v]overlay=0:0,fade=t=in:st=0:d=0.25,fade=t=out:st=3.300:d=0.2')
+  })
+
+  it('pads the voice to the scene length', () => {
+    expect(graph).toContain('[2:a]apad,atrim=0:3.500')
+    expect(args[args.indexOf('-t') + 1]).toBe('3.500')
+    expect(args.at(-1)).toBe('scene.mp4')
+  })
+
+  it('joins scenes without re-encoding, ready for streaming', () => {
+    expect(concatArgs('list.txt', 'reel.mp4')).toEqual(['-y', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', '-movflags', '+faststart', 'reel.mp4'])
+  })
+})
 
 describe('ffmpegArgs', () => {
   const scenes = [

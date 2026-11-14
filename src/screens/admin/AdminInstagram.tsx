@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getToken } from '../../auth/session'
 import { productsApi } from '../../api/products'
-import { adminApi, type FacebookCrossPost, type InstagramAutopilot, type InstagramPost, type InstagramStatus } from '../../api/admin'
+import { adminApi, type FacebookCrossPost, type InstagramAutopilot, type InstagramPost, type InstagramScheduled, type InstagramStatus } from '../../api/admin'
 import { appConfig } from '../../config/env'
 import { colors, fonts, radii } from '../../design/tokens'
 import { getTopPriceDrops } from '../../domain/notifications'
@@ -61,6 +61,7 @@ export default function AdminInstagram() {
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 0' }}>
         <ConnectionBanner status={status} />
         {canPublish && <AutopilotSwitch />}
+        {canPublish && <ScheduledPosts />}
         {canPublish && <FacebookSwitch />}
         {canPublish && <div style={{ marginTop: 16 }}><CustomPost onPublished={refreshHistory} /></div>}
         {canPublish && <div style={{ marginTop: 16 }}><InstagramMetrics /></div>}
@@ -165,7 +166,7 @@ function AutopilotSwitch() {
       <div style={{ flex: '1 1 260px' }}>
         <b>Piloto automático {autopilot.enabled ? 'activado' : 'apagado'}.</b>{' '}
         {autopilot.enabled
-          ? `Publica cada día ${schedule} (hora de RD), con la mejor comparación o baja que no se haya publicado en los últimos días. El post es un Reel lunes, miércoles y viernes, y el domingo un carrusel con el Top 5 de la semana. Si ya publicaste a mano ese día, no repite. Te avisa por Discord.`
+          ? `Publica cada día ${schedule} (hora de RD), con la mejor comparación o baja que no se haya publicado en los últimos días. El post es un Reel lunes, miércoles y viernes (miércoles y viernes con voz, listo a las 9:00 a. m. para revisarlo en Discord y publicado a las 7:00 p. m.), y el domingo un carrusel con el Top 5 de la semana. Si ya publicaste a mano ese día, no repite. Te avisa por Discord.`
           : `Al activarlo, publica cada día ${schedule} (hora de RD) sin que tengas que entrar: Reels lunes, miércoles y viernes, y un carrusel Top 5 los domingos.`}
         {error && <div style={{ color: colors.error, marginTop: 4 }}>{error}</div>}
       </div>
@@ -177,6 +178,67 @@ function AutopilotSwitch() {
       >
         {saving ? 'Guardando…' : autopilot.enabled ? 'Apagar' : 'Activar'}
       </button>
+    </div>
+  )
+}
+
+const SCHEDULED_STATUS: Record<InstagramScheduled['status'], string> = {
+  scheduled: 'Programado',
+  published: 'Publicado',
+  failed: 'Falló',
+  missed: 'No salió (tarde)',
+  cancelled: 'Cancelado',
+}
+
+// Queued posts (instagram_scheduled): campaigns and the Wednesday/Friday
+// voiced Reels, which wait here until 19:00 so they can be cancelled. A
+// cancelled voiced Reel isn't made again that day; the regular Reel goes out.
+function ScheduledPosts() {
+  const [rows, setRows] = useState<InstagramScheduled[] | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = () => adminApi.igScheduled().then(setRows).catch(() => setRows([]))
+  useEffect(() => { void load() }, [])
+  if (!rows?.length) return null
+
+  const cancel = async (row: InstagramScheduled) => {
+    if (!window.confirm(`¿Cancelar "${row.label}"? No se publicará.`)) return
+    setBusy(row.id)
+    setError(null)
+    try {
+      await adminApi.igCancelScheduled(row.id)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 10, background: colors.card, border: `1px solid ${colors.border}`, borderRadius: radii.md, padding: '10px 14px', fontSize: 13 }}>
+      <b>Programados</b>
+      <span style={{ color: colors.navy400 }}> · los Reels con voz de miércoles y viernes esperan aquí hasta las 7:00 p. m.; si cancelas uno, ese día sale el Reel normal.</span>
+      {error && <div style={{ color: colors.error, marginTop: 4 }}>{error}</div>}
+      {rows.map(row => (
+        <div key={row.id} style={{ display: 'flex', gap: 12, padding: '8px 0', borderTop: `1px solid ${colors.border}`, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+          <span style={{ width: 150, color: colors.navy400 }}>
+            {new Date(row.publish_at).toLocaleString('es-DO', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+          </span>
+          <span style={{ width: 70, color: colors.navy400 }}>{row.has_video ? 'Reel' : row.target === 'story' ? 'Historia' : 'Post'}</span>
+          <span style={{ flex: '1 1 200px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.caption}>
+            <b>{row.label}</b> — {row.caption.split('\n')[0]}
+          </span>
+          {row.status === 'scheduled' ? (
+            <button type="button" onClick={() => cancel(row)} disabled={busy === row.id} style={{ ...btn, flex: 'none', background: colors.background, color: colors.navy }}>
+              {busy === row.id ? 'Cancelando…' : 'Cancelar'}
+            </button>
+          ) : (
+            <span style={{ color: row.status === 'published' ? colors.primary : colors.navy400 }} title={row.error ?? ''}>{SCHEDULED_STATUS[row.status]}</span>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

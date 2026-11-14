@@ -172,6 +172,19 @@ export interface InstagramAutopilot {
   slots: { target: 'feed' | 'story'; hour: number }[]
 }
 
+// GET /admin/instagram/scheduled: campaign posts and voiced Reels queued in instagram_scheduled.
+export interface InstagramScheduled {
+  id: string
+  label: string
+  target: 'feed' | 'story'
+  caption: string
+  status: 'scheduled' | 'published' | 'failed' | 'missed' | 'cancelled'
+  publish_at: string
+  published_at: string | null
+  error: string | null
+  has_video: boolean
+}
+
 export interface FacebookCrossPost {
   configured: boolean
   enabled: boolean
@@ -216,6 +229,12 @@ export const adminApi = {
   },
   igSetAutopilot(enabled: boolean): Promise<InstagramAutopilot> {
     return apiFetch('/admin/instagram/autopilot', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled }) })
+  },
+  igScheduled(): Promise<InstagramScheduled[]> {
+    return apiFetch('/admin/instagram/scheduled')
+  },
+  igCancelScheduled(id: string): Promise<{ ok: boolean }> {
+    return apiFetch(`/admin/instagram/scheduled/${id}/cancel`, { method: 'POST' })
   },
   campaigns(days: number): Promise<CampaignReport> {
     return apiFetch(`/admin/campaigns?days=${days}`)
