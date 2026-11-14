@@ -39,6 +39,18 @@ export function acceptsCategory(item: Pick<NormalizedRetailerItem, 'categoryName
   return isApplianceCategory(item.categoryName)
 }
 
+// Matching by EAN / model / model code never lands on a variant this
+// retailer already lists under another SKU and URL (those are checked
+// first): one store doesn't sell the same item twice, so a hit there means
+// two different products share a code. Every KTC TV said "AND11" and the 32"
+// and the 86" ended up as one product showing the 32" price.
+function noOfferFromRetailer(retailerParam: number): string {
+  return `not exists (
+    select 1 from offers same
+    where same.product_variant_id = pv.id and same.retailer_id = $${retailerParam}
+  )`
+}
+
 // Suffixed with a slice of the product's own id, so this never needs a
 // collision-retry loop against the unique index even if two products
 // slugify to the same text.
@@ -89,7 +101,16 @@ export class IngestionRepository {
                -- (matched inside "marcadores-y-felpas"); repair it even on
                -- shared products.
                brand = case when shared.yes and brand not in ('dores-y-felpas', 'Desconocida') then brand else $3 end,
-               image_url = coalesce(image_url, $4),
+               -- Refresh the image when nobody else lists the product or
+               -- this retailer supplied the current one (same host): stores
+               -- delete old images (Plaza Lama 404s) and a dead link used to
+               -- stick forever.
+               image_url = case
+                 when $4::text is null then image_url
+                 when image_url is null or not shared.yes
+                   or split_part(image_url, '/', 3) = split_part($4::text, '/', 3) then $4::text
+                 else image_url
+               end,
                category_id = case when shared.yes then category_id else $5 end,
                updated_at = now()
            from (
@@ -238,9 +259,9 @@ export class IngestionRepository {
 
     if (item.ean) {
       const byEan = await client.query<{ product_id: string; variant_id: string }>(
-        `select product_id::text, id::text as variant_id
-         from product_variants where ean = $1 limit 1`,
-        [item.ean],
+        `select pv.product_id::text, pv.id::text as variant_id
+         from product_variants pv where pv.ean = $1 and ${noOfferFromRetailer(2)} limit 1`,
+        [item.ean, retailerId],
       )
       if (byEan.rows[0]) {
         return { productId: byEan.rows[0].product_id, variantId: byEan.rows[0].variant_id }
@@ -252,15 +273,16 @@ export class IngestionRepository {
        from product_variants pv
        join products p on p.id = pv.product_id
        where lower(p.brand) = lower($1) and lower(pv.model) = lower($2)
+         and ${noOfferFromRetailer(3)}
        limit 1`,
-      [item.brand, item.model],
+      [item.brand, item.model, retailerId],
     )
 
     if (byModel.rows[0]) {
       return { productId: byModel.rows[0].product_id, variantId: byModel.rows[0].variant_id }
     }
 
-    return this.findVariantByModelCodes(client, item, modelCodes)
+    return this.findVariantByModelCodes(client, item, retailerId, modelCodes)
   }
 
   // Same manufacturer model code in another product's name/model (see
@@ -269,6 +291,7 @@ export class IngestionRepository {
   private async findVariantByModelCodes(
     client: PoolClient,
     item: NormalizedRetailerItem,
+    retailerId: string,
     modelCodes: string[],
   ): Promise<{ productId: string; variantId: string } | null> {
     if (!modelCodes.length) return null
@@ -277,10 +300,11 @@ export class IngestionRepository {
        from product_variants pv
        join products p on p.id = pv.product_id
        where pv.model_codes && $1::text[]
+         and ${noOfferFromRetailer(2)}
        order by cardinality(array(select unnest(pv.model_codes) intersect select unnest($1::text[]))) desc,
                 p.created_at asc
        limit 10`,
-      [modelCodes],
+      [modelCodes, retailerId],
     )
     const match = candidates.rows.find(row => brandsCompatible({ brand: row.brand, name: row.name }, item) && bundlesCompatible(row, item))
     return match ? { productId: match.product_id, variantId: match.variant_id } : null

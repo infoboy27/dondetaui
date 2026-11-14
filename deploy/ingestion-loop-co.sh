@@ -35,6 +35,8 @@ while true; do
   done
 
   # Per-retailer summary; posts to Discord when a scraper broke or shrank.
+  # Splits bad matches, clears broken images, flags wild price gaps (Discord).
+  run quality node dist/ingestion/data-quality.cli.js
   run report node dist/ingestion/ingestion-report.cli.js
 
   echo "[worker] sleeping ${INTERVAL_SECONDS}s"

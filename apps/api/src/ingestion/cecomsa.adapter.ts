@@ -46,7 +46,15 @@ function decodeEntities(value: string): string {
     .trim()
 }
 
-const NAME_LINK = /<a\b[^>]*itemprop="name"[^>]*>/g
+// The listing's images point at Cecomsa's KeyCDN zone, which answers 403 to
+// any other site's Referer (hotlink protection): every Cecomsa image was
+// blank on DóndeTa. The same path on the store's own domain serves the image.
+export function cecomsaImageUrl(src: string): string {
+  const absolute = src.startsWith('//') ? `https:${src}` : src.startsWith('/') ? `${CECOMSA_ORIGIN}${src}` : src
+  return absolute.replace(/^https?:\/\/odoo-[a-z0-9-]+\.kxcdn\.com\//i, `${CECOMSA_ORIGIN}/`)
+}
+
+const NAME_LINK =/<a\b[^>]*itemprop="name"[^>]*>/g
 
 /** Reads the product cards of one /shop listing page. */
 export function parseListing(html: string): CecomsaListingItem[] {
@@ -75,7 +83,7 @@ export function parseListing(html: string): CecomsaListingItem[] {
       path: path.split('?')[0]!,
       code: decodeEntities(code),
       price,
-      imageUrl: image ? (image.startsWith('//') ? `https:${image}` : image) : undefined,
+      imageUrl: image ? cecomsaImageUrl(image) : undefined,
     })
   })
   return items
