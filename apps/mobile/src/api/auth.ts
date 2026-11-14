@@ -29,8 +29,9 @@ function post<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
 }
 
 export const authApi = {
-  register(email: string, password: string, name?: string, phone?: string): Promise<AuthResult> {
-    return post('/auth/register', { email, password, name, phone })
+  // source: first-touch attribution for the sign-up alert (src/domain/signupNudge.ts appSignupSource).
+  register(email: string, password: string, name?: string, phone?: string, source?: string): Promise<AuthResult> {
+    return post('/auth/register', { email, password, name, phone, source })
   },
 
   login(email: string, password: string): Promise<LoginResult> {

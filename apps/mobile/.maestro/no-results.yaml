@@ -1,4 +1,4 @@
-appId: com.jfmcss.dondeta
+appId: com.dondeta.app
 name: Search with no results explains the catalog
 ---
 - runFlow: common/open.yaml

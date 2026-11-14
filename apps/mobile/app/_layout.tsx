@@ -50,6 +50,7 @@ export default function RootLayout() {
             <Stack.Screen name="store/[slug]" options={{ title: '', headerLargeTitle: true }} />
             <Stack.Screen name="nearby-stores" options={{ title: 'Tiendas cercanas', headerLargeTitle: true }} />
             <Stack.Screen name="gaming" options={{ title: 'Gaming', headerLargeTitle: true }} />
+            <Stack.Screen name="black-friday-alerts" options={{ title: 'Black Friday' }} />
             <Stack.Screen name="auth" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="country" options={{ presentation: 'modal' }} />
           </Stack>

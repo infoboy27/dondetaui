@@ -57,6 +57,7 @@ const ICONS = {
   devices: { ios: 'laptopcomputer.and.iphone', android: 'devices' },
   sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
   info: { ios: 'info.circle.fill', android: 'info' },
+  ellipsis: { ios: 'ellipsis', android: 'more_horiz' },
 } satisfies Record<string, { ios: SFSymbol; android: AndroidSymbol }>
 
 export type IconName = keyof typeof ICONS

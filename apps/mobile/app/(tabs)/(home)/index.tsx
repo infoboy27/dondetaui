@@ -23,6 +23,7 @@ import Touchable from '../../../src/components/ui/Touchable'
 import { DealCardSkeleton, ProductRowSkeleton } from '../../../src/components/ui/Skeleton'
 import { formatCount, formatPrice } from '../../../src/domain/currency'
 import CountryBanner from '../../../src/components/CountryBanner'
+import SignupNudgeCard from '../../../src/components/SignupNudgeCard'
 import { useCountry } from '../../../src/hooks/useCountry'
 import { useCountryPreference } from '../../../src/state/CountryContext'
 import { friendlyError } from '../../../src/api/errors'
@@ -114,6 +115,8 @@ export default function HomeScreen() {
           <Text style={[type.footnote, styles.blackFridayText]}>{blackFriday.subtitle}</Text>
         </Touchable>
       )}
+
+      <SignupNudgeCard />
 
 
       {loading ? (

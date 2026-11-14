@@ -1,7 +1,8 @@
 # App móvil (Android + iOS)
 
 `apps/mobile`: Expo SDK 57 + expo-router, misma API que la web
-(`EXPO_PUBLIC_API_URL`). Bundle id / package: `com.jfmcss.dondeta`. Proyecto EAS
+(`EXPO_PUBLIC_API_URL`). Bundle id / package: **`com.dondeta.app`** (definitivo desde el
+2026-11-14; no cambiarlo después de publicar). Versión 1.0.0. Proyecto EAS
 `jfmcss/dondeta` (las versiones las lleva EAS: `appVersionSource: remote`).
 
 ## Arrancar
@@ -48,7 +49,9 @@ push) solo funciona en un build real o en el dev client.
 Ya configurado para iOS:
 
 - `ITSAppUsesNonExemptEncryption=false`, así App Store Connect no pregunta por cifrado en cada build.
-- Ubicación solo "mientras se usa la app", sin ubicación en segundo plano.
+- Ubicación solo "mientras se usa la app", sin ubicación en segundo plano: los textos de "siempre", movimiento, micrófono y Face ID están desactivados (`false` en los plugins), porque Apple rechaza textos que la app no usa o que quedan en inglés.
+- Manifiesto de privacidad (`ios.privacyManifests` en `app.json` → `PrivacyInfo.xcprivacy`): ver "Respuestas de privacidad" abajo.
+- Ícono de 1024 sin transparencia (Apple rechaza el canal alfa).
 - Textos de los permisos de cámara y ubicación.
 - Ciclo de vida por escenas (UIScene), obligatorio desde iOS 27: sin él la app
   se cierra al abrir. Lo activa `plugins/withSceneLifecycle.js` en cada prebuild
@@ -147,3 +150,77 @@ npx expo export --platform android
 
 - **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
 - **`android/` en la raíz:** es el intento viejo con Capacitor; la app oficial es `apps/mobile`.
+
+## Publicación en las tiendas (preparado el 2026-11-14)
+
+Todo lo que no necesita las cuentas de Apple y Google ya está en el código. Lo que falta, en orden:
+
+1. **Apple Developer** (organización con D-U-N-S) y **Play Console** (organización: evita la prueba cerrada de 12 testers/14 días).
+2. **Enlaces universales / App Links** (`https://dondeta.com.do/product/…`, `/stores/…`, `/store/…`, `/cuenta/black-friday` abren la app):
+   - `public/.well-known/apple-app-site-association`: cambiar `TEAMID` por el **Team ID** de Apple (10 caracteres, *Membership details*). Queda `ABCDE12345.com.dondeta.app`.
+   - `public/.well-known/assetlinks.json`: cambiar `PLAY_APP_SIGNING_SHA256` por la huella **SHA-256 del certificado de firma de Play** (*Play Console → Configuración → Integridad de la app → Firma de apps*), en formato `AB:CD:…`. Si también se instalan builds firmados con la llave de subida (EAS), agregar esa huella como segundo elemento.
+   - nginx los sirve como JSON en `/.well-known/` sin redirección ni fallback (`deploy/nginx.conf`). Comprobar después del deploy: `curl -sI https://dondeta.com.do/.well-known/apple-app-site-association` → `200` y `content-type: application/json`.
+   - La app ya declara `applinks:dondeta.com.do` (iOS) y los `intentFilters` con `autoVerify` (Android). `app/+native-intent.tsx` traduce las rutas web a las de la app (`src/domain/deepLinks.ts`).
+3. **`eas.json` → `submit.production.ios`**: cuando exista la app en App Store Connect, agregar `ascAppId` (el *Apple ID* numérico de la app), `appleTeamId` y, si se usa API key, `ascApiKeyPath`/`ascApiKeyId`/`ascApiKeyIssuerId`. Para Android, `serviceAccountKeyPath` de una service account con acceso a Play Console. No se pusieron valores de ejemplo para no subir algo inválido.
+4. **Push:** EAS crea la llave APNs al primer build de producción; Android necesita el `google-services.json` del proyecto de Firebase (FCM v1) en `apps/mobile/`.
+5. `pnpm build:ios:production` / `pnpm build:android:production`, luego `pnpm submit:ios` / `pnpm submit:android`.
+6. **Cuenta de prueba para la revisión de Apple** (la app tiene inicio de sesión): crear una cuenta sin 2FA y ponerla en *App Review Information*.
+
+**Android:** React Native 0.86 trae `compileSdk`/`targetSdk` 36 y `minSdk` 24 con NDK r27, que cumple el requisito de Google Play (target 35+) y alinea las librerías nativas a páginas de 16 KB. `react-native-google-mobile-ads` 17.2 (play-services-ads 25.x) también es compatible con 16 KB. Permisos: cámara y ubicación aproximada/precisa; `blockedPermissions` en `app.json` quita los que agregan las librerías sin usarse (micrófono, ubicación en segundo plano, servicio en primer plano, almacenamiento, `SYSTEM_ALERT_WINDOW`). Se mantienen `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE`, `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK` y `com.google.android.gms.permission.AD_ID` (AdMob).
+
+## Respuestas de privacidad (formularios de las tiendas)
+
+Fuente: lo que la app y la API hacen de verdad (revisado el 2026-11-14). El manifiesto de iOS (`app.json` → `ios.privacyManifests`) dice lo mismo.
+
+**App Store → App Privacy** ("Data Used to Track You" = solo lo de AdMob cuando el usuario acepta el permiso de rastreo):
+
+| Dato | ¿Se recoge? | ¿Ligado al usuario? | ¿Rastreo? | Para qué |
+|---|---|---|---|---|
+| Correo | Sí (cuenta) | Sí | No | Funcionalidad de la app |
+| Nombre | Sí, opcional | Sí | No | Funcionalidad |
+| Teléfono | Sí, opcional (alertas por WhatsApp) | Sí | No | Funcionalidad |
+| ID de usuario | Sí | Sí | No | Funcionalidad |
+| Historial de búsqueda | Sí, con cuenta (búsquedas recientes sincronizadas) | Sí | No | Funcionalidad |
+| Otro contenido del usuario (reseñas, favoritos, alertas) | Sí, con cuenta | Sí | No | Funcionalidad |
+| Ubicación precisa | Sí, solo en "Cerca de ti": se envía a la API para buscar sucursales y no se guarda en la cuenta | No | No | Funcionalidad |
+| ID del dispositivo (IDFA) | Sí (AdMob) | No | **Sí** | Publicidad de terceros |
+| Datos de publicidad | Sí (AdMob) | No | **Sí** | Publicidad de terceros |
+| Ubicación aproximada (por IP) | Sí (AdMob) | No | No | Publicidad de terceros |
+| Interacción con el producto | Sí (AdMob) | No | No | Publicidad, analítica |
+| Fallos, rendimiento y otros diagnósticos | Sí (SDK de AdMob) | No | No | Analítica |
+
+No se recogen: contactos, fotos (la cámara solo lee códigos de barras en el teléfono), salud, pagos, audio ni mensajes. El token de notificaciones push se guarda ligado a la cuenta solo para enviar las alertas.
+
+**Google Play → Seguridad de los datos:**
+
+- Cifrado en tránsito: **sí** (todo por HTTPS).
+- Eliminación de datos: **sí**, desde la app (*Perfil → Seguridad → Eliminar cuenta*) y en la web: `https://dondeta.com.do/cuenta/seguridad`.
+- Datos **recopilados**: los de la tabla de arriba, con estas marcas:
+  - Correo, ID de usuario: obligatorios para tener cuenta (la app se usa sin cuenta).
+  - Nombre, teléfono: opcionales.
+  - Ubicación precisa: opcional, para tiendas cercanas.
+  - Historial de búsqueda, contenido del usuario: solo con cuenta.
+- Datos **compartidos**: ID de dispositivo/publicidad, ubicación aproximada, interacción y diagnósticos, con Google (AdMob), para publicidad y analítica.
+- Ninguno se procesa solo de forma efímera salvo la ubicación precisa.
+
+**Clasificación por edad:** sin violencia, contenido sexual, apuestas ni compras dentro de la app. Tiene contenido generado por usuarios (reseñas) con moderación: filtro de lenguaje, "Reportar" y "Ocultar reseñas de este usuario" en cada reseña, revisión en menos de 24 h desde `/admin/resenas` y aviso a Discord en cada reporte. Términos con tolerancia cero en `https://dondeta.com.do/terminos`, aceptados al crear la cuenta (web y app).
+
+## Paridad con la web (2026-11-14)
+
+- **Ofertas reales de Black Friday por correo:** fila en Perfil (solo RD) y pantalla `app/black-friday-alerts.tsx` (también el destino de `/cuenta/black-friday?activar=1`). Con `?activar=1` suscribe apenas hay sesión, incluso después de crear la cuenta desde ahí.
+- **Tarjeta "Crea tu cuenta gratis" en Inicio** para quien no tiene sesión: copia de Black Friday en RD durante la campaña; "Ahora no" la oculta 14 días; nunca vuelve tras crear cuenta (`src/domain/signupNudge.ts`).
+- **Origen del registro:** la app manda `source=utm_source=app&utm_medium=ios|android` (más la pantalla de origen) para el aviso de Discord.
+- **Reseñas:** menú "…" en cada reseña con "Reportar reseña" (pide cuenta) y "Ocultar reseñas de este usuario" (funciona sin cuenta, se guarda en el teléfono y, con sesión, en la cuenta).
+
+## Capturas para las tiendas
+
+Build de release en el simulador, contra la API de producción, sin Metro:
+
+```bash
+cd apps/mobile
+npx expo prebuild --platform ios --clean --no-install
+npx expo run:ios --configuration Release --device "iPhone 18 Pro Max"   # 6.9"
+maestro test -e RELEASE=true .maestro        # recorre las pantallas y guarda capturas
+```
+
+Los anuncios en release son reales: no tocarlos (en el simulador Google los trata como de prueba, pero mejor no). Para 6.5" se puede usar el mismo build en otro simulador si App Store Connect lo pide; desde 2024 basta con 6.9".

@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { reviewsApi, type Review } from '../api/reviews'
 import { appConfig } from '../config/env'
+import { getToken } from '../auth/session'
+import { addBlocked, parseBlocked, withoutBlocked, type ReportReason } from '../domain/reviewBlocks'
 
 interface ReviewsState {
   reviews: Review[]
@@ -11,11 +13,29 @@ interface ReviewsState {
 }
 
 const EMPTY: ReviewsState = { reviews: [], average: 0, count: 0, loading: false, error: null }
+const BLOCKED_KEY = 'dondeta.blockedReviewAuthors'
+
+function readLocalBlocked(): string[] {
+  try {
+    return parseBlocked(localStorage.getItem(BLOCKED_KEY))
+  } catch {
+    return []
+  }
+}
+
+function writeLocalBlocked(keys: string[]) {
+  try {
+    localStorage.setItem(BLOCKED_KEY, JSON.stringify(keys))
+  } catch {
+    // Private mode / storage off: the block lasts for this page only.
+  }
+}
 
 // No fixture data for reviews (unlike products/stores) -- fixture mode just
 // shows the honest empty state instead of fabricating review content.
 export function useProductReviews(productId: string) {
   const [state, setState] = useState<ReviewsState>(EMPTY)
+  const [blocked, setBlocked] = useState<string[]>(readLocalBlocked)
 
   useEffect(() => {
     if (!appConfig.useApi) {
@@ -37,6 +57,13 @@ export function useProductReviews(productId: string) {
         }
       })
 
+    // Signed in: the account's hidden authors, merged with this browser's.
+    if (getToken()) {
+      reviewsApi.blockedAuthors()
+        .then(keys => { if (!cancelled) setBlocked(current => keys.reduce(addBlocked, current)) })
+        .catch(() => {})
+    }
+
     return () => { cancelled = true }
   }, [productId])
 
@@ -52,5 +79,25 @@ export function useProductReviews(productId: string) {
     })
   }
 
-  return { ...state, submit }
+  // Needs a session (the caller asks for login first). A review hidden by
+  // reports disappears from the list right away.
+  const report = async (reviewId: string, reason: ReportReason) => {
+    const result = await reviewsApi.report(reviewId, reason)
+    if (result.hidden) setState(current => ({ ...current, reviews: current.reviews.filter(r => r.id !== reviewId) }))
+  }
+
+  // Works signed out too (this browser only).
+  const hideAuthor = (authorKey: string) => {
+    setBlocked(current => {
+      const next = addBlocked(current, authorKey)
+      writeLocalBlocked(next)
+      return next
+    })
+    if (getToken()) void reviewsApi.blockAuthor(authorKey).catch(() => {})
+  }
+
+  const blockedSet = useMemo(() => new Set(blocked), [blocked])
+  const visible = useMemo(() => withoutBlocked(state.reviews, blockedSet), [state.reviews, blockedSet])
+
+  return { ...state, reviews: visible, submit, report, hideAuthor }
 }

@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
-import { StyleSheet, Text, TextInput, View } from 'react-native'
+import { useEffect, useMemo, useState } from 'react'
+import { ActionSheetIOS, Alert, Platform, StyleSheet, Text, TextInput, View } from 'react-native'
 import { useRouter } from 'expo-router'
-import { reviewsApi, type ReviewSummary } from '../api/reviews'
+import { reviewsApi, type Review, type ReviewSummary } from '../api/reviews'
+import { REPORT_OPTIONS, withoutBlocked, type ReportReason } from '../domain/reviewBlocks'
+import { useBlockedAuthors } from '../hooks/useBlockedAuthors'
 import { colors, radii, spacing } from '../design/tokens'
 import { type } from '../design/type'
 import { haptics } from '../design/haptics'
@@ -22,6 +24,61 @@ export default function ProductReviews({ productId }: { productId: string }) {
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { blocked, hideAuthor } = useBlockedAuthors(Boolean(user))
+  const visibleReviews = useMemo(() => withoutBlocked(summary?.reviews ?? [], blocked), [summary, blocked])
+
+  const report = async (review: Review, reason: ReportReason) => {
+    try {
+      const result = await reviewsApi.report(review.id, reason)
+      haptics.success()
+      if (result.hidden) setSummary(current => current && { ...current, reviews: current.reviews.filter(r => r.id !== review.id) })
+      Alert.alert('Gracias por avisarnos', 'Revisamos los reportes en menos de 24 horas.')
+    } catch {
+      Alert.alert('No se pudo enviar', 'Intenta de nuevo en un momento.')
+    }
+  }
+
+  // "Reportar" needs an account (one report per person); hiding an author
+  // works for anyone, on this phone.
+  const chooseReason = (review: Review) => {
+    if (!user) {
+      router.push({ pathname: '/auth', params: { reason: 'reviews' } })
+      return
+    }
+    const labels = REPORT_OPTIONS.map(option => option.label)
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { title: '¿Por qué reportas esta reseña?', options: [...labels, 'Cancelar'], cancelButtonIndex: labels.length },
+        index => { const option = REPORT_OPTIONS[index]; if (option) void report(review, option.reason) },
+      )
+    } else {
+      Alert.alert('¿Por qué reportas esta reseña?', undefined, [
+        ...REPORT_OPTIONS.slice(0, 2).map(option => ({ text: option.label, onPress: () => void report(review, option.reason) })),
+        { text: 'Otro motivo', onPress: () => void report(review, 'other') },
+      ], { cancelable: true })
+    }
+  }
+
+  const openMenu = (review: Review) => {
+    const actions: { label: string; destructive?: boolean; run: () => void }[] = [
+      { label: 'Reportar reseña', destructive: true, run: () => chooseReason(review) },
+    ]
+    if (review.authorKey) {
+      const key = review.authorKey
+      actions.push({ label: 'Ocultar reseñas de este usuario', run: () => { hideAuthor(key); haptics.success() } })
+    }
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: [...actions.map(a => a.label), 'Cancelar'], cancelButtonIndex: actions.length, destructiveButtonIndex: 0 },
+        index => actions[index]?.run(),
+      )
+    } else {
+      Alert.alert('Reseña', undefined, [
+        ...actions.map(a => ({ text: a.label, style: a.destructive ? ('destructive' as const) : ('default' as const), onPress: a.run })),
+        { text: 'Cancelar', style: 'cancel' as const },
+      ], { cancelable: true })
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -113,13 +170,18 @@ export default function ProductReviews({ productId }: { productId: string }) {
         </View>
       )}
 
-      {!!summary?.reviews.length && (
+      {visibleReviews.length > 0 && (
         <View style={styles.card}>
-          {summary.reviews.slice(0, 5).map((review, index) => (
+          {visibleReviews.slice(0, 5).map((review, index) => (
             <View key={review.id} style={[styles.reviewRow, index > 0 && styles.reviewDivider]}>
               <View style={styles.reviewHeader}>
                 <Text style={[type.subheadlineEmphasized, styles.reviewName]}>{review.userName}</Text>
-                <Stars value={review.rating} size={12} />
+                <View style={styles.reviewMeta}>
+                  <Stars value={review.rating} size={12} />
+                  <Touchable onPress={() => openMenu(review)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Opciones de la reseña: reportar u ocultar">
+                    <Icon name="ellipsis" size={16} color={colors.tertiaryLabel} weight="semibold" />
+                  </Touchable>
+                </View>
               </View>
               {!!review.comment && <Text style={[type.subheadline, styles.reviewComment]}>{review.comment}</Text>}
             </View>
@@ -160,6 +222,7 @@ const styles = StyleSheet.create({
   reviewRow: { gap: 4 },
   reviewDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.separator, paddingTop: spacing.md },
   reviewHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  reviewMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reviewName: { color: colors.navy },
   reviewComment: { color: colors.secondaryLabel },
 })

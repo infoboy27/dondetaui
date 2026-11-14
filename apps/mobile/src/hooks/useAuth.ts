@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Platform } from 'react-native'
+import { appSignupSource } from '../domain/signupNudge'
+import { markSignedUp } from './useSignupNudge'
 import { authApi, isMfaChallenge, type AuthResult, type LoginResult, type MfaChallenge } from '../api/auth'
 import { setSessionExpiredHandler } from '../api/http'
 import { clearToken, getToken, setToken } from '../auth/session'
@@ -72,8 +75,11 @@ export function useAuth() {
       return handleLoginResult(await authApi.login(email.trim(), password))
     },
 
-    async register(email: string, password: string, name?: string): Promise<void> {
-      await applySession(await authApi.register(email.trim(), password, name?.trim() || undefined))
+    // landing: the screen that led to sign-up (e.g. /cuenta/black-friday), for the sign-up alert.
+    async register(email: string, password: string, name?: string, landing?: string): Promise<void> {
+      const source = appSignupSource(Platform.OS, landing)
+      await applySession(await authApi.register(email.trim(), password, name?.trim() || undefined, undefined, source))
+      void markSignedUp()
     },
 
     async verifyMfa(code: string, method?: MfaMethod): Promise<void> {

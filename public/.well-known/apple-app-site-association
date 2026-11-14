@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.dondeta.app"],
+        "components": [
+          { "/": "/product/*", "comment": "Product pages" },
+          { "/": "/store/*", "comment": "Store pages (app route)" },
+          { "/": "/stores/*", "comment": "Store pages (web route)" },
+          { "/": "/cuenta/black-friday", "comment": "Black Friday real-deals email sign-up" }
+        ]
+      }
+    ]
+  }
+}

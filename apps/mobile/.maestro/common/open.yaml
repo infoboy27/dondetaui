@@ -1,8 +1,19 @@
-# Opens the dev build on the local Metro server and waits for the home screen.
-appId: com.jfmcss.dondeta
+# Opens the app and waits for the home screen.
+# - Dev build (default): through the dev client, on the local Metro server.
+# - Release build (no Metro, live API): maestro test -e RELEASE=true .maestro
+appId: com.dondeta.app
 ---
 - stopApp
-- openLink: "exp+dondeta://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+- runFlow:
+    when:
+      true: ${RELEASE == 'true'}
+    commands:
+      - launchApp
+- runFlow:
+    when:
+      true: ${RELEASE != 'true'}
+    commands:
+      - openLink: "exp+dondeta://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
 - extendedWaitUntil:
     visible: "Comparaciones del día"
     timeout: 90000

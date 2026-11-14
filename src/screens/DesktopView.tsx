@@ -20,6 +20,7 @@ import { useCatalogFreshness } from '../hooks/useCatalogFreshness'
 import { usePagination } from '../hooks/usePagination'
 import PaginationControls from '../components/PaginationControls'
 import { useProductReviews } from '../hooks/useProductReviews'
+import ReviewActions from '../components/ReviewActions'
 import { useSearchHistory } from '../hooks/useSearchHistory'
 import AdBanner from '../components/AdBanner'
 import ProductImage from '../components/ProductImage'
@@ -180,6 +181,13 @@ function DesktopReviews({ productId, isLoggedIn, onRequireLogin }: {
                   {review.comment}
                 </p>
               )}
+              <ReviewActions
+                authorKey={review.authorKey}
+                isLoggedIn={isLoggedIn}
+                onRequireLogin={onRequireLogin}
+                onReport={reason => reviews.report(review.id, reason)}
+                onHideAuthor={reviews.hideAuthor}
+              />
             </div>
           ))}
         </div>

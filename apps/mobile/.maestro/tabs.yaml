@@ -1,4 +1,4 @@
-appId: com.jfmcss.dondeta
+appId: com.dondeta.app
 name: Saved, profile, scanner and nearby stores
 ---
 - runFlow: common/open.yaml

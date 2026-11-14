@@ -365,6 +365,14 @@ export default function AuthForm({ onLogin, onRegister, onSuccess, loading, erro
         {loading ? 'Cargando…' : tab === 'login' ? 'Entrar' : 'Crear cuenta'}
       </button>
       {tab === 'login' && linkButton('¿Olvidaste tu contraseña?', () => { setStep('forgot'); setStepError(null) })}
+      {tab === 'register' && (
+        <p style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: '#9AAABB', fontFamily: "'DM Sans', sans-serif", textAlign: 'center' }}>
+          Al crear tu cuenta aceptas los{' '}
+          <a href="/terminos" target="_blank" rel="noopener" style={{ color: '#00B894' }}>Términos de uso</a>
+          {' '}y la{' '}
+          <a href="/privacy" target="_blank" rel="noopener" style={{ color: '#00B894' }}>Política de privacidad</a>.
+        </p>
+      )}
     </>
   )
 }

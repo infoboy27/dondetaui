@@ -1,0 +1,30 @@
+appId: com.dondeta.app
+name: Review options - report asks for an account, hide author is offered
+---
+- runFlow: common/open.yaml
+- tapOn: "Buscar"
+- tapOn: "Buscar Neveras"
+- extendedWaitUntil:
+    visible: ".*resultados para “Neveras”"
+    timeout: 15000
+- tapOn:
+    text: ".*RD\\$.*"
+    index: 0
+- scrollUntilVisible:
+    element: "Reseñas"
+    direction: DOWN
+# Only when this product has reviews: the "…" menu offers both actions, and
+# reporting while signed out opens the account sheet.
+- runFlow:
+    when:
+      visible: "Opciones de la reseña.*"
+    commands:
+      - tapOn: "Opciones de la reseña.*"
+      - assertVisible: "Reportar reseña"
+      - assertVisible: "Ocultar reseñas de este usuario"
+      - takeScreenshot: 40-review-menu
+      - tapOn: "Reportar reseña"
+      - extendedWaitUntil:
+          visible: "Comparte tu experiencia"
+          timeout: 10000
+      - tapOn: "Cerrar"
