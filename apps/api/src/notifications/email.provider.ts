@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Resend } from 'resend'
+import { assertSent } from './email-result'
 
 @Injectable()
 export class EmailProvider {
@@ -21,6 +22,11 @@ export class EmailProvider {
       return
     }
 
-    await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) })
+    try {
+      assertSent(await this.client.emails.send({ from: this.from, to, subject, text, ...(html ? { html } : {}) }))
+    } catch (error) {
+      this.logger.error(String(error))
+      throw error
+    }
   }
 }
