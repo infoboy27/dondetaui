@@ -372,7 +372,11 @@ export class ProductsRepository {
       join product_variants pv on pv.id = o.product_variant_id
       join products p on p.id = pv.product_id
       join retailers r on r.id = o.retailer_id
+      join categories c on c.id = p.category_id
       where o.availability = 'in_stock'
+        -- Gaming codes (Eneba) swing with the dollar and their own promos:
+        -- like "Bajaron de precio", the Black Friday check is for store prices.
+        and c.slug <> 'gaming'
         and ${freshOfferSql()}`,
     )
     return result.rows.map(row => ({

@@ -74,7 +74,8 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 **En producción** (dondeta.com.do, más los stacks CO y MX):
 
 - Comparador: ~1,600 productos de 5 tiendas en RD, cruce entre tiendas por modelo, historial y bajas de precio.
-- Páginas SEO en `apps/web-seo`: `/precios`, `/comparaciones`, `/bajas-de-precio` y `/black-friday`.
+- Páginas SEO en `apps/web-seo`: `/precios`, `/comparaciones`, `/bajas-de-precio`, `/black-friday` y `/cyber-monday` (misma comprobación, `lib/priceCheckPage.tsx`; sin Gaming), y `/calculadora-amazon` (solo RD: Amazon + courier + impuestos frente al precio local; las fichas la enlazan con `?q=&local=`).
+- Ingesta RD: cada 6 h, y cada hora desde el miércoles antes de Black Friday hasta el Cyber Monday, hora RD (`ingestion-interval.ts`, `INGESTION_PEAK_INTERVAL_SECONDS`).
 - **Gaming con Eneba** (afiliado `af_id=dondeta`, código `DONDETA` para un 5 % de descuento, cookie de 30 días):
   - qué se vende: recargas, Game Pass y 17 juegos de PC, de `apps/api/src/ingestion/eneba.*`;
   - dónde aparece: secciones con filtros rápidos y el sello "En alianza con Eneba";

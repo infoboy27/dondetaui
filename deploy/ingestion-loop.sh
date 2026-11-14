@@ -42,6 +42,10 @@ while true; do
   # Per-retailer summary; posts to Discord when a scraper broke or shrank.
   run report node dist/ingestion/ingestion-report.cli.js
 
-  echo "[worker] sleeping ${INTERVAL_SECONDS}s"
-  sleep "$INTERVAL_SECONDS"
+  # Hourly from the Wednesday before Black Friday through Cyber Monday
+  # (INGESTION_PEAK_INTERVAL_SECONDS); INGESTION_INTERVAL_SECONDS otherwise.
+  SLEEP=$(node dist/ingestion/ingestion-interval.cli.js 2>/dev/null) || SLEEP=$INTERVAL_SECONDS
+  [ -n "$SLEEP" ] || SLEEP=$INTERVAL_SECONDS
+  echo "[worker] sleeping ${SLEEP}s"
+  sleep "$SLEEP"
 done
