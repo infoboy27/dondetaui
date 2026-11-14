@@ -1,0 +1,15 @@
+{
+  "app_store": {
+    "name": "DóndeTa: Compara precios RD",
+    "subtitle": "Precios de Sirena, Jumbo y más",
+    "keywords": "ofertas,descuentos,black friday,supermercado,electrodomesticos,tiendas,escaner,ahorro,corripio",
+    "promotional_text": "Black Friday: te decimos qué ofertas son reales. Comparamos cada precio con su historial de 30 días en las tiendas de República Dominicana.",
+    "category_primary": "Shopping",
+    "category_secondary": "Lifestyle"
+  },
+  "google_play": {
+    "title": "DóndeTa: Compara precios RD",
+    "short_description": "Compara precios en Plaza Lama, Sirena, Jumbo, Corripio y PriceSmart.",
+    "category": "Shopping"
+  }
+}
