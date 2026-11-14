@@ -82,6 +82,11 @@ VARIANTS = {
         sub="Ahora comparamos sus precios con los de las demás tiendas dominicanas.",
         points=["Estufas, extractores, neveras, hornos y TV", "Más de 170 productos con precio e historial", "Compáralos con Sirena, Plaza Lama y más"],
         card=("DO", "Electrodom", "Ya disponible en DóndeTa"), button="dondeta.com.do", note="Precios publicados por la tienda"),
+    "tienda-hifi": dict(
+        pill="NUEVA TIENDA", pill_color=GREEN, lines=[("HI-FI", GREEN), ("ya está en DóndeTa", (255, 255, 255))],
+        sub="Ahora comparamos sus precios con los de las demás tiendas dominicanas.",
+        points=["Neveras, estufas, lavadoras, aires y TV", "Más de 370 productos con precio e historial", "Compáralos con Sirena, Plaza Lama y más"],
+        card=("DO", "HI-FI", "Ya disponible en DóndeTa"), button="dondeta.com.do", note="Precios publicados por la tienda"),
     "estados-unidos": dict(
         pill="MUY PRONTO", pill_color=ORANGE, lines=[("DóndeTa va", (255, 255, 255)), ("a Estados Unidos", GREEN)],
         sub="Estamos preparando la comparación de precios en tiendas de EE. UU.",
