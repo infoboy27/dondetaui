@@ -29,8 +29,9 @@ function post<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
 }
 
 export const authApi = {
-  register(email: string, password: string, name?: string, phone?: string): Promise<AuthResult> {
-    return post('/auth/register', { email, password, name, phone })
+  // `source`: first-touch attribution (utm_*, landing page), see domain/signupPrompt.ts.
+  register(email: string, password: string, name?: string, phone?: string, source?: string): Promise<AuthResult> {
+    return post('/auth/register', { email, password, name, phone, ...(source ? { source } : {}) })
   },
 
   login(email: string, password: string): Promise<LoginResult> {

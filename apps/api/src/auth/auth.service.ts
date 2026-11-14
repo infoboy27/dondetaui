@@ -10,7 +10,8 @@ import {
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import bcrypt from 'bcryptjs'
-import { sendDiscordAlert } from '../common/discord-webhook'
+import { sendDiscordAlert, signupsWebhook } from '../common/discord-webhook'
+import { parseSignupSource, signupMessage } from './signup-alert'
 import { EmailProvider } from '../notifications/email.provider'
 import { adminEmails } from '../admin/admin.guard'
 import { decryptSecret, encryptSecret, generateSecret, otpauthUrl, verifyTotp } from '../admin/totp'
@@ -65,7 +66,13 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS)
     const row = await this.users.create(dto.email.trim(), passwordHash, dto.name?.trim() || null, dto.phone ?? null)
     const user = this.users.toDto(row)
-    sendDiscordAlert(process.env.DISCORD_WEBHOOK_REGISTRATIONS, `🆕 Nuevo registro en DóndeTa: ${user.email}`)
+    // Masked email, where they came from, running total. Never blocks sign-up.
+    const webhook = signupsWebhook()
+    if (webhook) {
+      void this.users.count()
+        .catch(() => null)
+        .then(totalUsers => sendDiscordAlert(webhook, signupMessage({ email: row.email, source: parseSignupSource(dto.source), totalUsers })))
+    }
 
     // Welcome + email confirmation code. Never blocks the sign-up.
     void this.codes
@@ -220,7 +227,7 @@ export class AuthService {
     await this.checkPassword(row, password)
     await this.users.delete(row.id)
     this.notify(row.email, accountDeletedEmail(row.name))
-    sendDiscordAlert(process.env.DISCORD_WEBHOOK_REGISTRATIONS, `👋 Cuenta eliminada en DóndeTa: ${row.email}`)
+    sendDiscordAlert(signupsWebhook(), `👋 Cuenta eliminada en DóndeTa: ${maskEmail(row.email)}`)
     return { deleted: true }
   }
 

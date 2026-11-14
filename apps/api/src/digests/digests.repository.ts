@@ -19,13 +19,19 @@ export class DigestsRepository {
     return (result.rowCount ?? 0) > 0
   }
 
-  async subscribe(userId: string, topic: DigestTopic): Promise<void> {
-    await this.pool.query(
-      `insert into digest_subscriptions (user_id, topic, unsubscribe_token)
-      values ($1, $2, $3)
-      on conflict (user_id, topic) do nothing`,
+  /** The account's email when this created a new subscription, null if it already existed. */
+  async subscribe(userId: string, topic: DigestTopic): Promise<string | null> {
+    const result = await this.pool.query<{ email: string }>(
+      `with inserted as (
+        insert into digest_subscriptions (user_id, topic, unsubscribe_token)
+        values ($1, $2, $3)
+        on conflict (user_id, topic) do nothing
+        returning user_id
+      )
+      select u.email from inserted join users u on u.id = inserted.user_id`,
       [userId, topic, newUnsubscribeToken()],
     )
+    return result.rows[0]?.email ?? null
   }
 
   async unsubscribe(userId: string, topic: DigestTopic): Promise<void> {

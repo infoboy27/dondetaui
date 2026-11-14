@@ -29,6 +29,13 @@ export class RegisterDto {
   @IsString()
   @Matches(/^\+?[1-9]\d{7,14}$/, { message: 'Escribe un número de teléfono válido.' })
   phone?: string
+
+  // First-touch attribution from the web app (utm_*, landing page, referrer)
+  // as a query string; only used for the sign-up alert, parsed defensively.
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  source?: string
 }
 
 export class LoginDto {

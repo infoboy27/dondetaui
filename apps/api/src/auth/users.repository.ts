@@ -55,6 +55,11 @@ export class UsersRepository {
     return result.rows[0]
   }
 
+  async count(): Promise<number> {
+    const result = await this.pool.query<{ n: string }>('select count(*)::text as n from users')
+    return Number(result.rows[0]?.n ?? 0)
+  }
+
   // New password; every token issued before now stops working.
   async updatePassword(id: string, passwordHash: string): Promise<void> {
     await this.pool.query(

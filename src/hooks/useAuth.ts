@@ -3,6 +3,7 @@ import { trackAuth } from '../analytics'
 import { authApi, isMfaChallenge, type LoginResult } from '../api/auth'
 import { appConfig } from '../config/env'
 import { clearToken, getToken, setToken, subscribeSession } from '../auth/session'
+import { PROMPT_DONE_KEY, SIGNUP_SOURCE_KEY, buildSignupSource, readStorage, writeStorage } from '../domain/signupPrompt'
 import type { User } from '../types'
 
 interface AuthState {
@@ -74,8 +75,11 @@ export function useAuth() {
 
     setState(current => ({ ...current, loading: true, error: null }))
     try {
-      const { token, user } = await authApi.register(email, password, name, phone)
+      const source = readStorage(SIGNUP_SOURCE_KEY) ?? buildSignupSource(window.location.href, document.referrer)
+      const { token, user } = await authApi.register(email, password, name, phone, source || undefined)
       setToken(token)
+      // The first-visit prompt never shows again once this browser signed up.
+      writeStorage(PROMPT_DONE_KEY, new Date().toISOString())
       trackAuth('sign_up')
       setState({ user, loading: false, error: null })
     } catch (error) {

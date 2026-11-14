@@ -57,6 +57,8 @@ services:
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      # New accounts + digest sign-ups (masked emails); falls back to the older REGISTRATIONS one.
+      DISCORD_WEBHOOK_SIGNUPS: ${DISCORD_WEBHOOK_SIGNUPS:-}
       DISCORD_WEBHOOK_REGISTRATIONS: ${DISCORD_WEBHOOK_REGISTRATIONS:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-}

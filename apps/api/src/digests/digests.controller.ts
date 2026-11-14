@@ -4,6 +4,8 @@ import { JwtAuthGuard, type AuthenticatedRequest } from '../auth/jwt-auth.guard'
 import { isDigestTopic, isWellFormedToken, type DigestTopic } from './digest-schedule'
 import { UnsubscribeDto } from './digests.types'
 import { DigestsRepository } from './digests.repository'
+import { sendDiscordAlert, signupsWebhook } from '../common/discord-webhook'
+import { digestSubscribedMessage } from '../auth/signup-alert'
 
 function topicOf(value: string): DigestTopic {
   if (!isDigestTopic(value)) throw new BadRequestException('Ese boletín no existe.')
@@ -23,7 +25,10 @@ export class DigestsController {
 
   @Put(':topic')
   async subscribe(@Req() req: AuthenticatedRequest, @Param('topic') topic: string) {
-    await this.digests.subscribe(req.userId, topicOf(topic))
+    const name = topicOf(topic)
+    const newSubscriber = await this.digests.subscribe(req.userId, name)
+    // Only new subscriptions: toggling the switch again doesn't re-announce.
+    if (newSubscriber) sendDiscordAlert(signupsWebhook(), digestSubscribedMessage(newSubscriber, name))
     return { subscribed: true }
   }
 
