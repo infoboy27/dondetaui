@@ -99,7 +99,7 @@ describe('parseListing', () => {
       path: '/shop/aba363-abanico-de-techo-nexxt-smart-nha-f100-with-rgb-light-mm107nxt72-94973',
       code: 'ABA363',
       price: 3693.4,
-      imageUrl: 'https://odoo-1f249.kxcdn.com/web/image/product.template/94973/image_512',
+      imageUrl: 'https://www.cecomsa.com/web/image/product.template/94973/image_512',
     })
   })
 

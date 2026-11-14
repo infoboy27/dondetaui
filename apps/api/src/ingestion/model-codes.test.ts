@@ -23,6 +23,18 @@ describe('extractModelCodes', () => {
     expect(codes).toEqual([])
   })
 
+  it('ignores spec words followed by a number (Android version, SEER, ports)', () => {
+    // Every KTC TV said AND11: the 32" and the 86" were merged into one product.
+    expect(extractModelCodes('TELEVISOR KTC 86" SMART 4K UHD/QLED/HDMIx3/USBx2/AND11/GOOGLE TV (86J2U)(J86QDC)', 'TV564')).toEqual(
+      expect.not.arrayContaining(['AND11', 'HDMIX3', 'USBX2']),
+    )
+    expect(extractModelCodes('TELEVISOR KTC 86" SMART 4K UHD/QLED/HDMIx3/USBx2/AND11/GOOGLE TV (86J2U)(J86QDC)', 'TV564')).toEqual(
+      expect.arrayContaining(['86J2U', 'J86QDC', 'TV564']),
+    )
+    expect(extractModelCodes('ACONDICIONADOR DE AIRE KTC SPLIT INVERTER SEER18 24,000BTU 220V', '')).toEqual([])
+    expect(extractModelCodes('Abanico de techo IP44 Wifi6 R410A Clase5 3PUERTAS 4X4', '')).toEqual([])
+  })
+
   it('reads a real code from the model field when the name lacks it', () => {
     expect(extractModelCodes('Abanico De Pedestal Daiwa, 18"', 'AD-WFS1820G')).toEqual(['ADWFS1820G'])
   })

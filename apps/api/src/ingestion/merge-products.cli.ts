@@ -96,6 +96,7 @@ async function main() {
     parent.set(id, root)
     return root
   }
+  const groupRetailers = new Map<string, Set<string>>()
   for (const [key, ids] of keyIndex) {
     const list = [...ids].map(id => products.get(id)!)
     if (list.length < 2 || list.length > MAX_GROUP_SIZE) {
@@ -112,7 +113,16 @@ async function main() {
           if (sameRetailerOnly) continue
           if (!key.startsWith('ean:') && (!brandsCompatible(a, b) || !bundlesCompatible(a, b))) continue
         }
-        parent.set(find(a.id), find(b.id))
+        const rootA = find(a.id)
+        const rootB = find(b.id)
+        if (rootA === rootB) continue
+        // Transitive guard: A(Jumbo)~B(Sirena)~C(Jumbo) must not fold two
+        // different Jumbo listings into one product (same-URL keys excepted).
+        const retailersA = groupRetailers.get(rootA) ?? a.retailers
+        const retailersB = groupRetailers.get(rootB) ?? b.retailers
+        if (!key.startsWith('url:') && [...retailersA].some(r => retailersB.has(r))) continue
+        parent.set(rootA, rootB)
+        groupRetailers.set(rootB, new Set([...retailersA, ...retailersB]))
       }
     }
   }

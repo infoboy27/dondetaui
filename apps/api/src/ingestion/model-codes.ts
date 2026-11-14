@@ -14,6 +14,12 @@ const SPEC_TOKENS = new Set([
   'SEER', 'BTU', 'INVERTER', 'QLED', 'OLED', 'UHD', 'FHD', 'WIFI', 'LED', 'USB', 'HDMI',
   '1080P', '2160P', '720P', 'R410A', 'R32',
 ])
+// Spec words followed by a number: "AND11" (Android 11), "SEER18", "HDMIx3",
+// "USBx2", "R410A", "IP44", "WIFI6", "DDR4", "HDR10". Every KTC TV carried
+// AND11, so the 32" and the 86" were matched as one product.
+const SPEC_PREFIX = /^(?:AND|ANDROID|SEER|SEER2|EER|HDMIX?|USBX?|USBC|HDR|IP|IPX|WIFI|BT|DDR|LPDDR|GDDR|DOLBY|DTS|HZ|R|CLASE|SERIE|SERIES|GEN|PCS|PZS|PIEZAS|VEL|VELOCIDADES|PUERTAS|QUEMADORES)\d+[A-Z]?$/
+// Digits followed by a spec/count word: "3PUERTAS", "5QUEMADORES", "10VELOCIDADES", "4X4".
+const COUNT_SUFFIX = /^\d+(?:X\d+|PUERTAS|QUEMADORES|VELOCIDADES|VEL|PIEZAS|PZS|PCS|HORNILLAS|LITROS|LIBRAS|PULGADAS|TAZAS|NIVELES|BANDEJAS)$/
 const UNIT_SUFFIX = /^\d+(?:BTU|BTUS|L|LT|LTS|LB|LBS|KG|KGS|PIES|PC|CM|MM|W|GAL|SEER|PULG|P|V|HZ|MAH|GB|TB|IN|K|QT|OZ|ML)$/
 
 function normalizeCode(token: string): string {
@@ -27,6 +33,8 @@ function isModelCode(code: string): boolean {
     /[A-Z]/.test(code) &&
     /\d/.test(code) &&
     !SPEC_TOKENS.has(code) &&
+    !SPEC_PREFIX.test(code) &&
+    !COUNT_SUFFIX.test(code) &&
     !UNIT_SUFFIX.test(code)
   )
 }
