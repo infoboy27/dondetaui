@@ -14,7 +14,7 @@ run() {
   fi
 }
 
-RETAILERS="plaza-lama jumbo sirena corripio pricesmart cecomsa electrodom eneba"
+RETAILERS="plaza-lama jumbo sirena corripio pricesmart cecomsa electrodom hifi eneba"
 
 while true; do
   # Oldest data first (and close runs a restart cut off) -- deploys restart
@@ -29,6 +29,7 @@ while true; do
       corripio) run corripio node dist/ingestion/retailer.cli.js corripio ;;
       cecomsa) run cecomsa node dist/ingestion/cecomsa.cli.js ;;
       electrodom) run electrodom node dist/ingestion/shopify.cli.js electrodom ;;
+      hifi) run hifi node dist/ingestion/hifi.cli.js ;;
       pricesmart) run pricesmart node dist/ingestion/pricesmart.cli.js ;;
       eneba) run eneba env ENEBA_COUNTRY=do ENEBA_CURRENCY=DOP node dist/ingestion/eneba.cli.js ;;
     esac
