@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft } from '../components/Icons'
 import AuthForm from '../components/AuthForm'
 
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function LoginScreen({ onBack, onLogin, onRegister, loading, error }: Props) {
+  // /login?registro=1 (the sign-up prompt) opens on "Crear cuenta".
+  const [searchParams] = useSearchParams()
   return (
     <div style={{ background: '#F2F4F7', minHeight: '100%', paddingBottom: 80 }}>
       <div style={{
@@ -37,7 +40,14 @@ export default function LoginScreen({ onBack, onLogin, onRegister, loading, erro
       </div>
 
       <div style={{ padding: '24px 20px 0' }}>
-        <AuthForm onLogin={onLogin} onRegister={onRegister} onSuccess={onBack} loading={loading} error={error} />
+        <AuthForm
+          onLogin={onLogin}
+          onRegister={onRegister}
+          onSuccess={onBack}
+          loading={loading}
+          error={error}
+          initialTab={searchParams.has('registro') ? 'register' : 'login'}
+        />
       </div>
     </div>
   )

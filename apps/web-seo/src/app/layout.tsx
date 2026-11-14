@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { colors } from '../lib/tokens'
 import { htmlLang, isIndexable } from '../lib/country'
 import { COUNTRY, SITE_URL } from '../lib/site'
+import SignupPrompt from './SignupPrompt'
 
 // Render every page at request time. SITE_URL, GA_MEASUREMENT_ID and
 // ADSENSE_CLIENT_ID only exist in the container's runtime environment, not
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body style={{ margin: 0, background: colors.background, fontFamily: "'DM Sans', sans-serif" }}>
         {children}
+        <SignupPrompt blackFridayDigest={COUNTRY.isDominican} />
       </body>
     </html>
   )

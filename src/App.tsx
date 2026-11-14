@@ -15,6 +15,9 @@ import { useSearchHistory } from './hooks/useSearchHistory'
 import BottomNav from './components/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import SplashOverlay from './components/SplashOverlay'
+import SignupPrompt from './components/SignupPrompt'
+import { captureSignupSource } from './domain/signupPrompt'
+import { getToken } from './auth/session'
 import AuthModal from './components/AuthModal'
 
 // Each screen is its own chunk: phones only download the mobile home up front,
@@ -182,6 +185,9 @@ export default function App() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>(() => pathToTab(location.pathname) ?? 'home')
+
+  // First-touch attribution (utm_*, landing page) for the sign-up alert.
+  useEffect(() => { captureSignupSource() }, [])
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 1024)
@@ -394,6 +400,8 @@ export default function App() {
   return (
     <>
     <SplashOverlay />
+    {/* A stored token counts as signed in while /auth/me is still loading. */}
+    {!isScanner && <SignupPrompt signedIn={Boolean(user) || (authLoading && Boolean(getToken()))} />}
     <div style={{
       display: 'flex',
       minHeight: '100vh',

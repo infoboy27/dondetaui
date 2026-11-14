@@ -75,6 +75,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 
 - Comparador: ~1,600 productos de 5 tiendas en RD, cruce entre tiendas por modelo, historial y bajas de precio.
 - Páginas SEO en `apps/web-seo`: `/precios`, `/comparaciones`, `/bajas-de-precio`, `/black-friday` y `/cyber-monday` (misma comprobación, `lib/priceCheckPage.tsx`; sin Gaming), y `/calculadora-amazon` (solo RD: Amazon + courier + impuestos frente al precio local; las fichas la enlazan con `?q=&local=`).
+- **Registro**: popup de primera visita (SPA `src/components/SignupPrompt.tsx` y web-seo `app/SignupPrompt.tsx`, lógica en `domain/signupPrompt.ts` y su espejo en `lib/`): tarjeta inferior en móvil / esquina en escritorio (no intersticial, por SEO y AdSense), a los 10 s o al 50 % del scroll, no a quien tiene sesión, no en /cuenta, /admin, /login; descartado = 14 días sin verlo. En temporada de Black Friday (solo RD) lleva a `/cuenta/black-friday?activar=1`, el resto del año a `/login?registro=1`. Cada cuenta nueva y cada suscripción nueva al boletín avisan por Discord (`DISCORD_WEBHOOK_SIGNUPS` en el `.env`, servicio `api`; correo enmascarado, origen utm/página de entrada y total de cuentas).
 - Ingesta RD: cada 6 h, y cada hora desde el miércoles antes de Black Friday hasta el Cyber Monday, hora RD (`ingestion-interval.ts`, `INGESTION_PEAK_INTERVAL_SECONDS`).
 - **Gaming con Eneba** (afiliado `af_id=dondeta`, código `DONDETA` para un 5 % de descuento, cookie de 30 días):
   - qué se vende: recargas, Game Pass y 17 juegos de PC, de `apps/api/src/ingestion/eneba.*`;
