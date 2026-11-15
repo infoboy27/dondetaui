@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { homeHighlights } from './highlights'
 import { buildReport, type PriceCheckReport } from './price-check'
 import { ProductsRepository } from './products.repository'
+import { rankSearchResults } from './search-ranking'
 
 @Injectable()
 export class ProductsService {
@@ -15,8 +16,8 @@ export class ProductsService {
     return homeHighlights(await this.repository.list())
   }
 
-  search(query: string) {
-    return this.repository.list(query)
+  async search(query: string) {
+    return rankSearchResults(await this.repository.list(query), query)
   }
 
   async get(productId: string) {

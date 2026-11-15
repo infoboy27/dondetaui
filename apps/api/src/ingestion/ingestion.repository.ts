@@ -3,6 +3,7 @@ import type { Pool, PoolClient } from 'pg'
 import type { IngestionResult, NormalizedRetailerItem } from './ingestion.types'
 import { brandsCompatible, bundlesCompatible, extractModelCodes } from './model-codes'
 import { cleanBrand } from './brands'
+import { applyCategoryOverrides } from './category-overrides'
 
 // DóndeTa is an appliance price-comparison app. Discovery is already scoped to each
 // retailer's appliance department by URL, but sites nest non-appliance subcategories
@@ -20,7 +21,7 @@ const APPLIANCE_CATEGORY_KEYWORDS = [
   'aspirad', 'television', 'televisor', 'tv y audio', 'audio',
   'dispensador', 'freidora', 'air fryer',
   'extractor', 'procesador', 'barras de sonido', 'electro hogar', 'electro cocina',
-  'nevecon', 'lavavajill', 'minibar', 'calentador',
+  'nevecon', 'lavavajill', 'minibar', 'calentador', 'bebedero',
 ]
 
 function isApplianceCategory(categoryName: string): boolean {
@@ -69,7 +70,9 @@ export class IngestionRepository {
   constructor(private readonly pool: Pool) {}
 
   async ingest(rawItem: NormalizedRetailerItem, ingestionRunId?: string): Promise<IngestionResult> {
-    const item = { ...rawItem, brand: cleanBrand(rawItem.brand, rawItem.name) }
+    // Name-based overrides (water dispensers out of Neveras) before the
+    // appliance gate, so both see the category the product is stored under.
+    const item = applyCategoryOverrides({ ...rawItem, brand: cleanBrand(rawItem.brand, rawItem.name) })
     if (!acceptsCategory(item)) {
       throw new Error(`Skipped: category "${item.categoryName}" is not an appliance category`)
     }

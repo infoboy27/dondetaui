@@ -1,6 +1,7 @@
 import { brandFromName, normalizeBrand } from './brands'
 import { politeFetch, sleep } from './polite-fetch'
 import type { NormalizedRetailerItem } from './ingestion.types'
+import { WATER_DISPENSER_CATEGORY } from './category-overrides'
 
 // HI-FI Electrodomésticos (hifi.com.do) is a Laravel + Inertia site: every
 // category page (/linea-blanca?page=N, 8 per page) embeds its products as JSON
@@ -47,13 +48,15 @@ const CATEGORY_MAP: Array<[string[], { name: string; slug: string }]> = [
   [['microondas'], { name: 'Microondas', slug: 'microondas' }],
   [['extractores'], { name: 'Extractores', slug: 'extractores' }],
   [['estufas', 'estufa-con-horno', 'topes', 'hornos'], { name: 'Estufas', slug: 'estufas' }],
+  // Before Neveras: some dispensers ("Bebedero Con Nevera") are tagged both.
+  [['bebederos'], WATER_DISPENSER_CATEGORY],
   // Not the "refrigeracion" department: it also holds water dispensers and ice makers.
   [['neveras', 'neveras-ejecutivas', 'freezers', 'vineras', 'exhibidores'], { name: 'Neveras', slug: 'neveras' }],
   [['aspiradoras'], { name: 'Aspiradoras', slug: 'aspiradoras' }],
   [['licuadoras'], { name: 'Licuadoras', slug: 'licuadoras' }],
   [
     [
-      'bebederos', 'fabrica-de-hielo', 'batidoras', 'cafeteras', 'wafleras-tostadoras-grill', 'procesador-de-alimentos',
+      'fabrica-de-hielo', 'batidoras', 'cafeteras', 'wafleras-tostadoras-grill', 'procesador-de-alimentos',
       'planchas', 'extractores-de-jugo', 'freidoras-de-aire', 'estufas-hornos-electricos', 'purificadores-deshumidificadores',
       'otros-pequenos', 'pequenos-electrodomesticos', 'refrigeracion', 'linea-blanca', 'lavado', 'aires-y-abanicos', 'electronica',
     ],

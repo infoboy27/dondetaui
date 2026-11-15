@@ -94,7 +94,8 @@ describe('hifiCategory', () => {
   it('prefers the most specific category', () => {
     expect(hifiCategory(TWIN_TUB)).toEqual({ name: 'Lavadoras', slug: 'lavadoras' })
     expect(hifiCategory(TV)).toEqual({ name: 'Televisores', slug: 'televisores' })
-    expect(hifiCategory(BEBEDERO)).toEqual({ name: 'Electrodomésticos', slug: 'electrodomesticos' })
+    expect(hifiCategory(BEBEDERO)).toEqual({ name: 'Bebederos y dispensadores', slug: 'bebederos' })
+    expect(hifiCategory({ categories: [...BEBEDERO.categories!, cat('neveras', 'Neveras')] })).toEqual({ name: 'Bebederos y dispensadores', slug: 'bebederos' })
   })
 
   it('skips spare parts and products with only brand or offer pages', () => {
@@ -112,7 +113,7 @@ describe('normalizeHifiProduct', () => {
       name: 'Bebedero Blanco Kenmore',
       brand: 'Kenmore',
       model: 'BTCSWS',
-      categorySlug: 'electrodomesticos',
+      categorySlug: 'bebederos',
       imageUrl: 'https://hifi.com.do/storage/images/kenmore/BTCSWS.jpg',
       price: 7140,
       available: true,

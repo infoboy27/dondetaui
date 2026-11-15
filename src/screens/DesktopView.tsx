@@ -10,7 +10,7 @@ import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
 import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
-import { compareByRelevance, getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange, getTopComparisons } from '../domain/offers'
+import { getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange, getTopComparisons } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
 import { userInitials } from '../domain/user'
@@ -28,6 +28,7 @@ import StoreLogo from '../components/StoreLogo'
 import SectionHeader from '../components/SectionHeader'
 import EnebaBadge from '../components/EnebaBadge'
 import { matchesSectionFilter } from '../domain/sections'
+import { sortBySearchRelevance } from '../domain/searchRank'
 import type { Product, User } from '../types'
 
 type SortKey = 'price-asc' | 'price-desc' | 'relevance'
@@ -582,7 +583,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
       return inStoreFilter && inPriceRange && inCategory && isDeal && isAlerted && inAvailability
     })
 
-    if (sortBy === 'relevance') return [...filtered].sort(compareByRelevance)
+    if (sortBy === 'relevance') return sortBySearchRelevance(filtered, query)
 
     const sorted = [...filtered].sort((a, b) => {
       const totalA = getOfferTotal(getBestOffer(a.prices) ?? a.prices[0])
@@ -590,7 +591,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
       return sortBy === 'price-asc' ? totalA - totalB : totalB - totalA
     })
     return sorted
-  }, [products, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, sectionCategory, sectionFilter, screen, alertedIds, stockOnly, freeShippingOnly])
+  }, [products, query, selectedStores, minPrice, maxPrice, sortBy, selectedCategory, sectionCategory, sectionFilter, screen, alertedIds, stockOnly, freeShippingOnly])
 
   // The biggest saving between stores among what's on screen; no banner at
   // all when nothing is sold in more than one store (it used to crown the
