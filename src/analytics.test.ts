@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { trackOfferClick, trackSearch } from './analytics'
+import { trackOfferClick, trackSearch, trackShare } from './analytics'
 import type { Product, StorePrice } from './types'
 
 describe('analytics', () => {
@@ -24,5 +24,12 @@ describe('analytics', () => {
     expect(gtag).not.toHaveBeenCalled()
     delete window.gtag
     expect(() => trackSearch('nevera')).not.toThrow()
+  })
+
+  it('sends a GA4 share event for a product', () => {
+    const gtag = vi.fn()
+    window.gtag = gtag
+    trackShare('p1', 'whatsapp')
+    expect(gtag).toHaveBeenCalledWith('event', 'share', { method: 'whatsapp', content_type: 'product', item_id: 'p1' })
   })
 })

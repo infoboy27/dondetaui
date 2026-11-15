@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { homeHighlights } from './highlights'
-import { buildReport, type PriceCheckReport } from './price-check'
+import { buildReport, productChecks, type PriceCheck, type PriceCheckReport } from './price-check'
 import { ProductsRepository } from './products.repository'
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 @Injectable()
 export class ProductsService {
@@ -46,6 +48,13 @@ export class ProductsService {
       this.priceCheckCache = { at: Date.now(), report }
     }
     return this.priceCheckCache.report
+  }
+
+  // One product's verdicts, one per store (its share card shows the one for
+  // the store with the best price). Not cached: a single product's offers.
+  async productPriceCheck(productId: string): Promise<PriceCheck[]> {
+    if (!UUID.test(productId)) return []
+    return productChecks(await this.repository.priceCheckSeries(productId))
   }
 
   history(productId: string) {

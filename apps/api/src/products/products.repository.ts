@@ -340,7 +340,8 @@ export class ProductsRepository {
 
   // Every live, in-stock offer with its daily lowest price in that store over
   // the previous 30 days (today excluded), for the price check (price-check.ts).
-  async priceCheckSeries(): Promise<OfferSeries[]> {
+  // With productId, only that product's offers (its share card).
+  async priceCheckSeries(productId?: string): Promise<OfferSeries[]> {
     const result = await this.pool.query<{
       product_id: string
       name: string
@@ -377,7 +378,9 @@ export class ProductsRepository {
         -- Gaming codes (Eneba) swing with the dollar and their own promos:
         -- like "Bajaron de precio", the Black Friday check is for store prices.
         and c.slug <> 'gaming'
-        and ${freshOfferSql()}`,
+        and ${freshOfferSql()}
+        ${productId ? 'and p.id = $1::uuid' : ''}`,
+      productId ? [productId] : [],
     )
     return result.rows.map(row => ({
       productId: row.product_id,

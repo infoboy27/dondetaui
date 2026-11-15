@@ -10,10 +10,13 @@ import { outboundHref, rankOffers } from '../../../lib/offers'
 import { similarProducts } from '../../../lib/specs'
 import { colors, fonts } from '../../../lib/tokens'
 import { SiteFooter, SiteHeader } from '../../../lib/page'
-import { currencyCode, hasGuides, productDescription } from '../../../lib/country'
+import { currencyCode, hasGuides, htmlLang, productDescription } from '../../../lib/country'
 import { AMAZON, COUNTRY, SITE_URL } from '../../../lib/site'
 import { AMAZON_DISCLOSURE, amazonSearchUrl } from '../../../lib/amazon'
 import { PriceHistoryCard } from '../../../components/PriceHistoryCard'
+import ShareButtons from '../../../components/ShareButtons'
+import { CARD_HEIGHT, CARD_WIDTH } from '../../../lib/shareCard'
+import { productShareUrl, shareMessage } from '../../../lib/share'
 import type { Product } from '../../../lib/types'
 
 interface Props {
@@ -52,10 +55,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     storeCount,
   )
 
+  // Link previews (WhatsApp first): the price is in the title and the share
+  // card (share-image/route.tsx) is the image. ?v changes with the price so
+  // WhatsApp, which caches previews by URL, picks up a new card.
+  const shareTitle = best ? `${product.name}: ${formatPrice(best.price)} en ${best.store}` : product.name
+  const image = {
+    url: `/product/${product.slug}/share-image?v=${best ? Math.round(best.price) : 0}`,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    alt: shareTitle,
+    type: 'image/png',
+  }
+
   return {
     title,
     description,
-    openGraph: { title, description, images: product.image ? [product.image] : undefined },
+    openGraph: {
+      type: 'website',
+      siteName: 'DóndeTa',
+      locale: htmlLang(COUNTRY).replace('-', '_'),
+      url: `/product/${product.slug}`,
+      title: shareTitle,
+      description,
+      images: [image],
+    },
+    twitter: { card: 'summary_large_image', title: shareTitle, description, images: [image] },
     alternates: { canonical: `/product/${product.slug}` },
     // Single-retailer pages with little history add little on their own --
     // keep them crawlable (follow) but out of the index so the site isn't
@@ -199,6 +223,12 @@ export default async function ProductPage({ params }: Props) {
               )}
             </>
           )}
+          <ShareButtons
+            productId={product.id}
+            message={shareMessage(product.name, bestOffer && { price: formatPrice(bestOffer.price), store: bestOffer.store })}
+            whatsappUrl={productShareUrl(SITE_URL, product.slug, 'whatsapp')}
+            shareSheetUrl={productShareUrl(SITE_URL, product.slug, 'web_share')}
+          />
         </div>
       </div>
 

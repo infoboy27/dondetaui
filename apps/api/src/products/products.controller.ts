@@ -42,6 +42,12 @@ export class ProductsController {
     return this.products.offers(id)
   }
 
+  // Public: the verdict on a product's share card (web-seo).
+  @Get('products/:id/price-check')
+  productPriceCheck(@Param('id') id: string) {
+    return this.products.productPriceCheck(id)
+  }
+
   @Get('products/:id/history')
   history(@Param('id') id: string) {
     return this.products.history(id)

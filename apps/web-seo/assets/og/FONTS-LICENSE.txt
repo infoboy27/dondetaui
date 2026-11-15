@@ -1,0 +1,4 @@
+Poppins (Indian Type Foundry) and DM Sans (Colophon Foundry), latin subsets
+from @fontsource. Both are licensed under the SIL Open Font License 1.1:
+https://openfontlicense.org
+Used by src/app/product/[slug]/share-image/route.tsx (the product share card).
