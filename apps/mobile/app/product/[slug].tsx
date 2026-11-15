@@ -8,7 +8,8 @@ import { rankOffers, getBestOffer, getSavingsRange } from '../../src/domain/offe
 import { isGaming } from '../../src/domain/gaming'
 import { bestCardDeal, cardDealConditions, cardDealParts, cardDealSentence } from '../../src/domain/cardPromotions'
 import { useCardPromotions } from '../../src/hooks/useCardPromotions'
-import { offerUrl, openInApp, productWebUrl } from '../../src/domain/links'
+import { offerUrl, openInApp, siteUrl } from '../../src/domain/links'
+import { productShareUrl, shareMessage } from '../../src/domain/share'
 import DiscountCode from '../../src/components/DiscountCode'
 import { formatPrice } from '../../src/domain/currency'
 import { colors, radii, spacing } from '../../src/design/tokens'
@@ -103,13 +104,15 @@ export default function ProductDetailScreen() {
   const isAlerted = alertedIds.has(product.id)
   const cheapestUrl = cheapest ? offerUrl(product, cheapest) : null
 
+  // Native share sheet. The link goes inside the message on both platforms:
+  // Android ignores `url`, and on iOS some apps (WhatsApp among them) drop
+  // the message when `url` is also set. WhatsApp builds the preview from the
+  // link (the product's share card, web-seo share-image).
   const share = () => {
-    void Share.share({
-      message: cheapest
-        ? `${product.name} desde ${formatPrice(cheapest.price)} en DóndeTa`
-        : `${product.name} en DóndeTa`,
-      url: productWebUrl(product),
-    }).catch(() => {})
+    const message = shareMessage(product.name, cheapest && { price: formatPrice(cheapest.price), store: cheapest.store })
+    const url = productShareUrl(siteUrl(), product.slug ?? product.id, 'app')
+    haptics.selection()
+    void Share.share({ message: `${message}\n${url}` }).catch(() => {})
   }
 
   const onToggleAlert = () => {

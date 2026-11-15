@@ -19,9 +19,8 @@ export function openInApp(url: string) {
   }).catch(() => {})
 }
 
-// Public web page for a product, used when sharing. The site is the API's
-// origin (each country build points at its own domain).
-export function productWebUrl(product: Product): string {
-  const site = appConfig.apiBaseUrl.replace(/\/api$/, '')
-  return `${site}/product/${encodeURIComponent(product.slug ?? product.id)}`
+// Public website, used when sharing: the API's origin (each country build
+// points at its own domain).
+export function siteUrl(): string {
+  return appConfig.apiBaseUrl.replace(/\/api$/, '')
 }

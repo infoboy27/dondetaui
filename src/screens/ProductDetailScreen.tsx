@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { trackOfferClick } from '../analytics'
+import { trackOfferClick, trackShare } from '../analytics'
 import PriceHistoryChart from '../components/PriceHistoryChart'
 import DiscountCode from '../components/DiscountCode'
 import AmazonCard from '../components/AmazonCard'
 import { isGaming } from '../domain/gaming'
 import ProductOfferSummary from '../components/ProductOfferSummary'
+import WhatsAppShareButton from '../components/WhatsAppShareButton'
+import { productShareUrl, shareMessage, shareSiteUrl, whatsappShareHref } from '../domain/share'
 import {
   BellIcon,
   CheckIcon,
@@ -58,6 +60,9 @@ export default function ProductDetailScreen({
     ? Math.min(...product.priceHistory.map(point => point.price))
     : undefined
   const isBestPrice = Boolean(bestOffer && priceMin !== undefined && bestOffer.price <= priceMin * 1.05)
+  const siteUrl = shareSiteUrl(typeof window === 'undefined' ? undefined : window.location.origin)
+  const shareSlug = product.slug || product.id
+  const shareText = shareMessage(product.name, bestOffer && { price: formatPrice(bestOffer.price), store: bestOffer.store })
 
   const createAlert = async () => {
     if (!bestOffer) return
@@ -150,16 +155,16 @@ export default function ProductDetailScreen({
           type="button"
           aria-label="Compartir producto"
           onClick={async () => {
-            // The prototype has no real per-product route yet (see AGENTS.md), so there's
-            // no shareable URL to include -- share the name/price as text instead of a
-            // broken or misleading link.
-            const text = bestOffer
-              ? `${product.name} — desde ${formatPrice(bestOffer.price)} en DóndeTa`
-              : product.name
+            // System share sheet when there is one (phones), else WhatsApp:
+            // the most used way to send a link in RD.
             if (navigator.share) {
-              try { await navigator.share({ title: product.name, text }) } catch { /* user cancelled */ }
-            } else if (navigator.clipboard) {
-              await navigator.clipboard.writeText(text)
+              try {
+                await navigator.share({ text: shareText, url: productShareUrl(siteUrl, shareSlug, 'web_share') })
+                trackShare(product.id, 'web_share')
+              } catch { /* user cancelled */ }
+            } else {
+              trackShare(product.id, 'whatsapp')
+              window.open(whatsappShareHref(shareText, productShareUrl(siteUrl, shareSlug, 'whatsapp')), '_blank', 'noopener')
             }
           }}
           style={{
@@ -234,6 +239,13 @@ export default function ProductDetailScreen({
       {/* Price Summary */}
       <div style={{ margin: '12px 16px 0' }}>
         <ProductOfferSummary offers={product.prices} />
+        <WhatsAppShareButton
+          productId={product.id}
+          slug={shareSlug}
+          siteUrl={siteUrl}
+          message={shareText}
+          style={{ marginTop: 10 }}
+        />
       </div>
 
       {/* Gaming (Eneba): digital delivery and the affiliate discount code */}

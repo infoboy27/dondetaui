@@ -1,5 +1,5 @@
 import type { CardPromotion } from './cardPromotions'
-import type { PriceCheckReport, Product, ReviewSummary, Store } from './types'
+import type { PriceCheck, PriceCheckReport, Product, ReviewSummary, Store } from './types'
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001/api'
 
@@ -64,4 +64,11 @@ export async function getStoreProducts(slug: string): Promise<Product[]> {
 
 export function getPriceCheck(): Promise<PriceCheckReport | null> {
   return apiFetch<PriceCheckReport>('/price-check')
+}
+
+// One product's "¿la oferta es real?" verdicts, one per store (share card).
+// An older API without the route, or any failure, just means no verdict.
+export async function getProductPriceCheck(productId: string): Promise<PriceCheck[]> {
+  const checks = await apiFetch<PriceCheck[]>(`/products/${encodeURIComponent(productId)}/price-check`).catch(() => null)
+  return Array.isArray(checks) ? checks : []
 }

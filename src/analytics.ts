@@ -48,3 +48,10 @@ export function trackAlert(productId: string) {
 export function trackAuth(kind: 'login' | 'sign_up') {
   track(kind, { method: 'email' })
 }
+
+// GA4's recommended "share" event; the shared link also carries
+// utm_source=<method>&utm_medium=share, so the visits it brings show up as
+// their own row in /admin → Campañas.
+export function trackShare(productId: string, method: 'whatsapp' | 'web_share') {
+  track('share', { method, content_type: 'product', item_id: productId })
+}

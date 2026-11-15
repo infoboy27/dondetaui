@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildReport, checkOffer, type OfferSeries } from './price-check'
+import { buildReport, checkOffer, productChecks, type OfferSeries } from './price-check'
 
 function series(prices: number[], current: number, productId = 'p1'): OfferSeries {
   return {
@@ -67,5 +67,19 @@ describe('buildReport', () => {
     ])
     expect(report.lowest.map(c => [c.productId, c.current])).toEqual([['b', 7_000], ['a', 9_500]])
     expect(report.tracked).toBe(3)
+  })
+})
+
+describe('productChecks', () => {
+  it('lists one verdict per judged offer, real lows first', () => {
+    const raised = { ...series(flat(10_000), 12_000), store: 'A' }
+    const low = { ...series(flat(10_000), 9_000), store: 'B' }
+    const quiet = { ...series(flat(10_000), 10_000), store: 'C' }
+    const checks = productChecks([raised, low, quiet])
+    expect(checks.map(c => [c.store, c.verdict])).toEqual([['B', 'lowest'], ['A', 'raised']])
+  })
+
+  it('is empty without enough history', () => {
+    expect(productChecks([series(flat(10_000, 3), 8_000)])).toEqual([])
   })
 })

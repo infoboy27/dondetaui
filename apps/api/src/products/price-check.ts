@@ -130,3 +130,13 @@ export function buildReport(all: OfferSeries[], limit = 30, now = new Date()): P
     raised: pick('raised', (a, b) => b.pctVsReference - a.pctVsReference),
   }
 }
+
+// Every verdict for one product's offers (one per store), most telling first:
+// a real low, then an inflated "rebaja", then a rise.
+export function productChecks(all: OfferSeries[]): PriceCheck[] {
+  const rank: Record<Verdict, number> = { lowest: 0, inflated: 1, raised: 2 }
+  return all
+    .map(checkOffer)
+    .filter((check): check is PriceCheck => check !== null)
+    .sort((a, b) => rank[a.verdict] - rank[b.verdict])
+}
