@@ -4,6 +4,8 @@ import { EmailProvider } from '../notifications/email.provider'
 import { SmsProvider } from '../notifications/sms.provider'
 import { PushProvider } from '../notifications/push.provider'
 import { NotificationsService } from '../notifications/notifications.service'
+import { PushTokensRepository } from '../notifications/push-tokens.repository'
+import { PushBudget, pushEnabled } from '../notifications/push-messages'
 import { formatPrice } from '../common/currency'
 
 const databaseUrl = process.env.DATABASE_URL
@@ -11,7 +13,12 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 const pool = new Pool({ connectionString: databaseUrl, max: 5 })
 const alerts = new AlertsRepository(pool)
-const notifications = new NotificationsService(new EmailProvider(), new SmsProvider(), new PushProvider())
+const push = new PushProvider()
+const notifications = new NotificationsService(new EmailProvider(), new SmsProvider(), push)
+const pushTokens = new PushTokensRepository(pool)
+// Price-drop pushes go out only with PUSH_NOTIFICATIONS_ENABLED=1 (safe to
+// deploy before the apps are in the stores). Email/WhatsApp are unaffected.
+const sendPush = pushEnabled(process.env)
 
 interface HistoryPoint {
   date: string
@@ -41,9 +48,26 @@ async function productInfo(productId: string): Promise<{ name: string; imageUrl:
   return row ? { name: row.name, imageUrl: row.image_url, slug: row.slug } : null
 }
 
+// Receipts of earlier sends: tokens Expo reports as DeviceNotRegistered
+// (app uninstalled, notifications revoked) are disabled, not retried.
+async function processPushReceipts() {
+  const due = await pushTokens.dueTickets()
+  if (!due.length) return
+  const { checked, disable } = await push.deadTokensFromReceipts(due)
+  await pushTokens.disable(disable)
+  await pushTokens.deleteTickets(checked)
+  console.log(`[alerts] push receipts: ${checked.length} checked, ${disable.length} token(s) disabled`)
+}
+
 async function main() {
+  if (sendPush) {
+    await processPushReceipts().catch(error => console.warn('[alerts] push receipts check failed:', error))
+  }
+
   const candidates = await alerts.findAllForWorker()
   let notified = 0
+  let pushed = 0
+  const pushBudget = new PushBudget()
 
   for (const candidate of candidates) {
     const history = await latestPriceHistory(candidate.product_id)
@@ -64,18 +88,29 @@ async function main() {
     const name = product.name
 
     await notifications.notifyPriceDrop(
-      { email: candidate.user_email, phone: candidate.user_phone, pushTokens: candidate.push_tokens },
+      { email: candidate.user_email, phone: candidate.user_phone },
       name,
       latest.price,
       previous.price,
       product,
     )
+    // Same dedupe as email (last_notified_price below), plus a per-user cap per run.
+    if (sendPush && candidate.push_tokens.length && pushBudget.take(candidate.user_id)) {
+      try {
+        const outcome = await notifications.pushPriceDrop(candidate.push_tokens, name, latest.price, previous.price, product.slug)
+        await pushTokens.savePendingTickets(outcome.pending)
+        await pushTokens.disable(outcome.disable)
+        if (outcome.pending.length) pushed += 1
+      } catch (error) {
+        console.warn('[alerts] price-drop push failed:', error)
+      }
+    }
     await alerts.markNotified(candidate.alert_id, latest.price)
     notified += 1
     console.log(`[alerts] notified ${candidate.user_email} — ${name} dropped to ${formatPrice(latest.price)}`)
   }
 
-  console.log(`[alerts] checked ${candidates.length} alerts, sent ${notified} notifications`)
+  console.log(`[alerts] checked ${candidates.length} alerts, sent ${notified} notifications (${sendPush ? `${pushed} with push` : 'push off'})`)
 }
 
 main()

@@ -8,7 +8,7 @@ import { useCountry } from '../../../src/hooks/useCountry'
 import Icon, { type IconName } from '../../../src/components/Icon'
 import Button from '../../../src/components/ui/Button'
 import Touchable from '../../../src/components/ui/Touchable'
-import { ListRow, ListSection } from '../../../src/components/ui/GroupedList'
+import { ListRow, ListSection, ListSwitchRow } from '../../../src/components/ui/GroupedList'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
 
@@ -22,7 +22,7 @@ const MFA_LABEL = { email: 'Correo', totp: 'App autenticadora' } as const
 
 export default function ProfileScreen() {
   const router = useRouter()
-  const { user, authLoading, auth, favoriteIds, alertedIds } = useAppState()
+  const { user, authLoading, auth, favoriteIds, alertedIds, push } = useAppState()
   const country = useCountry()
   // The owner's metrics row: only when the server says this account is the
   // admin (ADMIN_EMAILS). Anyone else -- or any error -- never sees it.
@@ -66,6 +66,18 @@ export default function ProfileScreen() {
               <ListRow icon="heartFill" iconColor={colors.accent} title="Favoritos" value={String(favoriteIds.size)} onPress={() => router.navigate('/alerts')} />
               <ListRow icon="bellFill" iconColor={colors.primary} title="Alertas de precio" value={String(alertedIds.size)} onPress={() => router.navigate('/alerts')} />
             </ListSection>
+
+            {push.supported && (
+              <ListSection footer="Te avisamos en este teléfono cuando baje el precio de lo que guardas o sigues. Las alertas por correo no cambian.">
+                <ListSwitchRow
+                  icon="bellFill"
+                  iconColor="#E5383B"
+                  title="Notificaciones de precio"
+                  value={push.enabled}
+                  onValueChange={on => void push.setEnabled(on)}
+                />
+              </ListSection>
+            )}
 
             {country.code === 'DO' && (
               <ListSection footer="El miércoles, el viernes y el Cyber Monday: solo los precios que de verdad bajaron.">

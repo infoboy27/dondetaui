@@ -1,5 +1,5 @@
 import { Children, isValidElement, type ReactNode } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Switch, Text, View } from 'react-native'
 import { colors, radii, spacing } from '../../design/tokens'
 import { type } from '../../design/type'
 import Icon, { type IconName } from '../Icon'
@@ -63,6 +63,41 @@ export function ListRow({
     <Touchable onPress={onPress} accessibilityRole={external ? 'link' : 'button'} accessibilityLabel={accessibilityLabel ?? title}>
       {content}
     </Touchable>
+  )
+}
+
+// Settings-style row with a native switch (Settings → Notifications).
+export function ListSwitchRow({
+  icon,
+  iconColor = colors.primary,
+  title,
+  value,
+  onValueChange,
+  disabled = false,
+}: {
+  icon?: IconName
+  iconColor?: string
+  title: string
+  value: boolean
+  onValueChange: (value: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <View style={styles.row}>
+      {icon && (
+        <View style={[styles.iconTile, { backgroundColor: iconColor }]}>
+          <Icon name={icon} size={15} color="#fff" weight="semibold" />
+        </View>
+      )}
+      <Text style={[type.body, styles.title]} numberOfLines={1}>{title}</Text>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{ true: colors.primary }}
+        accessibilityLabel={title}
+      />
+    </View>
   )
 }
 

@@ -246,7 +246,9 @@
       [
         "expo-notifications",
         {
-          "color": "#00B894"
+          "icon": "./assets/notification-icon.png",
+          "color": "#00B894",
+          "defaultChannel": "price-alerts"
         }
       ],
       [

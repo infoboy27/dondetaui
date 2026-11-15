@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, HttpCode, Post, Req, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard, type AuthenticatedRequest } from '../auth/jwt-auth.guard'
 import { PushTokensRepository } from './push-tokens.repository'
-import { RegisterPushTokenDto } from './push-tokens.types'
+import { RegisterPushTokenDto, UnregisterPushTokenDto } from './push-tokens.types'
 
 @UseGuards(JwtAuthGuard)
 @Controller('me/push-token')
@@ -16,7 +16,7 @@ export class PushTokensController {
 
   @Delete()
   @HttpCode(204)
-  unregister(@Req() req: AuthenticatedRequest, @Body() dto: RegisterPushTokenDto) {
+  unregister(@Req() req: AuthenticatedRequest, @Body() dto: UnregisterPushTokenDto) {
     return this.pushTokens.unregister(req.userId, dto.token)
   }
 }

@@ -107,6 +107,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
   - Piezas y textos en `marketing/eneba-lanzamiento-2026-10/`.
   - Logos en `marketing/brand/`.
 - **App móvil** (`apps/mobile`, Expo SDK 57): **lista para enviar a las tiendas** salvo lo que pide las cuentas (2026-11-14): bundle/package `com.dondeta.app`, versión 1.0.0, manifiesto de privacidad, permisos mínimos, ícono sin transparencia, enlaces universales/App Links (faltan Team ID y SHA-256 en `public/.well-known/`), registro de Black Friday y tarjeta "Crea tu cuenta" en Inicio. Diseño nativo: pestañas Liquid Glass, SF Symbols y SF Pro. Pasos pendientes y respuestas de privacidad para los formularios: [MOBILE.md](MOBILE.md).
+- **Push de bajas de precio en la app** (2026-11-15, migración 036, aún apagado): el `alerts-worker` manda por Expo el mismo aviso que el correo a los teléfonos del usuario (máx. 3 por vuelta), y al tocarlo abre la ficha. La app pide el permiso la primera vez que se guarda o se sigue un producto (nunca al abrir), registra el token en `/me/push-token`, lo quita al cerrar sesión, y tiene el interruptor *Perfil → Notificaciones de precio*. Tokens muertos (`DeviceNotRegistered`) se desactivan solos. Se enciende con `PUSH_NOTIFICATIONS_ENABLED=1` en el `.env` del stack cuando la app esté en las tiendas con la llave APNs y FCM v1 cargadas en EAS: pasos en [MOBILE.md](MOBILE.md#notificaciones-push-bajas-de-precio).
 - **Moderación de reseñas** (migración 033, exigida por Apple para contenido de usuarios): filtro de lenguaje ofensivo al publicar (`apps/api/src/reviews/review-moderation.ts`), "Reportar" (una vez por persona; con 3 reportes la reseña se oculta sola) y "Ocultar reseñas de este usuario" en web y app, aviso a `DISCORD_WEBHOOK_ALERTS` por cada reporte, y `/admin/resenas` para ocultar, mostrar, eliminar o bloquear al autor. Compromiso en los Términos: revisar reportes en menos de 24 h.
 
 **Pendiente de Jonatan** (cuentas o accesos que solo él puede crear):
@@ -114,6 +115,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - Secret `DISCORD_WEBHOOK_ALERTS` en GitHub, para las alertas de `uptime.yml`.
 - Configurar el pago de Eneba en my.eneba.com/affiliates/overview.
 - Cuenta de Play Console (US$25) y Apple Developer Program (US$99/año).
+- Push en la app: llave APNs (Apple) y proyecto de Firebase con `google-services.json` + llave de service account FCM v1 (Google), ambos en EAS; luego `PUSH_NOTIFICATIONS_ENABLED=1` en `~/dondeta/.env` ([MOBILE.md](MOBILE.md#notificaciones-push-bajas-de-precio)).
 - Resend: crear la cuenta, verificar el dominio `dondeta.com.do` (registros DNS) y poner `RESEND_API_KEY` en `~/dondeta/.env`. Sin eso no salen los correos de cuenta (verificación, recuperar contraseña, 2FA por correo) ni las alertas por email.
 - Reaplicar a AdSense (rechazo del 2026-10-20: «contenido de bajo valor»): ver el plan de abajo, no antes de cumplirlo.
 - Mergear la rama `kong-memoria` del repo serviciosadsemble (otro proyecto, mismo server).

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { EmailProvider } from './email.provider'
 import { SmsProvider } from './sms.provider'
 import { PushProvider } from './push.provider'
+import { buildPriceDropPush, priceDropPct, sendableTokens, type ExpoPushMessage, type TicketOutcome } from './push-messages'
 import { formatPrice } from '../common/currency'
 import { priceDropEmail, type PriceDropDetails } from '../auth/account-emails'
 import type { NotificationRecipient } from './notifier.types'
@@ -35,8 +36,24 @@ export class NotificationsService {
       await this.sms.sendWhatsApp(recipient.phone, body)
     }
 
-    if (recipient.pushTokens.length) {
-      await this.push.send(recipient.pushTokens, 'DóndeTa', body)
-    }
+  }
+
+  /**
+   * The push copy of a price-drop alert, to every active device of the user.
+   * The alerts worker decides whether to call it (env flag, per-run budget)
+   * and stores the returned tickets / dead tokens.
+   */
+  async pushPriceDrop(tokens: string[], productName: string, newPrice: number, previousPrice?: number, slug?: string | null): Promise<TicketOutcome> {
+    const targets = sendableTokens(tokens)
+    if (!targets.length) return { pending: [], disable: [] }
+    const content = buildPriceDropPush({
+      productName,
+      newPrice: formatPrice(newPrice),
+      previousPrice: previousPrice && previousPrice > newPrice ? formatPrice(previousPrice) : undefined,
+      pct: priceDropPct(previousPrice, newPrice),
+      slug: slug ?? null,
+    })
+    const messages: ExpoPushMessage[] = targets.map(to => ({ to, ...content, sound: 'default', channelId: 'price-alerts' }))
+    return this.push.send(messages)
   }
 }

@@ -151,6 +151,64 @@ npx expo export --platform android
 - **Paridad con la web:** la navegación por secciones de las demás categorías y el filtro de tipos de artículo aún no están en la app (Gaming sí, desde 2026-10-12).
 - **`android/` en la raíz:** es el intento viejo con Capacitor; la app oficial es `apps/mobile`.
 
+## Notificaciones push (bajas de precio)
+
+Cuando baja el precio de algo que el usuario guardó (corazón) o sigue (campana), el
+mismo ciclo de alertas que manda el correo (`alerts-worker`,
+`apps/api/src/alerts/check-price-drops.cli.ts`) manda también un push por el servicio
+de Expo (`https://exp.host/--/api/v2/push/send`, `fetch` simple, sin SDK). Al tocarlo
+se abre la ficha del producto (`data.url = /product/<slug>`, misma tabla que los
+enlaces universales: `src/domain/deepLinks.ts`).
+
+- **Cuándo se pide el permiso:** nunca al abrir la app ni al iniciar sesión. Se pide
+  la primera vez que el usuario con cuenta guarda un producto o activa una alerta.
+  Si dice que no, no se le vuelve a preguntar; puede activarlo en *Perfil →
+  Notificaciones de precio* (si iOS ya no deja preguntar, abre Ajustes). Lógica pura
+  en `src/domain/pushPrefs.ts`; efectos en `src/hooks/usePushNotifications.ts`.
+- **Token:** se registra con `POST /me/push-token` (sesión iniciada) y se quita con
+  `DELETE /me/push-token` antes de cerrar sesión o al apagar el interruptor. El
+  interruptor solo aparece en un build real (no en Expo Go ni en el simulador).
+- **Servidor:** tabla `push_tokens` (migración 036: `last_seen_at`, `disabled_at`) y
+  `push_tickets` (recibos pendientes). Lotes de 100. Si Expo responde
+  `DeviceNotRegistered` (app desinstalada, permiso quitado), en el envío o en el
+  recibo que se revisa en la vuelta siguiente (≥15 min), el token queda desactivado;
+  si la app lo vuelve a registrar, se reactiva.
+- **Sin spam:** el mismo control que el correo (no se repite el aviso al mismo precio
+  o más alto; con precio objetivo, solo al alcanzarlo) y como mucho 3 push por
+  usuario en cada vuelta del worker (cada 30 min); el correo sigue listando todo.
+- **Interruptor del servidor:** `PUSH_NOTIFICATIONS_ENABLED=1` en el `.env` del stack
+  (servicio `alerts-worker`). Por defecto está apagado, así que se puede desplegar
+  antes de que la app esté en las tiendas. `EXPO_ACCESS_TOKEN` solo hace falta si se
+  activa *Enhanced push security* en el proyecto de Expo. Luego
+  `docker compose --profile alerts up -d alerts-worker`.
+- **Envío manual a todos** (p. ej. arranque de Black Friday):
+  `node dist/notifications/broadcast-push.cli.js "<título>" "<texto>"` (sin `--send`
+  solo cuenta los dispositivos). No depende del interruptor.
+
+**Lo que falta para que funcione en los builds de las tiendas** (necesita las cuentas):
+
+1. **iOS (APNs):** con la cuenta de Apple Developer pagada, `npx eas credentials -p ios`
+   → *Push Notifications: Manage your Apple Push Notifications Key* → crear o subir
+   una llave APNs (.p8). EAS la ofrece sola en el primer `eas build` de producción.
+   El build gratuito para el iPhone propio (`DONDETA_DEVICE_TEAM`) no tiene push.
+2. **Android (FCM v1):**
+   - crear un proyecto de Firebase y agregar una app Android con el paquete
+     `com.dondeta.app`; bajar `google-services.json`;
+   - subirlo como variable de entorno de tipo archivo en EAS
+     (`npx eas env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret`)
+     o dejarlo en `apps/mobile/google-services.json`; `app.config.js` lo usa solo si existe;
+   - en Firebase → *Configuración del proyecto → Cuentas de servicio*, generar una
+     llave privada (JSON) y subirla con `npx eas credentials -p android` →
+     *Google Service Account → Manage your Google Service Account Key for Push
+     Notifications (FCM V1)*.
+3. Compilar de nuevo (`pnpm build:ios:production` / `pnpm build:android:production`),
+   probar con una cuenta real que el push llega y abre la ficha, y poner
+   `PUSH_NOTIFICATIONS_ENABLED=1` en `~/dondeta/.env` (y en los demás stacks cuando
+   tengan app).
+
+Ícono de Android: `assets/notification-icon.png` (silueta blanca del logo, color
+`#00B894`), canal `price-alerts` ("Alertas de precio").
+
 ## Publicación en las tiendas (preparado el 2026-11-14)
 
 Todo lo que no necesita las cuentas de Apple y Google ya está en el código. Lo que falta, en orden:
@@ -162,7 +220,7 @@ Todo lo que no necesita las cuentas de Apple y Google ya está en el código. Lo
    - nginx los sirve como JSON en `/.well-known/` sin redirección ni fallback (`deploy/nginx.conf`). Comprobar después del deploy: `curl -sI https://dondeta.com.do/.well-known/apple-app-site-association` → `200` y `content-type: application/json`.
    - La app ya declara `applinks:dondeta.com.do` (iOS) y los `intentFilters` con `autoVerify` (Android). `app/+native-intent.tsx` traduce las rutas web a las de la app (`src/domain/deepLinks.ts`).
 3. **`eas.json` → `submit.production.ios`**: cuando exista la app en App Store Connect, agregar `ascAppId` (el *Apple ID* numérico de la app), `appleTeamId` y, si se usa API key, `ascApiKeyPath`/`ascApiKeyId`/`ascApiKeyIssuerId`. Para Android, `serviceAccountKeyPath` de una service account con acceso a Play Console. No se pusieron valores de ejemplo para no subir algo inválido.
-4. **Push:** EAS crea la llave APNs al primer build de producción; Android necesita el `google-services.json` del proyecto de Firebase (FCM v1) en `apps/mobile/`.
+4. **Push** (detalle en [Notificaciones push](#notificaciones-push-bajas-de-precio)): llave APNs en las credenciales de EAS (iOS) y `google-services.json` + llave de service account de FCM v1 (Android). Después, `PUSH_NOTIFICATIONS_ENABLED=1` en el `.env` de cada stack.
 5. `pnpm build:ios:production` / `pnpm build:android:production`, luego `pnpm submit:ios` / `pnpm submit:android`.
 6. **Cuenta de prueba para la revisión de Apple** (la app tiene inicio de sesión): crear una cuenta sin 2FA y ponerla en *App Review Information*.
 
