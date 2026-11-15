@@ -17,7 +17,7 @@ export const SEO_CATEGORIES: { id: string; label: string }[] = [
 ]
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  electrodomesticos: ['electrodomest', 'linea blanca', 'nevera', 'refriger', 'congelad', 'freezer', 'lavador', 'lavaplat', 'secador', 'lavad', 'plancha', 'aspirad', 'dispensador'],
+  electrodomesticos: ['electrodomest', 'linea blanca', 'nevera', 'refriger', 'congelad', 'freezer', 'lavador', 'lavaplat', 'secador', 'lavad', 'plancha', 'aspirad', 'dispensador', 'bebedero'],
   aires: ['acondicionad', 'climatiz', 'abanico', 'ventilad'],
   cocina: ['estufa', 'horno', 'microond', 'cocina', 'cocc', 'licuad', 'batidor', 'cafeter', 'tostad', 'freidora', 'air fryer'],
   'tv-audio': ['television', 'televisor', 'tv y audio', 'audio'],

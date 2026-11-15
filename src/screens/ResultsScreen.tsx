@@ -6,7 +6,8 @@ import PaginationControls from '../components/PaginationControls'
 import { ChevronLeft, FilterIcon } from '../components/Icons'
 import { CATEGORIES } from '../data/mock'
 import { matchesCategory } from '../domain/categories'
-import { compareByRelevance, getBestOffer, getOfferTotal } from '../domain/offers'
+import { getBestOffer, getOfferTotal } from '../domain/offers'
+import { sortBySearchRelevance } from '../domain/searchRank'
 import { useCatalogProducts } from '../hooks/useCatalogProducts'
 import { usePagination } from '../hooks/usePagination'
 import type { Product } from '../types'
@@ -79,7 +80,7 @@ export default function ResultsScreen({ query, category, onBack, onProduct, favo
       })
     })
 
-    if (sortBy === 'relevancia') return [...filtered].sort(compareByRelevance)
+    if (sortBy === 'relevancia') return sortBySearchRelevance(filtered, category ? '' : query)
 
     return [...filtered].sort((a, b) => {
       const aOffer = getBestOffer(a.prices.filter(offer => !excludedStores.includes(offer.store)))
