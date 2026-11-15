@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth, type AuthApi } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
-import { usePushNotifications } from '../hooks/usePushNotifications'
+import { usePushNotifications, type PushApi } from '../hooks/usePushNotifications'
 import { getCountry } from '../domain/currentCountry'
 import type { User } from '../types'
 
@@ -21,16 +21,26 @@ interface AppState {
   // Returns false when the user isn't logged in (alerts require an account,
   // no guest concept -- caller should route to Perfil to sign in).
   toggleAlert: (productId: string) => boolean
+  // Price-drop push on this device (Perfil switch, permission prompts).
+  push: PushApi
 }
 
 const AppStateContext = createContext<AppState | null>(null)
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const auth = useAuth()
-  const { user, loading: authLoading } = auth
+  const baseAuth = useAuth()
+  const { user, loading: authLoading } = baseAuth
   const favorites = useFavorites(user)
   const priceAlerts = usePriceAlerts(user)
-  usePushNotifications(user)
+  const push = usePushNotifications(user)
+  // Sign-out first removes this device from the account (needs the session).
+  const auth: AuthApi = {
+    ...baseAuth,
+    async logout() {
+      await push.unregister()
+      await baseAuth.logout()
+    },
+  }
   const [guestFavoriteIds, setGuestFavoriteIds] = useState<Set<string>>(new Set())
   const guestLoaded = useRef(false)
 
@@ -72,6 +82,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       } else {
         // The API also creates the price alert for a saved product; resync the bell.
         void favorites.create(productId).then(() => priceAlerts.refresh()).catch(() => {})
+        push.onFollow()
       }
       return
     }
@@ -88,7 +99,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const toggleAlert = (productId: string): boolean => {
     if (!user) return false
     if (alertedIds.has(productId)) void priceAlerts.remove(productId)
-    else void priceAlerts.create(productId)
+    else {
+      void priceAlerts.create(productId)
+      push.onFollow()
+    }
     return true
   }
 
@@ -100,6 +114,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     toggleFavorite,
     alertedIds,
     toggleAlert,
+    push,
   }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

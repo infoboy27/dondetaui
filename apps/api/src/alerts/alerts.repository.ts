@@ -11,6 +11,7 @@ export interface AlertRow {
 
 export interface AlertWorkerRow {
   alert_id: string
+  user_id: string
   user_email: string
   user_phone: string | null
   push_tokens: string[]
@@ -72,6 +73,7 @@ export class AlertsRepository {
     const result = await this.pool.query<AlertWorkerRow>(
       `select
         pa.id::text as alert_id,
+        u.id::text as user_id,
         u.email as user_email,
         u.phone as user_phone,
         coalesce(pt.tokens, array[]::text[]) as push_tokens,
@@ -83,6 +85,7 @@ export class AlertsRepository {
       left join (
         select user_id, array_agg(token) as tokens
         from push_tokens
+        where disabled_at is null
         group by user_id
       ) pt on pt.user_id = u.id`,
     )

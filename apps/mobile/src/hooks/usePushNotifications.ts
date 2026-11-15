@@ -1,88 +1,151 @@
-import { useEffect, useRef } from 'react'
-import { Platform } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AppState, Linking, Platform } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
 import { pushTokenApi } from '../api/pushToken'
+import { decidePushAction, parsePushPref, type PushPermission, type PushPref, type PushTrigger } from '../domain/pushPrefs'
+import { Notifications, PRICE_ALERTS_CHANNEL, pushSupported } from '../notifications/expoNotifications'
 import type { User } from '../types'
 
-type NotificationsModule = typeof import('expo-notifications')
-type DeviceModule = typeof import('expo-device')
+const PREF_KEY = 'dondeta.pushPref'
+const TOKEN_KEY = 'dondeta.pushToken'
 
-// Remote push doesn't work inside Expo Go (Expo removed that in SDK 53+):
-// merely evaluating a static `import ... from 'expo-notifications'` throws
-// there, before any of our own code runs. A static import is hoisted, so no
-// try/catch placed after it can ever catch that -- only a plain `require()`
-// call, as a normal statement, can be wrapped. This must stay `require`,
-// not `import`, for that reason.
-let Notifications: NotificationsModule | null = null
-let Device: DeviceModule | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Notifications = require('expo-notifications')
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Device = require('expo-device')
-  Notifications!.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  })
-} catch {
-  Notifications = null
-  Device = null
+export interface PushApi {
+  // false in Expo Go and on simulators: the Perfil switch is hidden.
+  supported: boolean
+  // This device receives price-drop pushes for the signed-in account.
+  enabled: boolean
+  // Call when the user follows a product (saves it or turns on its alert):
+  // the first time, that is when we ask for permission.
+  onFollow: () => void
+  // The Perfil switch.
+  setEnabled: (on: boolean) => Promise<void>
+  // Removes this device from the account; call before signing out.
+  unregister: () => Promise<void>
 }
 
-// Registers this device for price-drop push notifications once the user is
-// logged in (the backend needs a userId to send to) and unregisters on
-// logout. No-op under Expo Go (see above) or on simulators.
-export function usePushNotifications(user: User | null) {
-  const registeredToken = useRef<string | null>(null)
+function projectId(): string | undefined {
+  const fromConfig = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId
+  return fromConfig ?? Constants.easConfig?.projectId
+}
+
+// Price-drop push for the signed-in user. Permission is never requested on
+// launch or sign-in, only when the user follows something or turns the switch
+// on (decidePushAction). No-op under Expo Go or on simulators.
+export function usePushNotifications(user: User | null): PushApi {
+  const [pref, setPrefState] = useState<PushPref>('unset')
+  const prefRef = useRef<PushPref>('unset')
+  const [prefLoaded, setPrefLoaded] = useState(false)
+  const [registered, setRegistered] = useState(false)
+  // The switch position while a toggle is in flight (no flicker back).
+  const [desired, setDesired] = useState<boolean | null>(null)
+  const userRef = useRef(user)
+  userRef.current = user
 
   useEffect(() => {
+    void AsyncStorage.getItem(PREF_KEY)
+      .then(raw => { prefRef.current = parsePushPref(raw); setPrefState(prefRef.current) })
+      .catch(() => {})
+      .finally(() => setPrefLoaded(true))
+  }, [])
+
+  const setPref = (next: PushPref) => {
+    prefRef.current = next
+    setPrefState(next)
+    void AsyncStorage.setItem(PREF_KEY, next).catch(() => {})
+  }
+
+  const registerToken = useCallback(async () => {
     const notifications = Notifications
-    const device = Device
-    if (!user || !notifications || !device?.isDevice) return
-    let cancelled = false
-
-    void (async () => {
-      try {
-        const { status: existing } = await notifications.getPermissionsAsync()
-        let status = existing
-        if (status !== 'granted') {
-          const request = await notifications.requestPermissionsAsync()
-          status = request.status
-        }
-        if (status !== 'granted' || cancelled) return
-
-        if (Platform.OS === 'android') {
-          await notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: notifications.AndroidImportance.DEFAULT,
-          })
-        }
-
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId
-        if (!projectId) return
-
-        const { data: token } = await notifications.getExpoPushTokenAsync({ projectId })
-        if (cancelled) return
-        registeredToken.current = token
-        await pushTokenApi.register(token, Platform.OS === 'ios' ? 'ios' : 'android')
-      } catch {
-        /* Expo Go / simulators without push capability -- silently skip */
-      }
-    })()
-
-    return () => {
-      cancelled = true
+    const id = projectId()
+    if (!notifications || !id || !userRef.current) return
+    if (Platform.OS === 'android') {
+      await notifications.setNotificationChannelAsync(PRICE_ALERTS_CHANNEL, {
+        name: 'Alertas de precio',
+        importance: notifications.AndroidImportance.HIGH,
+      })
     }
-  }, [user])
+    const { data: token } = await notifications.getExpoPushTokenAsync({ projectId: id })
+    if (!userRef.current) return
+    await pushTokenApi.register(token, Platform.OS === 'ios' ? 'ios' : 'android')
+    await AsyncStorage.setItem(TOKEN_KEY, token).catch(() => {})
+    setRegistered(true)
+  }, [])
 
+  const run = useCallback(async (trigger: PushTrigger) => {
+    const notifications = Notifications
+    if (!pushSupported || !notifications || !userRef.current) return
+    try {
+      const current = await notifications.getPermissionsAsync()
+      const permission: PushPermission = current.granted ? 'granted' : current.status === 'denied' ? 'denied' : 'undetermined'
+      const action = decidePushAction({ trigger, pref: prefRef.current, permission, canAskAgain: current.canAskAgain })
+      if (action === 'skip') {
+        if (permission !== 'granted') setRegistered(false)
+        return
+      }
+      if (action === 'openSettings') {
+        await Linking.openSettings()
+        return
+      }
+      if (action === 'ask') {
+        const answer = await notifications.requestPermissionsAsync()
+        if (!answer.granted) return
+      }
+      await registerToken()
+    } catch {
+      /* no network / no push capability: try again next time */
+    }
+  }, [registerToken])
+
+  const unregister = useCallback(async () => {
+    setRegistered(false)
+    const token = await AsyncStorage.getItem(TOKEN_KEY).catch(() => null)
+    if (!token) return
+    await AsyncStorage.removeItem(TOKEN_KEY).catch(() => {})
+    if (userRef.current) await pushTokenApi.unregister(token).catch(() => {})
+  }, [])
+
+  // Signed in (or app opened with a session): refresh the token if allowed.
   useEffect(() => {
-    if (user || !registeredToken.current) return
-    const token = registeredToken.current
-    registeredToken.current = null
-    void pushTokenApi.unregister(token).catch(() => {})
-  }, [user])
+    if (!prefLoaded) return
+    if (!user) {
+      setRegistered(false)
+      return
+    }
+    void run('signin')
+  }, [user, prefLoaded, run])
+
+  // Back from Settings (permission turned on/off there): resync quietly.
+  useEffect(() => {
+    if (!pushSupported) return
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active' && userRef.current) void run('signin')
+    })
+    return () => subscription.remove()
+  }, [run])
+
+  const onFollow = useCallback(() => { void run('follow') }, [run])
+
+  const setEnabled = useCallback(async (on: boolean) => {
+    setDesired(on)
+    try {
+      if (on) {
+        setPref('on')
+        await run('enable')
+      } else {
+        setPref('off')
+        await unregister()
+      }
+    } finally {
+      setDesired(null)
+    }
+  }, [run, unregister])
+
+  return {
+    supported: pushSupported,
+    enabled: desired ?? (!!user && pref !== 'off' && registered),
+    onFollow,
+    setEnabled,
+    unregister,
+  }
 }

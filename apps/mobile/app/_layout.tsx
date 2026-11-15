@@ -12,6 +12,7 @@ import { initCountry, type CountryPreference } from '../src/config/countryStorag
 import { useCountry } from '../src/hooks/useCountry'
 import { nativeHeader } from '../src/design/navigation'
 import { initAds } from '../src/ads/ads'
+import { NotificationTapHandler } from '../src/hooks/useNotificationTaps'
 
 void SplashScreen.preventAutoHideAsync()
 
@@ -54,6 +55,7 @@ export default function RootLayout() {
             <Stack.Screen name="auth" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="country" options={{ presentation: 'modal' }} />
           </Stack>
+          <NotificationTapHandler />
           </AppStateProvider>
         </CountryProvider>
       </SafeAreaProvider>
