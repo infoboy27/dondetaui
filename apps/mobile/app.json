@@ -64,7 +64,7 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.dondeta.app",
+      "bundleIdentifier": "do.com.dondeta.app",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false

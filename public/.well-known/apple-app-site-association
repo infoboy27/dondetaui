@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["TEAMID.com.dondeta.app"],
+        "appIDs": ["782Z27T9U9.do.com.dondeta.app"],
         "components": [
           { "/": "/product/*", "comment": "Product pages" },
           { "/": "/store/*", "comment": "Store pages (app route)" },
