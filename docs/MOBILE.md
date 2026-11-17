@@ -1,8 +1,8 @@
 # App móvil (Android + iOS)
 
 `apps/mobile`: Expo SDK 57 + expo-router, misma API que la web
-(`EXPO_PUBLIC_API_URL`). Bundle id / package: **`com.dondeta.app`** (definitivo desde el
-2026-11-14; no cambiarlo después de publicar). Versión 1.0.0. Proyecto EAS
+(`EXPO_PUBLIC_API_URL`). Bundle id iOS: **`do.com.dondeta.app`** (2026-11-17: `com.dondeta.app` ya estaba tomado en Apple);
+package Android: **`com.dondeta.app`** (2026-11-14). No cambiarlos después de publicar. Versión 1.0.0. Proyecto EAS
 `jfmcss/dondeta` (las versiones las lleva EAS: `appVersionSource: remote`).
 
 ## Arrancar
@@ -213,9 +213,9 @@ enlaces universales: `src/domain/deepLinks.ts`).
 
 Todo lo que no necesita las cuentas de Apple y Google ya está en el código. Lo que falta, en orden:
 
-1. **Apple Developer** (organización con D-U-N-S) y **Play Console** (organización: evita la prueba cerrada de 12 testers/14 días).
+1. **Apple Developer**: hecho (individual, Team ID `782Z27T9U9`, App ID `do.com.dondeta.app` con Push y Associated Domains, 2026-11-17). **Play Console** (organización: evita la prueba cerrada de 12 testers/14 días).
 2. **Enlaces universales / App Links** (`https://dondeta.com.do/product/…`, `/stores/…`, `/store/…`, `/cuenta/black-friday` abren la app):
-   - `public/.well-known/apple-app-site-association`: cambiar `TEAMID` por el **Team ID** de Apple (10 caracteres, *Membership details*). Queda `ABCDE12345.com.dondeta.app`.
+   - `public/.well-known/apple-app-site-association`: hecho: `782Z27T9U9.do.com.dondeta.app`.
    - `public/.well-known/assetlinks.json`: cambiar `PLAY_APP_SIGNING_SHA256` por la huella **SHA-256 del certificado de firma de Play** (*Play Console → Configuración → Integridad de la app → Firma de apps*), en formato `AB:CD:…`. Si también se instalan builds firmados con la llave de subida (EAS), agregar esa huella como segundo elemento.
    - nginx los sirve como JSON en `/.well-known/` sin redirección ni fallback (`deploy/nginx.conf`). Comprobar después del deploy: `curl -sI https://dondeta.com.do/.well-known/apple-app-site-association` → `200` y `content-type: application/json`.
    - La app ya declara `applinks:dondeta.com.do` (iOS) y los `intentFilters` con `autoVerify` (Android). `app/+native-intent.tsx` traduce las rutas web a las de la app (`src/domain/deepLinks.ts`).

@@ -38,7 +38,9 @@
       "android": {
         "track": "internal"
       },
-      "ios": {}
+      "ios": {
+        "appleTeamId": "782Z27T9U9"
+      }
     }
   }
 }
