@@ -70,7 +70,8 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMotionUsageDescription": "Los anuncios pueden usar el movimiento del teléfono para mostrar contenido interactivo. DóndeTa no guarda estos datos."
       },
       "associatedDomains": [
         "applinks:dondeta.com.do"
