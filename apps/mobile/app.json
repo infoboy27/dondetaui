@@ -70,8 +70,7 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSMotionUsageDescription": "Los anuncios pueden usar el movimiento del teléfono para mostrar contenido interactivo. DóndeTa no guarda estos datos."
+        "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
         "applinks:dondeta.com.do"
@@ -238,10 +237,10 @@
         {
           "locationWhenInUsePermission": "Permite a DóndeTa usar tu ubicación para mostrarte las tiendas más cercanas.",
           "isIosBackgroundLocationEnabled": false,
+          "motionUsagePermission": "DóndeTa no usa los datos de movimiento de tu teléfono. Este aviso existe solo porque lo incluye el componente de ubicación.",
           "locationAlwaysPermission": false,
           "isAndroidBackgroundLocationEnabled": false,
-          "locationAlwaysAndWhenInUsePermission": false,
-          "motionUsagePermission": false
+          "locationAlwaysAndWhenInUsePermission": false
         }
       ],
       [
