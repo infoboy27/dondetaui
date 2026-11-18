@@ -270,7 +270,7 @@ export class WatchNotificationsRepository {
           join product_variants v on v.id = o.product_variant_id
           where v.product_id = p.id and po.observed_at::date = current_date - 1
         ) prev on true
-          and (p.name ilike '%' || ss.query || '%' or p.brand ilike '%' || ss.query || '%'
+        where (p.name ilike '%' || ss.query || '%' or p.brand ilike '%' || ss.query || '%'
             or pv.model ilike '%' || ss.query || '%' or c.name ilike '%' || ss.query || '%')
           and (p.created_at > ss.created_at or (ss.max_price is not null and best.current <= ss.max_price))
         order by best.current
