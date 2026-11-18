@@ -76,7 +76,7 @@
         "applinks:dondeta.com.do"
       ],
       "privacyManifests": {
-        "NSPrivacyTracking": true,
+        "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
         "NSPrivacyCollectedDataTypes": [
           {
