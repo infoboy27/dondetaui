@@ -27,6 +27,7 @@ import Touchable from '../../src/components/ui/Touchable'
 import { Skeleton } from '../../src/components/ui/Skeleton'
 import { useAppState } from '../../src/state/AppStateContext'
 import { STORE_SLUGS } from '../../src/data/storeSlugs'
+import { useIsWide } from '../../src/hooks/useColumns'
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
@@ -37,6 +38,9 @@ export default function ProductDetailScreen() {
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const promotions = useCardPromotions()
+  // Wide window (foldable opened, split view): photo and best price on the
+  // left, every store's price on the right, so both are visible at once.
+  const wide = useIsWide()
 
   useEffect(() => {
     let cancelled = false
@@ -123,6 +127,115 @@ export default function ProductDetailScreen() {
     haptics.success()
   }
 
+  const main = (
+    <>
+          <View style={styles.imageCard}>
+            <ProductImage uri={product.image} style={styles.image} />
+          </View>
+
+          <View style={styles.titleBlock}>
+            {!!product.brand && <Text style={[type.footnoteEmphasized, styles.brand]}>{product.brand}</Text>}
+            <Text style={[type.title2, styles.title]} accessibilityRole="header">{product.name}</Text>
+            {gaming
+              ? <Text style={[type.subheadline, styles.subtitle]}>Código digital · Entrega inmediata</Text>
+              : !!product.model && <Text style={[type.subheadline, styles.subtitle]}>Modelo {product.model}</Text>}
+          </View>
+
+          {cheapest && (
+            <View style={styles.bestCard}>
+              <View style={styles.bestTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[type.caption2, styles.bestLabel]}>{singleStore ? 'PRECIO' : 'MEJOR PRECIO'}</Text>
+                  <Text style={[type.price(34, 'bold'), styles.bestPrice]} adjustsFontSizeToFit numberOfLines={1}>{formatPrice(cheapest.price)}</Text>
+                  <Text style={[type.subheadline, styles.bestStore]}>
+                    en {cheapest.store} · {gaming ? 'entrega inmediata' : cheapest.shipping}
+                  </Text>
+                </View>
+                <StoreLogo abbr={cheapest.abbr} color={cheapest.color} size={48} />
+              </View>
+              {savings > 0 && (
+                <View style={styles.savings}>
+                  <Icon name="tag" size={13} color={colors.accent} />
+                  <Text style={[type.footnoteEmphasized, styles.savingsText]}>Ahorras hasta {formatPrice(savings)} frente a otras tiendas</Text>
+                </View>
+              )}
+              {cheapestUrl && (
+                <Button title={`Ver en ${cheapest.store}`} icon="arrowUpRight" onPress={() => openInApp(cheapestUrl)} style={{ marginTop: spacing.md }} />
+              )}
+            </View>
+          )}
+
+          {gaming && (
+            <View style={styles.gamingBox}>
+              <DiscountCode />
+              <Note icon="bolt" text="Producto digital: el código llega a tu correo al instante." />
+              <Note icon="checkmarkCircle" text="Región global: se activa desde tu país." />
+              <Note icon="storefront" text="La compra se hace en Eneba; DóndeTa no vende ni cobra." />
+            </View>
+          )}
+    </>
+  )
+
+  const side = (
+    <>
+          <Text style={[type.title3, styles.sectionTitle, wide && styles.sectionTitleTop]}>{singleStore ? 'Disponible en' : `Precios en ${offers.length} tiendas`}</Text>
+          <View style={styles.offers}>
+            {offers.map((offer, index) => {
+              const url = offerUrl(product, offer)
+              const storeSlug = STORE_SLUGS[offer.abbr]
+              const isBest = index === 0 && !singleStore
+              const deal = bestCardDeal(offer, promotions)
+              const conditions = deal ? cardDealConditions(deal.promotion) : ''
+              return (
+                <View key={`${offer.store}-${index}`}>
+                  <Touchable
+                    onPress={() => url && openInApp(url)}
+                    disabled={!url}
+                    style={styles.offerRow}
+                    accessibilityRole="link"
+                    accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}${deal ? `, ${cardDealSentence(deal)}` : ''}. Ver oferta`}
+                  >
+                    <Touchable
+                      onPress={() => storeSlug && router.push(`/store/${storeSlug}`)}
+                      disabled={!storeSlug}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ver tienda ${offer.store}`}
+                    >
+                      <StoreLogo abbr={offer.abbr} color={offer.color || colors.primary} size={40} />
+                    </Touchable>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.offerNameRow}>
+                        <Text style={[type.headline, styles.offerStore]} numberOfLines={1}>{offer.store}</Text>
+                        {isBest && <Text style={[type.caption2, styles.bestTag]}>MÁS BARATO</Text>}
+                      </View>
+                      <Text style={[type.footnote, offer.available ? styles.offerMeta : styles.offerUnavailable]} numberOfLines={1}>
+                        {offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}
+                      </Text>
+                      {deal && (
+                        <Text style={[type.footnote, styles.offerMeta]}>
+                          💳 {cardDealParts(deal).lead}{' '}
+                          <Text style={styles.cardDealPrice}>{formatPrice(cardDealParts(deal).amount)}</Text>
+                          {cardDealParts(deal).tail ? ` ${cardDealParts(deal).tail}` : ''}
+                          {conditions ? ` · ${conditions}` : ''}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.offerRight}>
+                      <Text style={[type.price(17, 'semibold'), isBest ? styles.offerPriceBest : styles.offerPrice]}>{formatPrice(offer.price)}</Text>
+                      {!!url && <Icon name="arrowUpRight" size={12} color={colors.tertiaryLabel} weight="semibold" />}
+                    </View>
+                  </Touchable>
+                  {index < offers.length - 1 && <View style={styles.separator} />}
+                </View>
+              )
+            })}
+          </View>
+
+          <ProductSpecs specs={product.specs} />
+    </>
+  )
+
   return (
     <>
       <Stack.Screen
@@ -151,106 +264,17 @@ export default function ProductDetailScreen() {
         }}
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.screen} contentContainerStyle={styles.content}>
-        <View style={styles.imageCard}>
-          <ProductImage uri={product.image} style={styles.image} />
-        </View>
-
-        <View style={styles.titleBlock}>
-          {!!product.brand && <Text style={[type.footnoteEmphasized, styles.brand]}>{product.brand}</Text>}
-          <Text style={[type.title2, styles.title]} accessibilityRole="header">{product.name}</Text>
-          {gaming
-            ? <Text style={[type.subheadline, styles.subtitle]}>Código digital · Entrega inmediata</Text>
-            : !!product.model && <Text style={[type.subheadline, styles.subtitle]}>Modelo {product.model}</Text>}
-        </View>
-
-        {cheapest && (
-          <View style={styles.bestCard}>
-            <View style={styles.bestTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={[type.caption2, styles.bestLabel]}>{singleStore ? 'PRECIO' : 'MEJOR PRECIO'}</Text>
-                <Text style={[type.price(34, 'bold'), styles.bestPrice]} adjustsFontSizeToFit numberOfLines={1}>{formatPrice(cheapest.price)}</Text>
-                <Text style={[type.subheadline, styles.bestStore]}>
-                  en {cheapest.store} · {gaming ? 'entrega inmediata' : cheapest.shipping}
-                </Text>
-              </View>
-              <StoreLogo abbr={cheapest.abbr} color={cheapest.color} size={48} />
-            </View>
-            {savings > 0 && (
-              <View style={styles.savings}>
-                <Icon name="tag" size={13} color={colors.accent} />
-                <Text style={[type.footnoteEmphasized, styles.savingsText]}>Ahorras hasta {formatPrice(savings)} frente a otras tiendas</Text>
-              </View>
-            )}
-            {cheapestUrl && (
-              <Button title={`Ver en ${cheapest.store}`} icon="arrowUpRight" onPress={() => openInApp(cheapestUrl)} style={{ marginTop: spacing.md }} />
-            )}
+        {wide ? (
+          <View style={styles.columns}>
+            <View style={styles.columnMain}>{main}</View>
+            <View style={styles.columnSide}>{side}</View>
           </View>
+        ) : (
+          <>
+            {main}
+            {side}
+          </>
         )}
-
-        {gaming && (
-          <View style={styles.gamingBox}>
-            <DiscountCode />
-            <Note icon="bolt" text="Producto digital: el código llega a tu correo al instante." />
-            <Note icon="checkmarkCircle" text="Región global: se activa desde tu país." />
-            <Note icon="storefront" text="La compra se hace en Eneba; DóndeTa no vende ni cobra." />
-          </View>
-        )}
-
-        <Text style={[type.title3, styles.sectionTitle]}>{singleStore ? 'Disponible en' : `Precios en ${offers.length} tiendas`}</Text>
-        <View style={styles.offers}>
-          {offers.map((offer, index) => {
-            const url = offerUrl(product, offer)
-            const storeSlug = STORE_SLUGS[offer.abbr]
-            const isBest = index === 0 && !singleStore
-            const deal = bestCardDeal(offer, promotions)
-            const conditions = deal ? cardDealConditions(deal.promotion) : ''
-            return (
-              <View key={`${offer.store}-${index}`}>
-                <Touchable
-                  onPress={() => url && openInApp(url)}
-                  disabled={!url}
-                  style={styles.offerRow}
-                  accessibilityRole="link"
-                  accessibilityLabel={`${offer.store}, ${formatPrice(offer.price)}${offer.available ? '' : ', no disponible'}${deal ? `, ${cardDealSentence(deal)}` : ''}. Ver oferta`}
-                >
-                  <Touchable
-                    onPress={() => storeSlug && router.push(`/store/${storeSlug}`)}
-                    disabled={!storeSlug}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Ver tienda ${offer.store}`}
-                  >
-                    <StoreLogo abbr={offer.abbr} color={offer.color || colors.primary} size={40} />
-                  </Touchable>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.offerNameRow}>
-                      <Text style={[type.headline, styles.offerStore]} numberOfLines={1}>{offer.store}</Text>
-                      {isBest && <Text style={[type.caption2, styles.bestTag]}>MÁS BARATO</Text>}
-                    </View>
-                    <Text style={[type.footnote, offer.available ? styles.offerMeta : styles.offerUnavailable]} numberOfLines={1}>
-                      {offer.available ? 'Disponible' : 'No disponible'} · {offer.shipping}
-                    </Text>
-                    {deal && (
-                      <Text style={[type.footnote, styles.offerMeta]}>
-                        💳 {cardDealParts(deal).lead}{' '}
-                        <Text style={styles.cardDealPrice}>{formatPrice(cardDealParts(deal).amount)}</Text>
-                        {cardDealParts(deal).tail ? ` ${cardDealParts(deal).tail}` : ''}
-                        {conditions ? ` · ${conditions}` : ''}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.offerRight}>
-                    <Text style={[type.price(17, 'semibold'), isBest ? styles.offerPriceBest : styles.offerPrice]}>{formatPrice(offer.price)}</Text>
-                    {!!url && <Icon name="arrowUpRight" size={12} color={colors.tertiaryLabel} weight="semibold" />}
-                  </View>
-                </Touchable>
-                {index < offers.length - 1 && <View style={styles.separator} />}
-              </View>
-            )
-          })}
-        </View>
-
-        <ProductSpecs specs={product.specs} />
 
         <ProductReviews productId={product.id} />
         <BannerSlot />
@@ -305,6 +329,10 @@ const styles = StyleSheet.create({
   note: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   noteText: { color: colors.secondaryLabel, flex: 1 },
   sectionTitle: { color: colors.navy, marginTop: spacing.xxl, marginBottom: spacing.md },
+  sectionTitleTop: { marginTop: 0 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.xl },
+  columnMain: { flex: 1 },
+  columnSide: { flex: 1.2 },
   offers: { backgroundColor: colors.card, borderRadius: radii.xl, borderCurve: 'continuous', overflow: 'hidden' },
   offerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   offerNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
