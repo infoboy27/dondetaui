@@ -14,6 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module'
 import { OutboundController } from './outbound/outbound.controller'
 import { ProductsModule } from './products/products.module'
 import { ReviewsModule } from './reviews/reviews.module'
+import { SavedSearchesModule } from './saved-searches/saved-searches.module'
 import { SearchHistoryModule } from './search-history/search-history.module'
 import { StoresModule } from './stores/stores.module'
 
@@ -34,6 +35,7 @@ import { StoresModule } from './stores/stores.module'
     FavoritesModule,
     DigestsModule,
     SearchHistoryModule,
+    SavedSearchesModule,
     ReviewsModule,
     NotificationsModule,
   ],

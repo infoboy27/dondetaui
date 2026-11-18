@@ -15,7 +15,7 @@ describe('shouldShowSignupPrompt', () => {
   })
 
   it('skips account, admin, render and auth pages, and links that already sign up', () => {
-    for (const pathname of ['/cuenta/black-friday', '/cuenta/seguridad', '/admin', '/admin/instagram', '/ig-render', '/login', '/profile']) {
+    for (const pathname of ['/cuenta/black-friday', '/cuenta/seguridad', '/cuenta/notificaciones', '/admin', '/admin/instagram', '/ig-render', '/login', '/profile']) {
       expect(shouldShowSignupPrompt({ ...base, pathname })).toBe(false)
     }
     expect(shouldShowSignupPrompt({ ...base, pathname: '/administrar-algo' })).toBe(true)

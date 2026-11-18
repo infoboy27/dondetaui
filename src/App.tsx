@@ -35,6 +35,7 @@ const EquipaHogarScreen = lazy(() => import('./screens/EquipaHogarScreen'))
 const NotificationsScreen = lazy(() => import('./screens/NotificationsScreen'))
 const LoginScreen = lazy(() => import('./screens/LoginScreen'))
 const AccountSecurityScreen = lazy(() => import('./screens/AccountSecurityScreen'))
+const NotificationPrefsScreen = lazy(() => import('./screens/NotificationPrefsScreen'))
 const BlackFridayDigestScreen = lazy(() => import('./screens/BlackFridayDigestScreen'))
 
 // Owner-only portal, split into its own chunk so the public app doesn't ship it.
@@ -329,6 +330,30 @@ export default function App() {
           onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
           onLogin={() => (desktopLogin ? setShowLoginModal(true) : navigate('/login'))}
           onDeleted={() => navigate('/')}
+        />
+        {showLoginModal && (
+          <AuthModal
+            onClose={() => setShowLoginModal(false)}
+            onLogin={login}
+            onRegister={register}
+            loading={authLoading}
+            error={authError}
+          />
+        )}
+      </Suspense>
+    )
+  }
+
+  // Notification switches (email + push) and saved searches, same as the
+  // app's Perfil › Notificaciones. Full page, like security.
+  if (location.pathname === '/cuenta/notificaciones') {
+    const desktopLogin = isDesktop && !isMobileView
+    return (
+      <Suspense fallback={null}>
+        <NotificationPrefsScreen
+          user={user}
+          onBack={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}
+          onLogin={() => (desktopLogin ? setShowLoginModal(true) : navigate('/login'))}
         />
         {showLoginModal && (
           <AuthModal

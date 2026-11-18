@@ -6,11 +6,13 @@ import { PushProvider } from './push.provider'
 import { NotificationsService } from './notifications.service'
 import { PushTokensController } from './push-tokens.controller'
 import { PushTokensRepository } from './push-tokens.repository'
+import { NotificationPrefsController } from './notification-prefs.controller'
+import { NotificationPrefsRepository } from './notification-prefs.repository'
 
 @Module({
   imports: [AuthModule],
-  controllers: [PushTokensController],
-  providers: [EmailProvider, SmsProvider, PushProvider, NotificationsService, PushTokensRepository],
+  controllers: [PushTokensController, NotificationPrefsController],
+  providers: [EmailProvider, SmsProvider, PushProvider, NotificationsService, PushTokensRepository, NotificationPrefsRepository],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

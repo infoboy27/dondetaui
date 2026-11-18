@@ -61,6 +61,8 @@ export interface PriceDropPushInput {
   previousPrice?: string
   pct?: number
   slug: string | null
+  /** Also the lowest price in 90 days: the lowest_price_90d alert rides on this message. */
+  lowest90d?: boolean
 }
 
 const MAX_NAME_LENGTH = 80
@@ -70,7 +72,8 @@ export function buildPriceDropPush(input: PriceDropPushInput): Pick<ExpoPushMess
   const name = input.productName.length > MAX_NAME_LENGTH
     ? `${input.productName.slice(0, MAX_NAME_LENGTH - 1).trimEnd()}…`
     : input.productName
-  const title = input.pct && input.pct > 0 ? `Bajó de precio (−${input.pct} %)` : 'Bajó de precio'
+  const headline = input.lowest90d ? 'Precio más bajo en 90 días' : 'Bajó de precio'
+  const title = input.pct && input.pct > 0 ? `${headline} (−${input.pct} %)` : headline
   const body = input.previousPrice
     ? `${name}: ahora ${input.newPrice} (antes ${input.previousPrice}).`
     : `${name}: ahora ${input.newPrice}.`

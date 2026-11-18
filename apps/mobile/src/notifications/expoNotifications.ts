@@ -35,3 +35,6 @@ export const pushSupported = !!notifications && !!device?.isDevice
 
 // Same id the API sends in channelId (apps/api push messages).
 export const PRICE_ALERTS_CHANNEL = 'price-alerts'
+// Opt-in promotional pushes (weekly summary, real seasonal offers): their
+// own Android channel so they can be muted apart from price alerts.
+export const PROMOTIONS_CHANNEL = 'promotions'

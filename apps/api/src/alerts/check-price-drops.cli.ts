@@ -7,6 +7,10 @@ import { NotificationsService } from '../notifications/notifications.service'
 import { PushTokensRepository } from '../notifications/push-tokens.repository'
 import { PushBudget, pushEnabled } from '../notifications/push-messages'
 import { formatPrice } from '../common/currency'
+import { wants } from '../notifications/notification-prefs'
+import { countryUtcOffsetHours, eventKeys, isLowestIn90Days, localDate, mergeLowestIntoDrop, pointsBefore, LOWEST_WINDOW_DAYS } from '../notifications/notification-rules'
+import { WatchNotificationsRepository } from '../notifications/watch-notifications.repository'
+import { runWatchNotifications } from '../notifications/watch-notifications.runner'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
@@ -16,6 +20,7 @@ const alerts = new AlertsRepository(pool)
 const push = new PushProvider()
 const notifications = new NotificationsService(new EmailProvider(), new SmsProvider(), push)
 const pushTokens = new PushTokensRepository(pool)
+const watch = new WatchNotificationsRepository(pool)
 // Price-drop pushes go out only with PUSH_NOTIFICATIONS_ENABLED=1 (safe to
 // deploy before the apps are in the stores). Email/WhatsApp are unaffected.
 const sendPush = pushEnabled(process.env)
@@ -68,6 +73,11 @@ async function main() {
   let notified = 0
   let pushed = 0
   const pushBudget = new PushBudget()
+  const now = new Date()
+  const today = localDate(now, countryUtcOffsetHours(process.env.COUNTRY_CODE))
+  // 90-day history of the alerted products: a drop that is also the lowest
+  // price in 90 days goes out as one message (lowest_price_90d merged in).
+  const snapshots = await watch.snapshots([...new Set(candidates.map(c => c.product_id))])
 
   for (const candidate of candidates) {
     const history = await latestPriceHistory(candidate.product_id)
@@ -86,6 +96,11 @@ async function main() {
     const product = await productInfo(candidate.product_id)
     if (!product) continue
     const name = product.name
+    const history90d = snapshots.get(candidate.product_id)?.history ?? []
+    const lowest90d = mergeLowestIntoDrop(
+      wants(candidate.notification_prefs, 'lowest_price_90d'),
+      isLowestIn90Days(latest.price, pointsBefore(history90d, today, LOWEST_WINDOW_DAYS)),
+    )
 
     await notifications.notifyPriceDrop(
       { email: candidate.user_email, phone: candidate.user_phone },
@@ -93,11 +108,12 @@ async function main() {
       latest.price,
       previous.price,
       product,
+      lowest90d,
     )
     // Same dedupe as email (last_notified_price below), plus a per-user cap per run.
     if (sendPush && candidate.push_tokens.length && pushBudget.take(candidate.user_id)) {
       try {
-        const outcome = await notifications.pushPriceDrop(candidate.push_tokens, name, latest.price, previous.price, product.slug)
+        const outcome = await notifications.pushPriceDrop(candidate.push_tokens, name, latest.price, previous.price, product.slug, lowest90d)
         await pushTokens.savePendingTickets(outcome.pending)
         await pushTokens.disable(outcome.disable)
         if (outcome.pending.length) pushed += 1
@@ -106,11 +122,17 @@ async function main() {
       }
     }
     await alerts.markNotified(candidate.alert_id, latest.price)
+    // The standalone 90-day-low notification must not repeat what this said.
+    if (lowest90d) await watch.markSent(candidate.user_id, 'lowest_price_90d', [eventKeys.lowest90d(candidate.product_id, today)])
     notified += 1
     console.log(`[alerts] notified ${candidate.user_email} — ${name} dropped to ${formatPrice(latest.price)}`)
   }
 
   console.log(`[alerts] checked ${candidates.length} alerts, sent ${notified} notifications (${sendPush ? `${pushed} with push` : 'push off'})`)
+
+  // Back in stock, 90-day low, card discounts, saved searches, weekly summary
+  // and seasonal real offers -- each only if the user left it on (prefs).
+  await runWatchNotifications({ pool, notifications, pushTokens, pushBudget, sendPush, now })
 }
 
 main()

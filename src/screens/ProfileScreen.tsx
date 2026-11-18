@@ -78,7 +78,9 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
     {
       title: 'Preferencias',
       items: [
-        { icon: SettingsIcon, label: 'Notificaciones', value: 'Activas', accent: false },
+        ...(user
+          ? [{ icon: BellIcon, label: 'Notificaciones', value: '', accent: false, onClick: () => { window.location.href = '/cuenta/notificaciones' } }]
+          : []),
         { icon: SettingsIcon, label: 'Moneda', value: CURRENCY_SYMBOL, accent: false },
       ],
     },
