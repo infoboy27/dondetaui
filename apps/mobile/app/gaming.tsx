@@ -6,7 +6,9 @@ import { productsApi } from '../src/api/products'
 import { friendlyError } from '../src/api/errors'
 import DiscountCode from '../src/components/DiscountCode'
 import EnebaBadge from '../src/components/EnebaBadge'
-import ProductCard from '../src/components/ProductCard'
+import ProductGridRow from '../src/components/ProductGridRow'
+import { listRows } from '../src/domain/grid'
+import { useColumns } from '../src/hooks/useColumns'
 import EmptyState from '../src/components/ui/EmptyState'
 import Touchable from '../src/components/ui/Touchable'
 import { ProductRowSkeleton } from '../src/components/ui/Skeleton'
@@ -52,14 +54,15 @@ export default function GamingScreen() {
     [products],
   )
   const visible = kind ? sorted.filter(p => gamingKind(p) === kind) : sorted
+  const columns = useColumns()
 
   return (
     <FlatList
-      data={loading || error ? [] : visible}
-      keyExtractor={item => item.id}
-      renderItem={({ item }) => (
-        <ProductCard product={item} onPress={() => router.push(`/product/${encodeURIComponent(item.slug ?? item.id)}`)} />
-      )}
+      data={loading || error ? [] : listRows(visible, columns, p => p.id)}
+      keyExtractor={row => row.key}
+      renderItem={({ item: row }) => row.kind === 'items' ? (
+        <ProductGridRow items={row.items} columns={columns} onPress={item => router.push(`/product/${encodeURIComponent(item.slug ?? item.id)}`)} />
+      ) : null}
       contentInsetAdjustmentBehavior="automatic"
       style={styles.screen}
       contentContainerStyle={styles.content}

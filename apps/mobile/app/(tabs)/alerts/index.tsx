@@ -6,7 +6,9 @@ import { productsApi } from '../../../src/api/products'
 import { useAppState } from '../../../src/state/AppStateContext'
 import { getPriceDropNotifications } from '../../../src/domain/notifications'
 import { formatPrice } from '../../../src/domain/currency'
-import ProductCard from '../../../src/components/ProductCard'
+import ProductGridRow from '../../../src/components/ProductGridRow'
+import { listRows } from '../../../src/domain/grid'
+import { useColumns } from '../../../src/hooks/useColumns'
 import Icon from '../../../src/components/Icon'
 import EmptyState from '../../../src/components/ui/EmptyState'
 import SegmentedControl from '../../../src/components/ui/SegmentedControl'
@@ -47,6 +49,7 @@ export default function SavedScreen() {
     router.push(`/product/${encodeURIComponent(product.slug ?? product.id)}`)
   }
 
+  const columns = useColumns()
   const notifications = tab === 'alertas' ? getPriceDropNotifications(products, alertedIds) : []
   const needsLogin = !user && tab === 'alertas'
 
@@ -54,9 +57,9 @@ export default function SavedScreen() {
     <>
       <Stack.Screen options={{ title: 'Guardados' }} />
       <FlatList
-        data={needsLogin || loading ? [] : products}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <ProductCard product={item} onPress={() => openProduct(item)} />}
+        data={needsLogin || loading ? [] : listRows(products, columns, p => p.id)}
+        keyExtractor={row => row.key}
+        renderItem={({ item: row }) => (row.kind === 'items' ? <ProductGridRow items={row.items} columns={columns} onPress={openProduct} /> : null)}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         style={styles.screen}

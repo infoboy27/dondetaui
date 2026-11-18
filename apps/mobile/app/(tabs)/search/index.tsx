@@ -8,7 +8,9 @@ import { productsApi } from '../../../src/api/products'
 import { friendlyError } from '../../../src/api/errors'
 import NativeAdCard from '../../../src/ads/NativeAdCard'
 import { withAdSlots } from '../../../src/domain/feed'
-import ProductCard from '../../../src/components/ProductCard'
+import ProductGridRow from '../../../src/components/ProductGridRow'
+import { gridRows } from '../../../src/domain/grid'
+import { useColumns } from '../../../src/hooks/useColumns'
 import Icon from '../../../src/components/Icon'
 import EmptyState from '../../../src/components/ui/EmptyState'
 import Touchable from '../../../src/components/ui/Touchable'
@@ -92,6 +94,7 @@ export default function SearchScreen() {
   const term = query.trim()
   const shown = useMemo(() => applySearchOptions(results, sort, filters), [results, sort, filters])
   const filterCount = activeFilterCount(filters)
+  const columns = useColumns()
 
   useEffect(() => setVisibleCount(BATCH), [sort, filters])
 
@@ -197,10 +200,10 @@ export default function SearchScreen() {
         </ScrollView>
       ) : (
         <FlatList
-          data={status === 'done' ? withAdSlots(shown.slice(0, visibleCount)) : []}
-          keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}
-          renderItem={({ item: entry }) =>
-            entry.kind === 'ad' ? <NativeAdCard /> : <ProductCard product={entry.item} onPress={() => openProduct(entry.item)} />}
+          data={status === 'done' ? gridRows(withAdSlots(shown.slice(0, visibleCount)), columns, p => p.id) : []}
+          keyExtractor={row => row.key}
+          renderItem={({ item: row }) =>
+            row.kind === 'ad' ? <NativeAdCard /> : <ProductGridRow items={row.items} columns={columns} onPress={openProduct} />}
           onEndReached={() => setVisibleCount(count => (count < shown.length ? count + BATCH : count))}
           onEndReachedThreshold={0.6}
           contentInsetAdjustmentBehavior="automatic"

@@ -6,7 +6,9 @@ import type { Product } from '../../src/types'
 import { storesApi, type Store, type StoreBranch } from '../../src/api/stores'
 import { friendlyError } from '../../src/api/errors'
 import { openInApp } from '../../src/domain/links'
-import ProductCard from '../../src/components/ProductCard'
+import ProductGridRow from '../../src/components/ProductGridRow'
+import { listRows } from '../../src/domain/grid'
+import { useColumns } from '../../src/hooks/useColumns'
 import StoreLogo from '../../src/components/StoreLogo'
 import StoreBranchRow from '../../src/components/StoreBranchRow'
 import Button from '../../src/components/ui/Button'
@@ -29,6 +31,7 @@ export default function StoreDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
+  const columns = useColumns()
 
   useEffect(() => {
     let cancelled = false
@@ -70,9 +73,9 @@ export default function StoreDetailScreen() {
     <>
       <Stack.Screen options={{ title: store?.name ?? '' }} />
       <FlatList
-        data={loading ? [] : products}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <ProductCard product={item} onPress={() => openProduct(item)} />}
+        data={loading ? [] : listRows(products, columns, p => p.id)}
+        keyExtractor={row => row.key}
+        renderItem={({ item: row }) => (row.kind === 'items' ? <ProductGridRow items={row.items} columns={columns} onPress={openProduct} /> : null)}
         contentInsetAdjustmentBehavior="automatic"
         style={styles.screen}
         contentContainerStyle={styles.content}
