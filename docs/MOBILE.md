@@ -208,6 +208,7 @@ solo se guardan los cambios del usuario, los valores por defecto están en
 - **Promociones:** solo con el interruptor encendido (Apple 4.5.4) y por su propio canal de Android (`promotions`).
 - **Lógica pura y tests:** `notification-rules.ts` (cuándo sale cada uno), `watch-plan.ts` (preferencias, deduplicación, agrupado y textos), `notification-messages.ts` (push) y `auth/account-emails.ts` (correos).
 - **App:** *Perfil → Notificaciones* (push del teléfono + un interruptor por tipo, en "Tus alertas" y "Promociones (opcional)", y la lista de búsquedas guardadas, que se borran tocándolas); "Guardar búsqueda" en los resultados de Buscar abre `app/save-search.tsx` (precio máximo opcional).
+- **Web:** `/cuenta/notificaciones` (enlazada en *Perfil → Preferencias → Notificaciones* con sesión iniciada): los mismos interruptores por tipo y la lista de búsquedas guardadas para borrarlas (`src/screens/NotificationPrefsScreen.tsx`). Las búsquedas se crean desde la app.
 
 **Lo que falta para que funcione en los builds de las tiendas** (necesita las cuentas):
 
