@@ -58,6 +58,9 @@ const ICONS = {
   sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
   info: { ios: 'info.circle.fill', android: 'info' },
   ellipsis: { ios: 'ellipsis', android: 'more_horiz' },
+  sort: { ios: 'arrow.up.arrow.down', android: 'swap_vert' },
+  filter: { ios: 'line.3.horizontal.decrease', android: 'filter_list' },
+  chevronDown: { ios: 'chevron.down', android: 'expand_more' },
 } satisfies Record<string, { ios: SFSymbol; android: AndroidSymbol }>
 
 export type IconName = keyof typeof ICONS
