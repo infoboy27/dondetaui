@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Localization from 'expo-localization'
-import { countryFromRegion, isCountryCode, DEFAULT_COUNTRY, type CountryCode } from '../domain/countries'
+import { countryFromRegion, isLiveCountry, DEFAULT_COUNTRY, type CountryCode } from '../domain/countries'
 import { setCurrentCountry } from '../domain/currentCountry'
 
 const KEY = 'dondeta.country'
@@ -44,7 +44,8 @@ async function write(pref: CountryPreference) {
 export async function initCountry(): Promise<CountryPreference> {
   const saved = await read()
   let pref: CountryPreference
-  if (saved && isCountryCode(saved.code)) {
+  // A saved country that was taken offline is ignored, as if never chosen.
+  if (saved && isLiveCountry(saved.code)) {
     pref = { code: saved.code, auto: !!saved.auto, needsChoice: false, bannerDismissed: !!saved.bannerDismissed }
   } else {
     const detected = countryFromRegion(deviceRegion())

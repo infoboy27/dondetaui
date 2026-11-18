@@ -16,6 +16,9 @@ export interface Country {
   storesAdjective: string
   /** Fallback map position for "Tiendas cercanas". */
   center: { label: string; latitude: number; longitude: number }
+  /** Its backend is open to the public. Countries still being prepared are
+   * never picked from the device region nor offered in the chooser. */
+  live: boolean
 }
 
 export const COUNTRIES: Record<CountryCode, Country> = {
@@ -23,25 +26,30 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     code: 'DO', name: 'República Dominicana', flag: '🇩🇴', apiUrl: 'https://dondeta.com.do/api',
     currencySymbol: 'RD$', locale: 'es-DO', cents: false, storesAdjective: 'dominicanas',
     center: { label: 'Santo Domingo', latitude: 18.4861, longitude: -69.9312 },
+    live: true,
   },
   CO: {
     code: 'CO', name: 'Colombia', flag: '🇨🇴', apiUrl: 'https://co.dondeta.com.do/api',
     currencySymbol: '$', locale: 'es-CO', cents: false, storesAdjective: 'colombianas',
     center: { label: 'Bogotá', latitude: 4.711, longitude: -74.0721 },
+    live: true,
   },
   MX: {
     code: 'MX', name: 'México', flag: '🇲🇽', apiUrl: 'https://mx.dondeta.com.do/api',
     currencySymbol: '$', locale: 'es-MX', cents: false, storesAdjective: 'mexicanas',
     center: { label: 'Ciudad de México', latitude: 19.4326, longitude: -99.1332 },
+    live: true,
   },
   US: {
     code: 'US', name: 'Estados Unidos', flag: '🇺🇸', apiUrl: 'https://us.dondeta.com.do/api',
     currencySymbol: 'US$', locale: 'en-US', cents: true, storesAdjective: 'estadounidenses',
     center: { label: 'Nueva York', latitude: 40.7128, longitude: -74.006 },
+    live: false,
   },
 }
 
-export const COUNTRY_LIST: Country[] = [COUNTRIES.DO, COUNTRIES.CO, COUNTRIES.MX, COUNTRIES.US]
+/** Countries the user can pick (live ones only). */
+export const COUNTRY_LIST: Country[] = [COUNTRIES.DO, COUNTRIES.CO, COUNTRIES.MX, COUNTRIES.US].filter(c => c.live)
 
 export const DEFAULT_COUNTRY: CountryCode = 'DO'
 
@@ -49,8 +57,13 @@ export function isCountryCode(value: unknown): value is CountryCode {
   return typeof value === 'string' && value in COUNTRIES
 }
 
-/** The supported country for a device region ("MX"), or null when we don't serve it. */
+/** A country the user can use now. */
+export function isLiveCountry(value: unknown): value is CountryCode {
+  return isCountryCode(value) && COUNTRIES[value].live
+}
+
+/** The live country for a device region ("MX"), or null when we don't serve it yet. */
 export function countryFromRegion(region: string | null | undefined): CountryCode | null {
   const code = region?.toUpperCase()
-  return isCountryCode(code) ? code : null
+  return isLiveCountry(code) ? code : null
 }
