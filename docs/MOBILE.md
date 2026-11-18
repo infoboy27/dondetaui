@@ -230,6 +230,8 @@ Todo lo que no necesita las cuentas de Apple y Google ya está en el código. Lo
 
 Fuente: lo que la app y la API hacen de verdad (revisado el 2026-11-14). El manifiesto de iOS (`app.json` → `ios.privacyManifests`) dice lo mismo.
 
+**Manifiesto (`PrivacyInfo.xcprivacy`) de la app: `NSPrivacyTracking: false`.** El código de DóndeTa no rastrea; el rastreo lo hace el SDK de Google Mobile Ads (con su propio manifiesto) solo si el usuario acepta el permiso de rastreo. Apple exige al menos un dominio en `NSPrivacyTrackingDomains` cuando `NSPrivacyTracking` es `true` (rechazo ITMS-91064 del build 6, 2026-11-18), e iOS bloquea esos dominios sin permiso, lo que dejaría sin anuncios a quien no acepte. La ficha de la App Store sí declara el rastreo de AdMob (abajo).
+
 **App Store → App Privacy** ("Data Used to Track You" = solo lo de AdMob cuando el usuario acepta el permiso de rastreo):
 
 | Dato | ¿Se recoge? | ¿Ligado al usuario? | ¿Rastreo? | Para qué |
