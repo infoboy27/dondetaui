@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants'
 import { pushTokenApi } from '../api/pushToken'
 import { decidePushAction, parsePushPref, type PushPermission, type PushPref, type PushTrigger } from '../domain/pushPrefs'
-import { Notifications, PRICE_ALERTS_CHANNEL, pushSupported } from '../notifications/expoNotifications'
+import { Notifications, PRICE_ALERTS_CHANNEL, PROMOTIONS_CHANNEL, pushSupported } from '../notifications/expoNotifications'
 import type { User } from '../types'
 
 const PREF_KEY = 'dondeta.pushPref'
@@ -63,6 +63,10 @@ export function usePushNotifications(user: User | null): PushApi {
       await notifications.setNotificationChannelAsync(PRICE_ALERTS_CHANNEL, {
         name: 'Alertas de precio',
         importance: notifications.AndroidImportance.HIGH,
+      })
+      await notifications.setNotificationChannelAsync(PROMOTIONS_CHANNEL, {
+        name: 'Promociones',
+        importance: notifications.AndroidImportance.DEFAULT,
       })
     }
     const { data: token } = await notifications.getExpoPushTokenAsync({ projectId: id })

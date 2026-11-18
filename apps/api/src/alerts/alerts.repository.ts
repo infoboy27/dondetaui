@@ -18,6 +18,8 @@ export interface AlertWorkerRow {
   product_id: string
   target_price: string | number | null
   last_notified_price: string | number | null
+  /** Stored notification_preferences.prefs (null = defaults). */
+  notification_prefs: unknown
 }
 
 @Injectable()
@@ -79,9 +81,11 @@ export class AlertsRepository {
         coalesce(pt.tokens, array[]::text[]) as push_tokens,
         pa.product_id::text as product_id,
         pa.target_price,
-        pa.last_notified_price
+        pa.last_notified_price,
+        np.prefs as notification_prefs
       from price_alerts pa
       join users u on u.id = pa.user_id
+      left join notification_preferences np on np.user_id = u.id
       left join (
         select user_id, array_agg(token) as tokens
         from push_tokens

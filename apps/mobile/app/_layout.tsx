@@ -54,6 +54,7 @@ export default function RootLayout() {
             <Stack.Screen name="black-friday-alerts" options={{ title: 'Black Friday' }} />
             <Stack.Screen name="auth" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="country" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="save-search" options={{ presentation: 'modal', title: 'Guardar búsqueda' }} />
           </Stack>
           <NotificationTapHandler />
           </AppStateProvider>

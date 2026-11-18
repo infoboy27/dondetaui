@@ -185,6 +185,30 @@ enlaces universales: `src/domain/deepLinks.ts`).
   `node dist/notifications/broadcast-push.cli.js "<título>" "<texto>"` (sin `--send`
   solo cuenta los dispositivos). No depende del interruptor.
 
+### Más tipos de aviso (migración 038, para un build futuro)
+
+Además de la baja de precio, el mismo ciclo del `alerts-worker` manda (correo y push)
+estos avisos, cada uno con su interruptor en *Perfil → Notificaciones* (guardados en
+la cuenta: `GET/PUT /me/notification-preferences`, tabla `notification_preferences`;
+solo se guardan los cambios del usuario, los valores por defecto están en
+`apps/api/src/notifications/notification-prefs.ts` y su espejo
+`apps/mobile/src/domain/notificationPrefs.ts`):
+
+| Tipo | Por defecto | Cuándo |
+| --- | --- | --- |
+| `back_in_stock` | sí | algo guardado o seguido pasa de agotado a disponible (`product_stock_states`) |
+| `lowest_price_90d` | sí | precio de hoy por debajo de todos los de 90 días (≥14 días de historial); si la baja de precio sale en la misma vuelta, va en el mismo mensaje |
+| `card_discount` | sí | descuento con tarjeta nuevo (empezó o se cargó hoy o ayer) en una tienda que tiene algo guardado |
+| `saved_search` | sí | búsqueda guardada (`/me/saved-searches`, máx. 20): producto nuevo que coincide, o que baja del precio máximo |
+| `weekly_digest` | **no** (opt-in) | domingo desde las 10:00: qué subió y qué bajó en lo guardado; no se manda si nada cambió |
+| `deal_real` | **no** (opt-in, promocional) | semana de Black Friday a Cyber Monday: algo guardado cuesta ≥3 % menos que su promedio de 30 días |
+
+- **Sin repetir:** cada envío queda en `notification_events` (usuario, tipo, clave) y nunca se repite.
+- **Límites:** como mucho 3 de estos avisos por usuario en cada vuelta (el resto espera a la siguiente; las promociones van al final) y el mismo tope de 3 push por vuelta que la baja de precio.
+- **Promociones:** solo con el interruptor encendido (Apple 4.5.4) y por su propio canal de Android (`promotions`).
+- **Lógica pura y tests:** `notification-rules.ts` (cuándo sale cada uno), `watch-plan.ts` (preferencias, deduplicación, agrupado y textos), `notification-messages.ts` (push) y `auth/account-emails.ts` (correos).
+- **App:** *Perfil → Notificaciones* (push del teléfono + un interruptor por tipo, en "Tus alertas" y "Promociones (opcional)", y la lista de búsquedas guardadas, que se borran tocándolas); "Guardar búsqueda" en los resultados de Buscar abre `app/save-search.tsx` (precio máximo opcional).
+
 **Lo que falta para que funcione en los builds de las tiendas** (necesita las cuentas):
 
 1. **iOS (APNs):** con la cuenta de Apple Developer pagada, `npx eas credentials -p ios`

@@ -14,6 +14,8 @@ import EmptyState from '../../../src/components/ui/EmptyState'
 import Touchable from '../../../src/components/ui/Touchable'
 import { ProductRowSkeleton } from '../../../src/components/ui/Skeleton'
 import { useRecentSearches } from '../../../src/hooks/useRecentSearches'
+import { useAppState } from '../../../src/state/AppStateContext'
+import { canSaveSearch } from '../../../src/domain/savedSearches'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
 
@@ -30,6 +32,7 @@ export default function SearchScreen() {
   const router = useRouter()
   const searchBar = useRef<SearchBarCommands>(null)
   const { recent, add: addRecent, clear: clearRecent } = useRecentSearches()
+  const { user } = useAppState()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Product[]>([])
   const [status, setStatus] = useState<Status>('idle')
@@ -81,6 +84,22 @@ export default function SearchScreen() {
   }
 
   const term = query.trim()
+
+  // Saved search (the saved_search notification). Without an account, the
+  // auth sheet explains what the account is for.
+  const saveSearch = () => {
+    if (!user) {
+      router.push({ pathname: '/auth', params: { reason: 'alerts' } })
+      return
+    }
+    router.push({ pathname: '/save-search', params: { q: term } })
+  }
+  const saveSearchButton = canSaveSearch(term) ? (
+    <Touchable onPress={saveSearch} hitSlop={8} style={styles.saveSearch} accessibilityRole="button" accessibilityLabel={`Guardar la búsqueda ${term} y recibir avisos`}>
+      <Icon name="bell" size={15} color={colors.primaryDark} />
+      <Text style={[type.subheadline, styles.saveSearchText]}>Guardar búsqueda</Text>
+    </Touchable>
+  ) : null
 
   return (
     <>
@@ -175,10 +194,11 @@ export default function SearchScreen() {
           style={styles.screen}
           ListHeaderComponent={
             status === 'done' && results.length > 0 ? (
-              <View>
+              <View style={styles.resultsHeader}>
                 <Text style={[type.footnote, styles.count]}>
                   {results.length === 1 ? '1 resultado' : `${formatCount(results.length)} resultados`} para “{term}”
                 </Text>
+                {saveSearchButton}
               </View>
             ) : null
           }
@@ -188,11 +208,14 @@ export default function SearchScreen() {
             ) : status === 'error' ? (
               <EmptyState icon="wifiSlash" title="Algo salió mal" message={error} actionTitle="Reintentar" onAction={() => void run(query)} />
             ) : (
-              <EmptyState
-                icon="search"
-                title={`Sin resultados para “${term}”`}
-                message="Por ahora comparamos electrodomésticos, electrónica y gaming. Revisa cómo se escribe o prueba con otra palabra."
-              />
+              <View>
+                <EmptyState
+                  icon="search"
+                  title={`Sin resultados para “${term}”`}
+                  message="Por ahora comparamos electrodomésticos, electrónica y gaming. Revisa cómo se escribe o prueba con otra palabra."
+                />
+                {!!saveSearchButton && <View style={styles.emptySave}>{saveSearchButton}</View>}
+              </View>
             )
           }
         />
@@ -215,7 +238,11 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: { backgroundColor: colors.card, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipText: { color: colors.navy },
-  count: { color: colors.secondaryLabel, marginBottom: spacing.sm, marginTop: spacing.xs },
+  count: { color: colors.secondaryLabel, marginBottom: spacing.sm, marginTop: spacing.xs, flexShrink: 1 },
+  resultsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  saveSearch: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 44, marginBottom: spacing.xs },
+  saveSearchText: { color: colors.primaryDark },
+  emptySave: { alignItems: 'center' },
   androidField: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 52, borderRadius: 26,
     backgroundColor: colors.fillStrong, paddingHorizontal: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.sm, marginBottom: spacing.xs,
