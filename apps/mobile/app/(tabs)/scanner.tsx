@@ -72,7 +72,7 @@ export default function ScannerScreen() {
           tone="brand"
           title="Escanea y compara"
           message="Apunta la cámara al código de barras de un producto en la tienda y te mostramos dónde está más barato."
-          actionTitle={permission.canAskAgain ? 'Permitir cámara' : 'Abrir Ajustes'}
+          actionTitle={permission.canAskAgain ? 'Continuar' : 'Abrir Ajustes'}
           onAction={() => (permission.canAskAgain ? void requestPermission() : void Linking.openSettings())}
           secondaryTitle="Escribir el código"
           onSecondary={() => setManual(true)}

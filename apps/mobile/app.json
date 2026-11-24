@@ -282,6 +282,12 @@
           ]
         }
       ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "DóndeTa usa este permiso para mostrarte anuncios más relevantes. Los anuncios ayudan a mantener la app gratis."
+        }
+      ],
       "./plugins/withSceneLifecycle"
     ],
     "extra": {
