@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { Platform } from 'react-native'
+import { AppState, Platform } from 'react-native'
 
 type AdMobModule = typeof import('react-native-google-mobile-ads')
 
@@ -15,6 +15,42 @@ try {
 }
 
 export { AdMob }
+
+type TrackingModule = typeof import('expo-tracking-transparency')
+let Tracking: TrackingModule | null = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  Tracking = require('expo-tracking-transparency')
+} catch {
+  Tracking = null
+}
+
+// iOS ignores the tracking prompt unless the app is in the foreground.
+function whenActive(): Promise<void> {
+  if (AppState.currentState === 'active') return Promise.resolve()
+  return new Promise(resolve => {
+    const sub = AppState.addEventListener('change', next => {
+      if (next === 'active') {
+        sub.remove()
+        resolve()
+      }
+    })
+  })
+}
+
+// Apple's "Allow DóndeTa to track…" prompt. Shown once, before the ads SDK
+// starts, so no ad request carries the IDFA until the user has answered.
+async function askTracking() {
+  if (Platform.OS !== 'ios' || !Tracking) return
+  try {
+    const current = await Tracking.getTrackingPermissionsAsync()
+    if (current.status !== 'undetermined') return
+    await whenActive()
+    await Tracking.requestTrackingPermissionsAsync()
+  } catch {
+    // The prompt is optional: never let it block the app.
+  }
+}
 
 // AdMob ad units (app ids live in app.json's plugin config). Dev builds always
 // use Google's test units: tapping real ads from a dev build is invalid
@@ -56,6 +92,7 @@ export async function initAds() {
   try {
     const consent = await AdsConsent.gatherConsent().catch(() => null)
     if (consent && !consent.canRequestAds) return
+    await askTracking()
     // Stored choices only exist after the user answered AdMob's consent form
     // (EEA/UK). Elsewhere (e.g. the DR) there are none to read: ads may be
     // personalized, and on iOS the SDK still honors Apple's tracking prompt.
