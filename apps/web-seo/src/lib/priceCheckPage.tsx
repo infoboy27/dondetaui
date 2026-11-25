@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { getPriceCheck } from './api'
-import { salesEvent, type SalesEventId } from './blackFriday'
+import { salesEvent, type SalesEvent, type SalesEventId } from './blackFriday'
 import { formatPrice } from './format'
 import { formatDateEs } from './history'
 import { SiteFooter, SiteHeader } from './page'
 import { Breadcrumb, FaqBlock, Section, h1Style, leadStyle, pageMain, type Faq } from './seoBlocks'
-import { countryShortName } from './country'
+import { countryShortName, type Country } from './country'
 import { COUNTRY, COUNTRY_NAME, CURRENCY_LOCALE, SITE_URL } from './site'
 import { colors, fonts } from './tokens'
 import type { PriceCheck } from './types'
@@ -18,10 +18,23 @@ const LIMIT = 15
 
 export function priceCheckMetadata(id: SalesEventId): Metadata {
   const ev = salesEvent(id)
-  const year = ev.date.getUTCFullYear()
-  const title = `${ev.name} ${year} en ${COUNTRY_NAME}: ¿la oferta es real? | DóndeTa`
-  const description = `Comparamos cada precio con su historial de los últimos 30 días para decirte qué descuentos de ${ev.name} son reales y cuáles subieron antes de “bajar”.`
+  const { title, description } = priceCheckSnippet(ev, COUNTRY)
   return { title, description, openGraph: { title, description }, alternates: { canonical: ev.path } }
+}
+
+const DO_STORES = 'Plaza Lama, Sirena, Jumbo, Corripio y PriceSmart'
+
+// Search-result title and description. Leads with the event, year and
+// country (what people type), then the date and the stores, which is what
+// makes someone pick this result over a generic list of deals.
+export function priceCheckSnippet(ev: SalesEvent, country: Country): { title: string; description: string } {
+  const year = ev.date.getUTCFullYear()
+  const day = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(ev.date)
+  const title = `${ev.name} ${year} ${country.name}: ¿la oferta es real? | DóndeTa`
+  const stores = country.isDominican ? DO_STORES : `las tiendas ${country.adjective}`
+  const when = ev.phase === 'after' ? `${ev.name} fue el ${day}` : `${ev.name} es el ${day}`
+  const description = `${when}. Comparamos ${stores} con sus precios de 30 días: ofertas reales y rebajas infladas.`
+  return { title, description }
 }
 
 const badge = (background: string, color: string) =>
