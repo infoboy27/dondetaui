@@ -148,6 +148,27 @@ export interface InstagramInsights {
   siteVisits: number | null
 }
 
+// GET /admin/stores -- apps/api/src/admin/store-stats.ts.
+export interface SourceResult<T> { configured: boolean; data: T | null; error: string | null }
+export interface DailyValue { date: string; value: number }
+export interface PlayStats {
+  installs: number
+  uninstalls: number
+  activeDevices: number | null
+  byDay: Array<{ date: string; installs: number; uninstalls: number }>
+  byCountry: Array<{ label: string; installs: number }>
+}
+export interface AppStoreStats { downloads: number; updates: number; byDay: DailyValue[]; byCountry: Array<{ label: string; downloads: number }> }
+export interface EarningsSource { earnings: number; impressions: number; clicks: number; byDay: DailyValue[] }
+export interface EarningsStats { currency: 'USD'; admob: EarningsSource | null; adsense: EarningsSource | null; balance: number | null; payoutThreshold: number }
+export interface StoresReport {
+  days: number
+  generatedAt: string
+  play: SourceResult<PlayStats>
+  appStore: SourceResult<AppStoreStats>
+  earnings: SourceResult<EarningsStats>
+}
+
 // GET /admin/campaigns -- apps/api/src/admin/google-analytics.ts campaignRows.
 export interface CampaignRow {
   source: string
@@ -226,6 +247,9 @@ export interface ModeratedReview {
 }
 
 export const adminApi = {
+  stores(days: number): Promise<StoresReport> {
+    return apiFetch(`/admin/stores?days=${days}`)
+  },
   reviewQueue(): Promise<ModeratedReview[]> {
     return apiFetch('/admin/reviews')
   },
