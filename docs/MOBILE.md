@@ -2,7 +2,7 @@
 
 `apps/mobile`: Expo SDK 57 + expo-router, misma API que la web
 (`EXPO_PUBLIC_API_URL`). Bundle id iOS: **`do.com.dondeta.app`** (2026-11-17: `com.dondeta.app` ya estaba tomado en Apple);
-package Android: **`com.dondeta.app`** (2026-11-14). No cambiarlos después de publicar. Versión 1.0.0. Proyecto EAS
+package Android: **`com.jfmcss.dondeta`** (2026-11-25: es el que quedó registrado en Play Console). No cambiarlos después de publicar. Versión 1.0.0. Proyecto EAS
 `jfmcss/dondeta` (las versiones las lleva EAS: `appVersionSource: remote`).
 
 ## Arrancar
@@ -193,7 +193,7 @@ enlaces universales: `src/domain/deepLinks.ts`).
    El build gratuito para el iPhone propio (`DONDETA_DEVICE_TEAM`) no tiene push.
 2. **Android (FCM v1):**
    - crear un proyecto de Firebase y agregar una app Android con el paquete
-     `com.dondeta.app`; bajar `google-services.json`;
+     `com.jfmcss.dondeta`; bajar `google-services.json`;
    - subirlo como variable de entorno de tipo archivo en EAS
      (`npx eas env:create --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility secret`)
      o dejarlo en `apps/mobile/google-services.json`; `app.config.js` lo usa solo si existe;
