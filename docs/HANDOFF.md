@@ -64,6 +64,7 @@ Gotchas conocidos:
 | `DEPLOY_SSH_KEY`, `DISCORD_WEBHOOK_ALERTS` | GitHub → Settings → Secrets → Actions |
 | Llave SSH al server | `~/.ssh` de cada máquina (copiarla o autorizar una nueva en el server) |
 | Firma Android / certificados iOS | EAS (cuenta Expo `jfmcss`), se bajan solos al compilar |
+| Cuenta de servicio de Play (`play-service-account.json`), llave de App Store Connect (`.p8`), OAuth de AdMob/AdSense (`google-ads-oauth.json`) | `~/.config/dondeta/` en la Mac (fuera de git); sus valores van al `.env` del server para /admin → Descargas e ingresos |
 | Google Analytics | cuenta jmservicedo@gmail.com, propiedad 549692638 |
 
 En una máquina nueva: `ssh -p 1600 ubuntu@163.245.207.38` debe funcionar antes
