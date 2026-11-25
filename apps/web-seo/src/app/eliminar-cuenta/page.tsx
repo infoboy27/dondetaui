@@ -64,8 +64,8 @@ export default function DeleteAccountPage() {
         </h2>
         <div style={{ fontSize: 15, lineHeight: 1.7, color: colors.navy400 }}>
           <ul style={list}>
-            <li><strong>Favoritos:</strong> en Guardados, quita el producto (se borra al momento).</li>
-            <li><strong>Alertas de precio:</strong> en Guardados &gt; Alertas, desactiva la alerta (se borra al momento).</li>
+            <li><strong>Favoritos:</strong> en Guardados &gt; Favoritos, abre el producto y vuelve a tocar el corazón (se borra al momento).</li>
+            <li><strong>Alertas de precio:</strong> en Guardados &gt; Alertas de precio, abre el producto y desactiva la alerta (se borra al momento).</li>
             <li><strong>Historial de búsqueda:</strong> en Buscar, toca &quot;Borrar&quot; junto a las búsquedas recientes.</li>
             <li><strong>Correos y notificaciones:</strong> desactívalos en Perfil; el token de notificaciones de tu dispositivo se borra.</li>
             <li>
