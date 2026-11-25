@@ -6,6 +6,7 @@ import { GUIDES_C } from './guides/batch-c'
 import { GUIDES_D } from './guides/batch-d'
 import { GUIDES_E } from './guides/batch-e'
 import { GUIDES_F } from './guides/batch-f'
+import { GUIDES_G } from './guides/batch-g'
 
 export const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
 
@@ -45,6 +46,7 @@ export interface Guide {
 }
 
 export const BUYING_GUIDES: Guide[] = [
+  ...GUIDES_G,
   ...GUIDES_F,
   ...GUIDES_D,
   ...GUIDES_E,
