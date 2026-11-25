@@ -135,7 +135,7 @@ export default function PrivacyPolicyPage() {
 
       <Section title="Tus derechos">
         <p>
-          Puedes eliminar tus favoritos, alertas y reseñas desde la app, y borrar tu cuenta con todos sus datos en
+          Puedes eliminar tus favoritos, alertas e historial de búsqueda desde la app (para borrar reseñas u otros datos, escríbenos), y borrar tu cuenta con todos sus datos en
           Perfil &gt; Seguridad &gt; Eliminar cuenta (detalles en{' '}
           <a href="/eliminar-cuenta" style={{ color: colors.primary }}>
             dondeta.com.do/eliminar-cuenta
