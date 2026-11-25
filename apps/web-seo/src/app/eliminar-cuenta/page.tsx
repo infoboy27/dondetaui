@@ -58,6 +58,30 @@ export default function DeleteAccountPage() {
         </p>
       </Section>
 
+      <section id="borrar-datos" style={{ marginBottom: 32 }}>
+        <h2 style={{ fontFamily: fonts.display, fontSize: 20, fontWeight: 600, color: colors.navy, marginBottom: 8 }}>
+          Borrar parte de tus datos sin eliminar la cuenta
+        </h2>
+        <div style={{ fontSize: 15, lineHeight: 1.7, color: colors.navy400 }}>
+          <ul style={list}>
+            <li><strong>Favoritos:</strong> en Guardados &gt; Favoritos, abre el producto y vuelve a tocar el corazón (se borra al momento).</li>
+            <li><strong>Alertas de precio:</strong> en Guardados &gt; Alertas de precio, abre el producto y desactiva la alerta (se borra al momento).</li>
+            <li><strong>Historial de búsqueda:</strong> en Buscar, toca &quot;Borrar&quot; junto a las búsquedas recientes.</li>
+            <li><strong>Correos y notificaciones:</strong> desactívalos en Perfil; el token de notificaciones de tu dispositivo se borra.</li>
+            <li>
+              <strong>Reseñas, teléfono u otro dato:</strong> escríbenos a{' '}
+              <a href={`mailto:${CONTACT_EMAIL}?subject=Borrar%20datos%20de%20DóndeTa`} style={{ color: colors.primary }}>
+                {CONTACT_EMAIL}
+              </a>{' '}
+              desde el correo de tu cuenta y dinos qué quieres borrar; lo hacemos en un plazo máximo de 7 días.
+            </li>
+          </ul>
+          <p style={{ marginTop: 12 }}>
+            Lo borrado así también desaparece de las copias de seguridad en un máximo de 14 días.
+          </p>
+        </div>
+      </section>
+
       <Section title="Qué se borra">
         <ul style={list}>
           <li>Tu cuenta: correo, nombre, teléfono (si lo diste) y contraseña encriptada.</li>
