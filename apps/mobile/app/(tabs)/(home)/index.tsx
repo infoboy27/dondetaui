@@ -6,7 +6,9 @@ import { productsApi } from '../../../src/api/products'
 import NativeAdCard from '../../../src/ads/NativeAdCard'
 import { withAdSlots } from '../../../src/domain/feed'
 import DealCard from '../../../src/components/DealCard'
-import ProductCard from '../../../src/components/ProductCard'
+import ProductGridRow from '../../../src/components/ProductGridRow'
+import { gridRows } from '../../../src/domain/grid'
+import { useColumns } from '../../../src/hooks/useColumns'
 import { compareByRelevance, getTopComparisons } from '../../../src/domain/offers'
 import { getTopPriceDrops } from '../../../src/domain/notifications'
 import { gamingKind, gamingShowcase } from '../../../src/domain/gaming'
@@ -49,7 +51,8 @@ export default function HomeScreen() {
   const comparisons = useMemo(() => getTopComparisons(products, 10), [products])
   const drops = useMemo(() => getTopPriceDrops(products, 10), [products])
   const gaming = useMemo(() => gamingShowcase(products), [products])
-  const visible = useMemo(() => withAdSlots(sorted.slice(0, visibleCount)), [sorted, visibleCount])
+  const columns = useColumns()
+  const visible = useMemo(() => gridRows(withAdSlots(sorted.slice(0, visibleCount)), columns, p => p.id), [sorted, visibleCount, columns])
 
   const load = useCallback(async (pull = false) => {
     if (pull) setRefreshing(true)
@@ -193,9 +196,9 @@ export default function HomeScreen() {
       <Stack.Screen options={{ title: 'DóndeTa', headerLargeTitle: false, headerTitle: () => <BrandTitle /> }} />
       <FlatList
         data={loading || error ? [] : visible}
-        keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}
-        renderItem={({ item: entry }) =>
-          entry.kind === 'ad' ? <NativeAdCard /> : <ProductCard product={entry.item} onPress={() => openProduct(entry.item)} />}
+        keyExtractor={row => row.key}
+        renderItem={({ item: row }) =>
+          row.kind === 'ad' ? <NativeAdCard /> : <ProductGridRow items={row.items} columns={columns} onPress={openProduct} />}
         ListHeaderComponent={header}
         ListEmptyComponent={loading ? <View><ProductRowSkeleton /><ProductRowSkeleton /><ProductRowSkeleton /></View> : null}
         onEndReached={() => setVisibleCount(count => (count < sorted.length ? count + BATCH : count))}
