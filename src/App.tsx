@@ -17,6 +17,7 @@ import HomeScreen from './screens/HomeScreen'
 import SplashOverlay from './components/SplashOverlay'
 import SignupPrompt from './components/SignupPrompt'
 import { captureSignupSource } from './domain/signupPrompt'
+import { applySeoMeta } from './domain/seoMeta'
 import { getToken } from './auth/session'
 import AuthModal from './components/AuthModal'
 
@@ -219,6 +220,10 @@ export default function App() {
   useEffect(() => {
     const tab = pathToTab(location.pathname)
     if (tab) setActiveTab(tab)
+  }, [location.pathname])
+
+  useEffect(() => {
+    applySeoMeta(document, window.location.origin, location.pathname)
   }, [location.pathname])
 
   const firstPageView = useRef(true)

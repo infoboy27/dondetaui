@@ -3,8 +3,8 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.dondeta.app",
-      "sha256_cert_fingerprints": ["PLAY_APP_SIGNING_SHA256"]
+      "package_name": "com.jfmcss.dondeta",
+      "sha256_cert_fingerprints": ["05:15:C6:11:65:61:A8:C2:5D:6B:5E:E9:D2:E2:82:26:E5:2D:71:32:D5:4E:26:D0:52:8B:01:DC:EC:04:DF:DF"]
     }
   }
 ]

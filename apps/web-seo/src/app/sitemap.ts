@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/contacto`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/terminos`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${SITE_URL}/eliminar-cuenta`, changeFrequency: 'yearly', priority: 0.2 },
     ...(hasGuides(COUNTRY) ? BUYING_GUIDES : []).map(guide => ({
       url: `${SITE_URL}/guias/${guide.slug}`,
       changeFrequency: 'monthly' as const,
