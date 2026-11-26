@@ -1,7 +1,7 @@
 # Store listing kit (App Store + Google Play)
 
 Everything the store consoles ask for, prepared before the developer accounts
-exist. Bundle id (iOS): `do.com.dondeta.app`; package (Android): `com.dondeta.app`.
+exist. Bundle id (iOS): `do.com.dondeta.app`; package (Android): `com.jfmcss.dondeta`.
 
 ## Files
 

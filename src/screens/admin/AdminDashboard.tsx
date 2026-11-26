@@ -7,6 +7,7 @@ import type { User } from '../../types'
 import { setToken } from '../../auth/session'
 import { DailyBars, Empty, ShareBars, formatCount } from './charts'
 import InstagramMetrics from './InstagramMetrics'
+import StoreMetrics from './StoreMetrics'
 
 const PERIODS = [7, 30, 90] as const
 
@@ -112,6 +113,8 @@ export default function AdminDashboard({ user, onLogout }: { user: User; onLogou
                 <Empty text="GA4 no está conectado todavía. Agrega GA_PROPERTY_ID y GA_SERVICE_ACCOUNT_JSON al .env del servidor (ver .env.example)." />
               )}
             </Card>
+
+            <StoreMetrics days={days} />
 
             <InstagramMetrics compact />
 

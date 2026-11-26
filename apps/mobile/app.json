@@ -8,7 +8,7 @@
     "scheme": "dondeta",
     "icon": "./assets/icon.png",
     "android": {
-      "package": "com.dondeta.app",
+      "package": "com.jfmcss.dondeta",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -280,6 +280,12 @@
           "skAdNetworkItems": [
             "cstr6suwn9.skadnetwork"
           ]
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "DóndeTa usa este permiso para mostrarte anuncios más relevantes. Los anuncios ayudan a mantener la app gratis."
         }
       ],
       "./plugins/withSceneLifecycle"

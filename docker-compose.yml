@@ -69,6 +69,19 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       GA_PROPERTY_ID: ${GA_PROPERTY_ID:-}
       GA_SERVICE_ACCOUNT_JSON: ${GA_SERVICE_ACCOUNT_JSON:-}
+      # Store downloads and ad earnings on /admin (apps/api/src/admin/store-stats.ts).
+      PLAY_SERVICE_ACCOUNT_JSON: ${PLAY_SERVICE_ACCOUNT_JSON:-}
+      PLAY_REPORTS_BUCKET: ${PLAY_REPORTS_BUCKET:-}
+      PLAY_PACKAGE_NAME: ${PLAY_PACKAGE_NAME:-}
+      ASC_KEY_ID: ${ASC_KEY_ID:-}
+      ASC_ISSUER_ID: ${ASC_ISSUER_ID:-}
+      ASC_PRIVATE_KEY: ${ASC_PRIVATE_KEY:-}
+      ASC_VENDOR_NUMBER: ${ASC_VENDOR_NUMBER:-}
+      ASC_APP_ID: ${ASC_APP_ID:-}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_ADS_REFRESH_TOKEN: ${GOOGLE_ADS_REFRESH_TOKEN:-}
+      ADS_PUBLISHER_ID: ${ADS_PUBLISHER_ID:-}
       # Instagram publishing from /admin/instagram (long-lived token; the API
       # refreshes it on its own) and the public base URL Instagram downloads
       # the post image from.

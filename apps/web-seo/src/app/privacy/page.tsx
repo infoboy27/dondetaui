@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 const CONTACT_EMAIL = 'jonathanmaria@gmail.com'
-const LAST_UPDATED = '8 de noviembre de 2026'
+const LAST_UPDATED = '25 de noviembre de 2026'
 const SITE_HOSTNAME = new URL(SITE_URL).hostname
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -41,16 +41,17 @@ export default function PrivacyPolicyPage() {
 
       <Section title="Qué es DóndeTa">
         <p>
-          DóndeTa es una aplicación de comparación de precios de electrodomésticos y productos en tiendas de
-          {COUNTRY.name}, disponible en <strong>{SITE_HOSTNAME}</strong> y como aplicación para Android.
-          Esta política aplica a ambas.
+          DóndeTa es un comparador de precios de electrodomésticos y productos en tiendas de {COUNTRY.name}, disponible
+          en <strong>{SITE_HOSTNAME}</strong> y como aplicación para iPhone (App Store) y Android (Google Play). La app
+          también compara precios en Colombia y México. Esta política aplica al sitio web y a las apps.
         </p>
       </Section>
 
       <Section title="Qué información recopilamos">
         <p style={{ marginBottom: 12 }}>
-          <strong>Cuenta:</strong> si te registras, guardamos tu correo electrónico, nombre y una contraseña
-          encriptada (nunca en texto plano). El teléfono es opcional, solo si activas alertas por SMS.
+          <strong>Cuenta (opcional):</strong> buscar, comparar y escanear funcionan sin cuenta. Si te registras,
+          guardamos tu correo electrónico, nombre y una contraseña encriptada (nunca en texto plano). El teléfono es
+          opcional, solo si activas alertas por SMS.
         </p>
         <p style={{ marginBottom: 12 }}>
           <strong>Uso de la app:</strong> tus productos favoritos, alertas de precio que configuras, tu historial
@@ -60,25 +61,66 @@ export default function PrivacyPolicyPage() {
           <strong>Ubicación:</strong> solo si usas "Tiendas cercanas" y das permiso explícito al sistema operativo.
           Se usa en el momento para calcular distancias a sucursales — no se guarda un historial de tu ubicación.
         </p>
+        <p style={{ marginBottom: 12 }}>
+          <strong>Cámara:</strong> solo si usas el escáner y das permiso. Se usa para leer el código de barras del
+          producto; las imágenes no se guardan ni se envían a nuestros servidores, solo el número del código.
+        </p>
+        <p style={{ marginBottom: 12 }}>
+          <strong>Notificaciones push:</strong> si aceptas notificaciones en la app, guardamos un token de
+          dispositivo (emitido por Expo) para poder enviarte avisos de bajada de precio.
+        </p>
         <p>
-          <strong>Notificaciones push:</strong> si aceptas notificaciones en la app Android, guardamos un token
-          de dispositivo (emitido por Expo) para poder enviarte avisos de bajada de precio.
+          <strong>Publicidad:</strong> las apps muestran anuncios de Google AdMob, que nos permiten mantener DóndeTa
+          gratis. Google puede recopilar el identificador de publicidad del dispositivo, tu dirección IP, una ubicación
+          aproximada derivada de ella y datos de interacción con los anuncios, según se explica más abajo.
         </p>
       </Section>
 
       <Section title="Cómo usamos tu información">
         <p>
-          Únicamente para operar el servicio: mostrarte comparaciones de precio, avisarte cuando un producto que
-          sigues baja de precio (por correo, SMS o notificación push, según lo que actives), y mostrarte tiendas
-          cercanas cuando lo pidas. No vendemos ni compartimos tus datos con terceros para publicidad.
+          Para operar el servicio: mostrarte comparaciones de precio, avisarte cuando un producto que sigues baja de
+          precio (por correo, SMS o notificación push, según lo que actives), mostrarte tiendas cercanas cuando lo
+          pidas y mostrar anuncios. No vendemos tus datos personales (correo, nombre, teléfono, favoritos, alertas o
+          búsquedas) ni los compartimos con anunciantes.
+        </p>
+      </Section>
+
+      <Section title="Anuncios y rastreo">
+        <p style={{ marginBottom: 12 }}>
+          Los anuncios de las apps los sirve Google AdMob. Google puede usar el identificador de publicidad del
+          dispositivo (IDFA en iPhone, ID de publicidad en Android) para mostrar anuncios personalizados y medir su
+          rendimiento, combinándolo con datos de otras apps y sitios. Eso es "rastreo" según Apple.
+        </p>
+        <p style={{ marginBottom: 12 }}>
+          <strong>En iPhone</strong>, la app te pregunta si permites el rastreo antes de cargar cualquier anuncio. Si
+          no lo permites, Google no recibe el IDFA y los anuncios no se personalizan con él. Puedes cambiarlo en
+          Ajustes &gt; Privacidad y seguridad &gt; Rastreo.
+        </p>
+        <p style={{ marginBottom: 12 }}>
+          <strong>En Android</strong>, puedes restablecer o eliminar tu ID de publicidad en Ajustes &gt; Privacidad
+          &gt; Anuncios (o Ajustes &gt; Google &gt; Anuncios).
+        </p>
+        <p style={{ marginBottom: 12 }}>
+          Donde la ley lo exige (por ejemplo, en el Espacio Económico Europeo y el Reino Unido), la app muestra el
+          formulario de consentimiento de Google antes de mostrar anuncios, y puedes elegir anuncios no
+          personalizados.
+        </p>
+        <p>
+          Más información sobre cómo usa Google estos datos:{' '}
+          <a href="https://policies.google.com/technologies/partner-sites" style={{ color: colors.primary }}>
+            policies.google.com/technologies/partner-sites
+          </a>
+          . El sitio web usa Google Analytics para medir visitas y puede mostrar anuncios de Google AdSense, con
+          cookies de Google.
         </p>
       </Section>
 
       <Section title="Con quién compartimos datos">
         <p>
-          Usamos proveedores externos únicamente para operar funciones que activas: Resend para enviar correos de
-          alerta, Twilio para SMS, y Expo para notificaciones push en Android. Estos proveedores procesan los datos
-          mínimos necesarios (tu correo, teléfono o token de dispositivo) solo para entregar esas notificaciones.
+          Además de Google (anuncios y analítica, arriba), usamos proveedores externos para operar funciones que
+          activas: Resend para enviar correos de alerta, Twilio para SMS, y Expo para notificaciones push. Estos
+          proveedores procesan los datos mínimos necesarios (tu correo, teléfono o token de dispositivo) solo para
+          entregar esas notificaciones. Los datos viajan cifrados (HTTPS).
         </p>
       </Section>
 
@@ -93,8 +135,13 @@ export default function PrivacyPolicyPage() {
 
       <Section title="Tus derechos">
         <p>
-          Puedes eliminar tus favoritos, alertas y reseñas desde la app. Para solicitar la eliminación completa de
-          tu cuenta y datos asociados, o para cualquier pregunta sobre esta política, escríbenos a{' '}
+          Puedes eliminar tus favoritos, alertas e historial de búsqueda desde la app (para borrar reseñas u otros datos, escríbenos), y borrar tu cuenta con todos sus datos en
+          Perfil &gt; Seguridad &gt; Eliminar cuenta (detalles en{' '}
+          <a href="/eliminar-cuenta" style={{ color: colors.primary }}>
+            dondeta.com.do/eliminar-cuenta
+          </a>
+          ). También puedes pedir la eliminación, o hacer cualquier pregunta
+          sobre esta política, escribiéndonos a{' '}
           <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: colors.primary }}>
             {CONTACT_EMAIL}
           </a>

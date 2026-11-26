@@ -5,6 +5,7 @@ import { ingestionHealth } from '../ingestion/ingestion-health'
 import { AdminGuard } from './admin.guard'
 import { AdminRepository } from './admin.repository'
 import { analyticsConfigured, analyticsSummary, campaignReport } from './google-analytics'
+import { appStoreConfigured, appStoreStats, earningsConfigured, earningsStats, playConfigured, playStats } from './store-stats'
 
 function periodDays(raw?: string): number {
   const days = Number(raw ?? 30)
@@ -17,6 +18,16 @@ async function safeAnalytics(days: number) {
   if (!analyticsConfigured()) return { configured: false, data: null, error: null }
   try {
     return { configured: true, data: await analyticsSummary(days), error: null }
+  } catch (error) {
+    return { configured: true, data: null, error: error instanceof Error ? error.message.slice(0, 300) : String(error) }
+  }
+}
+
+// Same contract as safeAnalytics for the store/earnings sources.
+async function safeSource<T>(configured: boolean, load: () => Promise<T>) {
+  if (!configured) return { configured: false, data: null, error: null }
+  try {
+    return { configured: true, data: await load(), error: null }
   } catch (error) {
     return { configured: true, data: null, error: error instanceof Error ? error.message.slice(0, 300) : String(error) }
   }
@@ -46,6 +57,18 @@ export class AdminController {
       safeAnalytics(days),
     ])
     return { days, generatedAt: new Date().toISOString(), catalog, clicks, retailers, ingestion, analytics }
+  }
+
+  // App downloads (Google Play, App Store) and ad earnings (AdMob, AdSense).
+  @Get('stores')
+  async stores(@Query('days') rawDays?: string) {
+    const days = periodDays(rawDays)
+    const [play, appStore, earnings] = await Promise.all([
+      safeSource(playConfigured(), () => playStats(days)),
+      safeSource(appStoreConfigured(), () => appStoreStats(days)),
+      safeSource(earningsConfigured(), () => earningsStats(days)),
+    ])
+    return { days, generatedAt: new Date().toISOString(), play, appStore, earnings }
   }
 
   // Traffic and store visits per utm campaign (paid promotions first).
