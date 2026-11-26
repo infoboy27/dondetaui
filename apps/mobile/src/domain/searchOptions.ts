@@ -50,6 +50,17 @@ function isDeal(product: Product): boolean {
   return product.discount > 0
 }
 
+/** True when at least one result carries a store discount. Most stores don't
+ * send one, so the discount filter/sort would only ever show 0 results. */
+export function hasDeals(products: Product[]): boolean {
+  return products.some(isDeal)
+}
+
+/** Sort options that make sense for these results ("Mayor descuento" needs discounts). */
+export function availableSortKeys(products: Product[]): SortKey[] {
+  return hasDeals(products) ? SORT_KEYS : SORT_KEYS.filter(key => key !== 'discount')
+}
+
 export function activeFilterCount(filters: SearchFilters): number {
   return (
     filters.stores.length +

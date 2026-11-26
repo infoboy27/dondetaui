@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import type { Product } from '../types'
 import {
   NO_FILTERS,
-  SORT_KEYS,
   SORT_LABELS,
   applySearchOptions,
+  availableSortKeys,
+  hasDeals,
   parsePriceInput,
   searchFacets,
   type Facet,
@@ -72,7 +73,7 @@ export default function SearchOptionsSheet({
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <Section title="Ordenar por">
-            {SORT_KEYS.map(key => (
+            {availableSortKeys(results).map(key => (
               <CheckRow
                 key={key}
                 title={SORT_LABELS[key]}
@@ -106,11 +107,13 @@ export default function SearchOptionsSheet({
               value={filters.onlyAvailable}
               onChange={onlyAvailable => onFiltersChange({ ...filters, onlyAvailable })}
             />
-            <SwitchRow
-              title="Solo con descuento"
-              value={filters.onlyDeals}
-              onChange={onlyDeals => onFiltersChange({ ...filters, onlyDeals })}
-            />
+            {(hasDeals(results) || filters.onlyDeals) && (
+              <SwitchRow
+                title="Solo con descuento"
+                value={filters.onlyDeals}
+                onChange={onlyDeals => onFiltersChange({ ...filters, onlyDeals })}
+              />
+            )}
           </Section>
 
           <FacetSection title="Tiendas" facets={facets.stores} selected={filters.stores} onToggle={value => toggle('stores', value)} />
