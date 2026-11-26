@@ -17,7 +17,7 @@ import Touchable from '../../../src/components/ui/Touchable'
 import { ProductRowSkeleton } from '../../../src/components/ui/Skeleton'
 import { useRecentSearches } from '../../../src/hooks/useRecentSearches'
 import SearchOptionsSheet from '../../../src/components/SearchOptionsSheet'
-import { NO_FILTERS, SORT_KEYS, SORT_LABELS, activeFilterCount, applySearchOptions, pruneFilters, type SearchFilters, type SortKey } from '../../../src/domain/searchOptions'
+import { NO_FILTERS, SORT_LABELS, activeFilterCount, availableSortKeys, applySearchOptions, pruneFilters, type SearchFilters, type SortKey } from '../../../src/domain/searchOptions'
 import { haptics } from '../../../src/design/haptics'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
@@ -103,10 +103,11 @@ export default function SearchScreen() {
       setOptionsOpen(true)
       return
     }
+    const keys = availableSortKeys(results)
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: 'Ordenar por', options: [...SORT_KEYS.map(key => SORT_LABELS[key]), 'Cancelar'], cancelButtonIndex: SORT_KEYS.length, tintColor: colors.primaryDark },
+      { title: 'Ordenar por', options: [...keys.map(key => SORT_LABELS[key]), 'Cancelar'], cancelButtonIndex: keys.length, tintColor: colors.primaryDark },
       index => {
-        const key = SORT_KEYS[index]
+        const key = keys[index]
         if (key) {
           haptics.selection()
           setSort(key)

@@ -4,6 +4,8 @@ import {
   NO_FILTERS,
   activeFilterCount,
   applySearchOptions,
+  availableSortKeys,
+  hasDeals,
   filterProducts,
   parsePriceInput,
   pruneFilters,
@@ -119,5 +121,14 @@ describe('parsePriceInput', () => {
     expect(parsePriceInput('RD$ 1.500')).toBe(1500)
     expect(parsePriceInput('')).toBeNull()
     expect(parsePriceInput('abc')).toBeNull()
+  })
+})
+
+describe('discount options', () => {
+  it('offers the discount filter and sort only when some result has a discount', () => {
+    expect(hasDeals(results)).toBe(true)
+    expect(availableSortKeys(results)).toContain('discount')
+    expect(hasDeals([tv, soldOut])).toBe(false)
+    expect(availableSortKeys([tv, soldOut])).toEqual(['relevance', 'priceAsc', 'priceDesc'])
   })
 })
