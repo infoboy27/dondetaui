@@ -71,6 +71,7 @@ export function ListSwitchRow({
   icon,
   iconColor = colors.primary,
   title,
+  subtitle,
   value,
   onValueChange,
   disabled = false,
@@ -78,24 +79,34 @@ export function ListSwitchRow({
   icon?: IconName
   iconColor?: string
   title: string
+  // Optional one-line explanation under the title (Settings-style).
+  subtitle?: string
   value: boolean
   onValueChange: (value: boolean) => void
   disabled?: boolean
 }) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, !!subtitle && styles.rowWithSubtitle]}>
       {icon && (
         <View style={[styles.iconTile, { backgroundColor: iconColor }]}>
           <Icon name={icon} size={15} color="#fff" weight="semibold" />
         </View>
       )}
-      <Text style={[type.body, styles.title]} numberOfLines={1}>{title}</Text>
+      {subtitle ? (
+        <View style={styles.titleBlock}>
+          <Text style={[type.body, styles.titleText]} numberOfLines={1}>{title}</Text>
+          <Text style={[type.footnote, styles.subtitle]}>{subtitle}</Text>
+        </View>
+      ) : (
+        <Text style={[type.body, styles.title]} numberOfLines={1}>{title}</Text>
+      )}
       <Switch
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
         trackColor={{ true: colors.primary }}
         accessibilityLabel={title}
+        accessibilityHint={subtitle}
       />
     </View>
   )
@@ -110,6 +121,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 48, paddingHorizontal: spacing.lg },
   iconTile: { width: 28, height: 28, borderRadius: 7, borderCurve: 'continuous', alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, color: colors.navy },
+  rowWithSubtitle: { paddingVertical: spacing.sm + 2 },
+  titleBlock: { flex: 1 },
+  titleText: { color: colors.navy },
+  subtitle: { color: colors.secondaryLabel, marginTop: 2 },
   destructive: { color: '#E5383B', textAlign: 'center' },
   value: { color: colors.secondaryLabel, maxWidth: '50%' },
 })

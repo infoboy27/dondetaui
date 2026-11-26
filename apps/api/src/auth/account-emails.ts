@@ -44,11 +44,13 @@ function layout(opts: {
   if (opts.code) lines.push('', `Tu código: ${opts.code}`, '')
   if (opts.deals?.length) {
     lines.push('')
-    for (const d of opts.deals) lines.push(`• ${d.name} — ${d.price} en ${d.store} (${d.note})`, `  ${d.url}`)
+    for (const d of opts.deals) lines.push(`• ${d.name} — ${d.price}${d.store ? ` en ${d.store}` : ''} (${d.note})`, `  ${d.url}`)
   }
   if (opts.after) lines.push(...opts.after)
   if (opts.cta) lines.push('', `${opts.cta.label}: ${opts.cta.url}`)
   lines.push('', '— El equipo de DóndeTa', 'https://dondeta.com.do')
+  // Why you get it / how to stop it, also for plain-text readers.
+  if (opts.footer) lines.push('', opts.footer)
   if (opts.footerLink) lines.push('', `${opts.footerLink.label}: ${opts.footerLink.url}`)
   const text = lines.join('\n')
 
@@ -203,6 +205,8 @@ export interface PriceDropDetails {
   imageUrl?: string | null
   // Path under the site, e.g. /product/nevera-samsung.
   path?: string | null
+  // Also the lowest price in 90 days (the lowest_price_90d alert, merged in).
+  lowest90d?: boolean
 }
 
 export function priceDropEmail(productName: string, price: string, details: PriceDropDetails = {}): EmailContent {
@@ -210,15 +214,16 @@ export function priceDropEmail(productName: string, price: string, details: Pric
   const imageUrl = details.imageUrl && /^https:\/\//.test(details.imageUrl) ? details.imageUrl : undefined
   const url = details.path?.startsWith('/') ? `${SITE}${details.path}` : SITE
   const was = details.previousPrice ? ` (antes ${details.previousPrice})` : ''
+  const lowest = details.lowest90d === true
   return {
-    subject: `Bajó de precio: ${productName} ahora ${price}`,
+    subject: lowest ? `Precio más bajo en 90 días: ${productName} ahora ${price}` : `Bajó de precio: ${productName} ahora ${price}`,
     ...layout({
       name: null,
       paragraphs: [
-        `${productName} ahora cuesta ${price}${was}.`,
+        lowest ? `${productName} ahora cuesta ${price}${was}: es su precio más bajo de los últimos 90 días.` : `${productName} ahora cuesta ${price}${was}.`,
         'Lo guardaste en DóndeTa, así que te avisamos apenas bajó. Los precios pueden cambiar en cualquier momento, no te quedes sin el tuyo.',
       ],
-      highlight: { badge: 'Bajó de precio', title: productName, value: price, oldValue: details.previousPrice, savings: details.savings, imageUrl },
+      highlight: { badge: lowest ? 'Más bajo en 90 días' : 'Bajó de precio', title: productName, value: price, oldValue: details.previousPrice, savings: details.savings, imageUrl },
       preheader: `${productName} ahora cuesta ${price}. Míralo antes de que vuelva a subir.`,
       cta: { label: 'Ver la oferta', url },
       footer: 'Recibes este correo porque guardaste este producto en DóndeTa y activaste las alertas de precio. Puedes quitarlo de tus favoritos cuando quieras.',
@@ -246,6 +251,124 @@ export function dealDigestEmail(opts: { name: string | null; deals: DealRow[]; p
       preheader: `${lead}, verificadas contra su historial de precios.`,
       footer: `Recibes este correo porque pediste las ofertas reales de ${eventName} en DóndeTa. Es como mucho un correo al día y solo durante la temporada de ofertas.`,
       footerLink: { label: 'Dejar de recibir estos correos', url: opts.unsubscribeUrl },
+    }),
+  }
+}
+
+// ---------------------------------------------------------------- watch notifications
+// Each kind can be turned off on its own (Perfil › Notificaciones in the app);
+// the footer says so. Promotional ones (weekly summary, Black Friday real
+// offers) are opt-in only.
+
+const PREFS_HINT = 'Puedes apagar este aviso cuando quieras en la app: Perfil › Notificaciones.'
+
+function httpsImage(url: string | null | undefined): string | undefined {
+  return url && /^https:\/\//.test(url) ? url : undefined
+}
+
+export interface WatchProduct {
+  name: string
+  price: string
+  imageUrl?: string | null
+  /** Absolute link to the product (the stack's own site). */
+  url: string
+}
+
+export function backInStockEmail(product: WatchProduct & { store: string | null }): EmailContent {
+  const where = product.store ? ` en ${product.store}` : ''
+  return {
+    subject: `Volvió a estar disponible: ${product.name}`,
+    ...layout({
+      name: null,
+      paragraphs: [
+        `${product.name} ya está disponible otra vez${where}, a ${product.price}.`,
+        'Lo guardaste en DóndeTa cuando estaba agotado. Las existencias pueden volver a acabarse.',
+      ],
+      highlight: { badge: 'Disponible otra vez', title: product.name, value: product.price, imageUrl: httpsImage(product.imageUrl) },
+      preheader: `${product.name} volvió a estar disponible${where}.`,
+      cta: { label: 'Ver la oferta', url: product.url },
+      footer: `Recibes este correo porque guardaste este producto en DóndeTa. ${PREFS_HINT}`,
+    }),
+  }
+}
+
+export function lowestPrice90dEmail(product: WatchProduct): EmailContent {
+  return {
+    subject: `Precio más bajo en 90 días: ${product.name} ahora ${product.price}`,
+    ...layout({
+      name: null,
+      paragraphs: [
+        `${product.name} cuesta hoy ${product.price}: lo más barato que lo hemos visto en los últimos 90 días.`,
+        'Lo comparamos con cada día de los últimos 3 meses en todas las tiendas que lo venden.',
+      ],
+      highlight: { badge: 'Más bajo en 90 días', title: product.name, value: product.price, imageUrl: httpsImage(product.imageUrl) },
+      preheader: `${product.name}: su precio más bajo en 3 meses.`,
+      cta: { label: 'Ver la oferta', url: product.url },
+      footer: `Recibes este correo porque guardaste este producto en DóndeTa. ${PREFS_HINT}`,
+    }),
+  }
+}
+
+export function cardDiscountEmail(opts: { store: string; phrase: string; endsOn: string; products: DealRow[] }): EmailContent {
+  return {
+    subject: `Nuevo descuento con tarjeta en ${opts.store}: ${opts.phrase}`,
+    ...layout({
+      name: null,
+      paragraphs: [
+        `${opts.store} tiene un descuento nuevo: ${opts.phrase}, hasta el ${opts.endsOn}. Aplica a estos productos que guardaste:`,
+      ],
+      deals: opts.products,
+      after: ['Revisa las condiciones con el banco y la tienda (tope, compra mínima, días) antes de comprar.'],
+      footer: `Recibes este correo porque guardaste productos de ${opts.store} en DóndeTa. ${PREFS_HINT}`,
+    }),
+  }
+}
+
+export function savedSearchEmail(opts: { query: string; maxPrice: string | null; products: DealRow[] }): EmailContent {
+  const limit = opts.maxPrice ? ` por ${opts.maxPrice} o menos` : ''
+  const count = opts.products.length
+  return {
+    subject: `Novedades en tu búsqueda “${opts.query}”`,
+    ...layout({
+      name: null,
+      paragraphs: [
+        count === 1
+          ? `Encontramos 1 producto nuevo o más barato para “${opts.query}”${limit}:`
+          : `Encontramos ${count} productos nuevos o más baratos para “${opts.query}”${limit}:`,
+      ],
+      deals: opts.products,
+      footer: `Recibes este correo porque guardaste esta búsqueda en DóndeTa. Puedes borrarla, o apagar estos avisos, en la app: Perfil › Notificaciones.`,
+    }),
+  }
+}
+
+export function weeklyDigestEmail(opts: { name: string | null; summary: string; products: DealRow[]; pageUrl: string }): EmailContent {
+  return {
+    subject: `Tu resumen de la semana: ${opts.summary}`,
+    ...layout({
+      name: opts.name,
+      paragraphs: [`Esta semana, de lo que guardaste en DóndeTa, ${opts.summary}. Cada precio comparado con el de hace 7 días:`],
+      deals: opts.products,
+      after: ['Los precios cambian varias veces al día: confirma el precio final con la tienda antes de comprar.'],
+      preheader: `De tus guardados, ${opts.summary}.`,
+      cta: { label: 'Ver mis guardados', url: opts.pageUrl },
+      footer: `Recibes este correo porque activaste el resumen semanal en DóndeTa (uno por semana). ${PREFS_HINT}`,
+    }),
+  }
+}
+
+export function dealRealEmail(opts: { seasonName: string; products: DealRow[] }): EmailContent {
+  const count = opts.products.length
+  return {
+    subject: `${opts.seasonName}: ${count === 1 ? '1 oferta real' : `${count} ofertas reales`} en lo que guardaste`,
+    ...layout({
+      name: null,
+      paragraphs: [
+        `Estas ofertas son reales: ${count === 1 ? 'este producto que guardaste cuesta' : 'estos productos que guardaste cuestan'} hoy menos que su precio promedio de los últimos 30 días.`,
+      ],
+      deals: opts.products,
+      after: ['Confirma el precio final, el envío y la garantía con la tienda antes de comprar.'],
+      footer: `Recibes este correo porque activaste las ofertas de temporada en DóndeTa. ${PREFS_HINT}`,
     }),
   }
 }
