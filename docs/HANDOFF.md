@@ -116,6 +116,7 @@ de hacer tareas de servidor, y `npx eas login` antes de compilar la app.
 - Secret `DISCORD_WEBHOOK_ALERTS` en GitHub, para las alertas de `uptime.yml`.
 - Configurar el pago de Eneba en my.eneba.com/affiliates/overview.
 - Cuenta de Play Console (US$25) y Apple Developer Program (US$99/año).
+- **Notificación manual a todos los teléfonos** (2026-11-27): `/admin/notificaciones` (título, mensaje, vista previa, conteo de teléfonos, confirmación; rechaza el mismo texto dos veces en 10 min). Equivale a `broadcast-push.cli.js`. Solo llega a quien dio permiso en la app (se pide al guardar/seguir un producto) y solo en el stack de RD.
 - Push en la app: llave APNs (Apple) y proyecto de Firebase con `google-services.json` + llave de service account FCM v1 (Google), ambos en EAS; luego `PUSH_NOTIFICATIONS_ENABLED=1` en `~/dondeta/.env` ([MOBILE.md](MOBILE.md#notificaciones-push-bajas-de-precio)).
 - Resend: crear la cuenta, verificar el dominio `dondeta.com.do` (registros DNS) y poner `RESEND_API_KEY` en `~/dondeta/.env`. Sin eso no salen los correos de cuenta (verificación, recuperar contraseña, 2FA por correo) ni las alertas por email.
 - Reaplicar a AdSense (rechazo del 2026-10-20: «contenido de bajo valor»): ver el plan de abajo, no antes de cumplirlo.

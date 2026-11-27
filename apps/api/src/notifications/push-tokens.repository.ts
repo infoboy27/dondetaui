@@ -29,6 +29,20 @@ export class PushTokensRepository {
     return result.rows.map(row => row.token)
   }
 
+  /** Active devices per platform, for the /admin broadcast screen. */
+  async activeCounts(): Promise<{ ios: number; android: number; total: number }> {
+    const result = await this.pool.query<{ platform: string; devices: string }>(
+      'select platform, count(distinct token) as devices from push_tokens where disabled_at is null group by platform',
+    )
+    const counts = { ios: 0, android: 0, total: 0 }
+    for (const row of result.rows) {
+      const devices = Number(row.devices)
+      if (row.platform === 'ios' || row.platform === 'android') counts[row.platform] += devices
+      counts.total += devices
+    }
+    return counts
+  }
+
   async disable(tokens: string[]): Promise<void> {
     if (!tokens.length) return
     await this.pool.query('update push_tokens set disabled_at = now() where token = any($1::text[]) and disabled_at is null', [tokens])
