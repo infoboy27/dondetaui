@@ -1,6 +1,7 @@
 import { Pool } from 'pg'
 import { PushProvider } from './push.provider'
 import { PushTokensRepository } from './push-tokens.repository'
+import { parseBroadcast } from './push-messages'
 
 // One-off push to every registered device (e.g. the Black Friday kickoff).
 // Dry run by default: it only reports how many devices would receive it.
@@ -13,9 +14,13 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 const args = process.argv.slice(2)
 const send = args.includes('--send')
-const [title, body] = args.filter(arg => arg !== '--send')
-if (!title || !body) {
-  console.error('Usage: broadcast-push.cli.js "<title>" "<body>" [--send]')
+const [rawTitle, rawBody] = args.filter(arg => arg !== '--send')
+let title: string, body: string
+try {
+  ({ title, body } = parseBroadcast({ title: rawTitle, body: rawBody }))
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error)
+  console.error('Usage: broadcast-push.cli.js "<title>" "<body>" [--send]   (also: /admin/notificaciones)')
   process.exit(1)
 }
 
@@ -31,7 +36,7 @@ async function main() {
     console.log('[broadcast] dry run — nothing sent (pass --send to send)')
     return
   }
-  const outcome = await new PushProvider().send(tokens.map(to => ({ to, title: title!, body: body!, sound: 'default' as const })))
+  const outcome = await new PushProvider().send(tokens.map(to => ({ to, title, body, sound: 'default' as const })))
   await pushTokens.savePendingTickets(outcome.pending)
   await pushTokens.disable(outcome.disable)
   console.log(`[broadcast] sent: ${outcome.pending.length} accepted, ${outcome.disable.length} token(s) disabled`)

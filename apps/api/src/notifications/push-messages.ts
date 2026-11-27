@@ -142,3 +142,22 @@ export class PushBudget {
     return true
   }
 }
+
+// Manual broadcasts from /admin/notificaciones (and broadcast-push.cli).
+// iOS shows ~40 characters of title and ~120 of body on the lock screen
+// before cutting; the hard caps below leave room for longer text when needed.
+export const BROADCAST_TITLE_MAX = 65
+export const BROADCAST_BODY_MAX = 178
+
+export interface BroadcastInput { title: string; body: string }
+
+/** Trims and validates a broadcast; throws a Spanish message for the admin. */
+export function parseBroadcast(raw: { title?: unknown; body?: unknown }): BroadcastInput {
+  const title = typeof raw.title === 'string' ? raw.title.trim() : ''
+  const body = typeof raw.body === 'string' ? raw.body.trim() : ''
+  if (!title) throw new Error('Escribe un título')
+  if (!body) throw new Error('Escribe el mensaje')
+  if ([...title].length > BROADCAST_TITLE_MAX) throw new Error(`El título no puede pasar de ${BROADCAST_TITLE_MAX} caracteres`)
+  if ([...body].length > BROADCAST_BODY_MAX) throw new Error(`El mensaje no puede pasar de ${BROADCAST_BODY_MAX} caracteres`)
+  return { title, body }
+}

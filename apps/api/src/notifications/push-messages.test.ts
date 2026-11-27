@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BROADCAST_BODY_MAX,
+  BROADCAST_TITLE_MAX,
+  parseBroadcast,
   PushBudget,
   buildPriceDropPush,
   chunk,
@@ -133,5 +136,21 @@ describe('PushBudget', () => {
     expect(budget.take('u1')).toBe(true)
     expect(budget.take('u1')).toBe(false)
     expect(budget.take('u2')).toBe(true)
+  })
+})
+
+describe('parseBroadcast', () => {
+  it('trims a valid title and body', () => {
+    expect(parseBroadcast({ title: '  Black Friday 🛍️ ', body: ' Compara antes de comprar. ' }))
+      .toEqual({ title: 'Black Friday 🛍️', body: 'Compara antes de comprar.' })
+  })
+  it('rejects a missing title or body', () => {
+    expect(() => parseBroadcast({ title: ' ', body: 'x' })).toThrow('título')
+    expect(() => parseBroadcast({ title: 'x', body: 42 })).toThrow('mensaje')
+  })
+  it('rejects text over the limits, counting emoji as one character', () => {
+    expect(() => parseBroadcast({ title: 'a'.repeat(BROADCAST_TITLE_MAX + 1), body: 'x' })).toThrow('título')
+    expect(() => parseBroadcast({ title: 'x', body: 'a'.repeat(BROADCAST_BODY_MAX + 1) })).toThrow('mensaje')
+    expect(parseBroadcast({ title: '🛍️'.repeat(20), body: 'x' }).title).toBeTruthy()
   })
 })

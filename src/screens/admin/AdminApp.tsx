@@ -12,6 +12,7 @@ import AdminInstagram from './AdminInstagram'
 import AdminMfa from './AdminMfa'
 import AdminCardPromotions from './AdminCardPromotions'
 import AdminReviews from './AdminReviews'
+import AdminPush from './AdminPush'
 import { setToken } from '../../auth/session'
 
 interface Props {
@@ -97,6 +98,7 @@ export default function AdminApp({ user, authLoading, authError, onLogin, onRegi
       <Route path="instagram" element={<AdminInstagram />} />
       <Route path="tarjetas" element={<AdminCardPromotions />} />
       <Route path="resenas" element={<AdminReviews />} />
+      <Route path="notificaciones" element={<AdminPush />} />
       <Route path="*" element={<AdminDashboard user={user} onLogout={onLogout} />} />
     </Routes>
   )

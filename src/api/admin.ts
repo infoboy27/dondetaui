@@ -1,6 +1,9 @@
 import type { CardPromotion, CardPromotionKind } from '../domain/cardPromotions'
 import { apiFetch } from './http'
 
+export interface PushDevices { ios: number; android: number; total: number }
+export interface PushBroadcastResult { devices: number; accepted: number; disabled: number }
+
 export interface ClickSeries {
   total: number
   byDay: Array<{ date: string; clicks: number }>
@@ -328,6 +331,12 @@ export const adminApi = {
   },
   overview(days: number): Promise<AdminOverview> {
     return apiFetch(`/admin/overview?days=${days}`)
+  },
+  pushDevices(): Promise<PushDevices> {
+    return apiFetch('/admin/push/devices')
+  },
+  broadcastPush(title: string, body: string): Promise<PushBroadcastResult> {
+    return apiFetch('/admin/push/broadcast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, body }) })
   },
   report(slug: string, days: number): Promise<RetailerReport> {
     return apiFetch(`/admin/retailers/${encodeURIComponent(slug)}/report?days=${days}`)
