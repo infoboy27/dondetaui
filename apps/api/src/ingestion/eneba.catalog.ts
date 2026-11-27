@@ -100,7 +100,8 @@ const RULES: Rule[] = [
       return ROBUX_CARDS.has(robux) ? `Roblox ${amount(String(robux))} Robux` : null
     },
   },
-  { group: 'recargas', brand: 'Epic Games', name: byTitle(/^Fortnite - (\d+) V-Bucks Gift Card Key GLOBAL$/i, n => `Fortnite ${n} V-Bucks`) },
+  // Fortnite V-Bucks left out (2026-11-27): Eneba's DOP prices run 2-3x Epic's
+  // own, so listing them would point people to a bad deal.
   { group: 'recargas', brand: 'Riot Games', name: byTitle(/^Valorant Points (\d+) VP Key/i, n => `Valorant ${n} VP`) },
   { group: 'recargas', brand: 'Riot Games', name: byTitle(/^League of Legends Gift Card - (\d+) RP/i, n => `League of Legends ${n} RP`) },
   { group: 'recargas', brand: 'Moonton', name: byId(/^mdirect-mobile-legends-mobile-legends-bang-bang-\d+-usd-(\d+)-diamonds/, n => `Mobile Legends ${n} diamantes`) },

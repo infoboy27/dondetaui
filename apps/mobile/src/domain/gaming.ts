@@ -26,7 +26,7 @@ export function gamingKind(product: Pick<Product, 'name'>): GamingKind {
 // What leads the home strip: the top-ups people here buy most, one size each,
 // then games cheapest first. Names come from eneba.catalog.ts.
 const SHOWCASE = [
-  'Free Fire 100 ', 'Roblox 800 ', 'Fortnite 1000 ', 'Valorant 475 ', 'Xbox Game Pass',
+  'Free Fire 100 ', 'Roblox 800 ', 'Valorant 475 ', 'Xbox Game Pass',
   'Mobile Legends 278 ', 'Marvel Rivals 500 ', 'EA SPORTS FC 26 1050 ', 'Minecraft 1720 ', 'League of Legends 575 ',
 ]
 
