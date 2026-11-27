@@ -29,7 +29,7 @@ describe('matchesType', () => {
 
 describe('comparisons, drops and stats', () => {
   const a = product('Nevera A', [offer('Jumbo', 30_000), offer('Sirena', 36_000)])
-  const b = product('Nevera B', [offer('Jumbo', 50_000), offer('Corripio', 51_000)], [{ date: '2026-10-01', price: 60_000 }, { date: '2026-10-02', price: 50_000 }])
+  const b = product('Nevera B', [offer('Jumbo', 50_000), offer('Corripio', 51_000)], [{ date: '2026-09-28', price: 60_000 }, { date: '2026-10-01', price: 60_000 }, { date: '2026-10-02', price: 50_000 }])
   const c = product('Nevera C', [offer('Sirena', 20_000)])
 
   it('ranks comparisons by saving', () => {
@@ -38,6 +38,16 @@ describe('comparisons, drops and stats', () => {
 
   it('finds real drops from the price history', () => {
     expect(topDrops([a, b, c])).toMatchObject([{ product: { name: 'Nevera B' }, pct: 17, oldPrice: 60_000, newPrice: 50_000 }])
+  })
+
+  it('ignores a wrong "before" price the store fixed within days', () => {
+    const hood = product('Campana', [offer('Plaza Lama', 14_995)], [
+      { date: '2026-11-20T10:00:00Z', price: 14_995 },
+      { date: '2026-11-25T10:00:00Z', price: 99_995 },
+      { date: '2026-11-27T13:45:00Z', price: 99_995 },
+      { date: '2026-11-27T13:46:00Z', price: 14_995 },
+    ])
+    expect(topDrops([hood])).toEqual([])
   })
 
   it('summarizes a type', () => {

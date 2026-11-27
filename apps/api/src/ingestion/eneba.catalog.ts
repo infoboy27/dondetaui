@@ -155,7 +155,7 @@ export function selectEnebaItems(rows: EnebaFeedRow[], currency: string): Normal
     }
   }
 
-  return [...best.values()].map(({ row, rule, name, price }) => ({
+  return dropOverpricedPacks([...best.values()]).map(({ row, rule, name, price }) => ({
     retailer: {
       name: 'Eneba',
       slug: 'eneba',
@@ -177,6 +177,44 @@ export function selectEnebaItems(rows: EnebaFeedRow[], currency: string): Normal
     available: true,
     raw: { source: 'eneba-feed', group: rule.group, title: row.title, price: row.price, digital: true },
   }))
+}
+
+// A top-up's cheapest seller is sometimes still absurd (2026-11-27: 1,000
+// Minecoins at RD$1,722 next to 1,720 for RD$411; 2,800 V-Bucks priced the
+// same as 5,000). Within one family (same name but for the amount):
+//  - a pack is dropped when a bigger one costs at most 5% more;
+//  - a pack is dropped when its price per unit is over PACK_UNIT_OUTLIER x
+//    the family's median.
+export const PACK_UNIT_OUTLIER = 2.5
+
+function packAmount(name: string): { family: string; amount: number } | null {
+  const numbers = [...name.matchAll(/\d[\d,]*/g)].map(m => ({ text: m[0], value: Number(m[0].replace(/,/g, '')) }))
+  if (!numbers.length) return null
+  const biggest = numbers.reduce((a, b) => (b.value > a.value ? b : a))
+  if (!(biggest.value > 0)) return null
+  return { family: name.replace(biggest.text, '#'), amount: biggest.value }
+}
+
+export function dropOverpricedPacks<T extends { rule: { group: EnebaGroup }; name: string; price: number }>(items: T[]): T[] {
+  const families = new Map<string, Array<{ item: T; amount: number }>>()
+  for (const item of items) {
+    if (item.rule.group !== 'recargas') continue
+    const pack = packAmount(item.name)
+    if (!pack) continue
+    families.set(pack.family, [...(families.get(pack.family) ?? []), { item, amount: pack.amount }])
+  }
+  const dropped = new Set<T>()
+  for (const packs of families.values()) {
+    if (packs.length < 2) continue
+    for (const pack of packs) {
+      if (packs.some(other => other.amount > pack.amount && other.item.price <= pack.item.price * 1.05)) dropped.add(pack.item)
+    }
+    const units = packs.filter(p => !dropped.has(p.item)).map(p => p.item.price / p.amount).sort((a, b) => a - b)
+    if (units.length < 3) continue
+    const median = units[Math.floor(units.length / 2)]!
+    for (const pack of packs) if (pack.item.price / pack.amount > median * PACK_UNIT_OUTLIER) dropped.add(pack.item)
+  }
+  return items.filter(item => !dropped.has(item))
 }
 
 // RFC 4180 CSV (quoted fields, doubled quotes, commas/newlines inside quotes).
