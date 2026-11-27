@@ -14,6 +14,7 @@ import DiscountCode from '../components/DiscountCode'
 import EnebaBadge from '../components/EnebaBadge'
 import CountryBanner from '../components/CountryBanner'
 import BlackFridayBanner from '../components/BlackFridayBanner'
+import AppBanner from '../components/AppBanner'
 import { gamingKind, gamingShowcase } from '../domain/gaming'
 import StoreLogo from '../components/StoreLogo'
 import { SiteLinks } from '../components/SiteLinks'
@@ -160,6 +161,7 @@ export default function HomeScreen({
       {/* Black Friday countdown: only renders inside its date window */}
       <CountryBanner />
       <BlackFridayBanner />
+      <AppBanner />
 
       {/* Value banner: what DóndeTa does, with the live catalog size */}
       <div style={{ padding: '16px 20px 0' }}>

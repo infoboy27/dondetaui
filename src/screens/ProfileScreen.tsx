@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { digestsApi } from '../api/digests'
-import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon } from '../components/Icons'
+import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon } from '../components/Icons'
 import { SiteLinks, DONATE_URL } from '../components/SiteLinks'
+import AppStoreButtons from '../components/AppStoreButtons'
 import { COUNTRY_SITES, countryForHost } from '../domain/countries'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
@@ -337,37 +338,8 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
       </div>
 
       {/* App availability */}
-      <div style={{ padding: '0 16px 16px', display: 'flex', gap: 10 }}>
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
-          background: '#fff', border: '1px solid #E8EDF2', borderRadius: 14,
-          padding: '12px 14px',
-        }}>
-          <AndroidIcon size={22} />
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
-              Android
-            </div>
-            <div style={{ fontSize: 10, color: '#00B894', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-              Disponible
-            </div>
-          </div>
-        </div>
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 10,
-          background: '#fff', border: '1px solid #E8EDF2', borderRadius: 14,
-          padding: '12px 14px', opacity: 0.7,
-        }}>
-          <AppleIcon size={20} />
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>
-              iOS
-            </div>
-            <div style={{ fontSize: 10, color: '#9AAABB', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
-              Próximamente
-            </div>
-          </div>
-        </div>
+      <div style={{ padding: '0 16px 16px' }}>
+        <AppStoreButtons stretch />
       </div>
 
       <div style={{ padding: '0 20px 8px' }}>

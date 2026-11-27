@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { trackOfferClick, trackSearch } from '../analytics'
 import { SiteLinks } from '../components/SiteLinks'
+import AppStoreButtons from '../components/AppStoreButtons'
 import DealCard, { DealCardSkeleton } from '../components/DealCard'
 import { getTopPriceDrops } from '../domain/notifications'
 import AmazonCard from '../components/AmazonCard'
@@ -9,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, AndroidIcon, AppleIcon, DondeTaMark } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, DondeTaMark } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange, getTopComparisons } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
@@ -1427,28 +1428,7 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
             </a>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              border: '1px solid #E8EDF2', borderRadius: 12, padding: '10px 14px',
-            }}>
-              <AndroidIcon size={18} />
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>Android</div>
-                <div style={{ fontSize: 9, color: '#00B894', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>Disponible</div>
-              </div>
-            </div>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, opacity: 0.7,
-              border: '1px solid #E8EDF2', borderRadius: 12, padding: '10px 14px',
-            }}>
-              <AppleIcon size={16} />
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, fontFamily: "'Poppins', sans-serif", color: '#0F1D2D' }}>iOS</div>
-                <div style={{ fontSize: 9, color: '#9AAABB', fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>Próximamente</div>
-              </div>
-            </div>
-          </div>
+          <AppStoreButtons />
 
           <span style={{ fontSize: 12, color: '#B0C4D8', fontFamily: "'DM Sans', sans-serif" }}>
             Hecho en 🇩🇴 RD con ❤️ · DóndeTa v1.0.0
