@@ -9,6 +9,19 @@ export const GAMING_CATEGORY = 'gaming'
 // and subscriptions.
 export const ENEBA_DISCOUNT_CODE = 'dondeta'
 
+export interface EnebaPromo { code: string; label: string; endsAt: string }
+
+// Eneba's own time-limited codes, sent to affiliates to share. Shown next to
+// DONDETA until endsAt; Eneba takes one code per order.
+export const ENEBA_PROMOS: EnebaPromo[] = [
+  // Black Friday 2026: "ends Sunday evening" → end of Sunday 29 Nov, RD time (UTC-4).
+  { code: 'BFSPREE', label: 'Black Friday: hasta 12% en juegos, hasta el domingo', endsAt: '2026-11-30T04:00:00Z' },
+]
+
+export function activeEnebaPromo(now = new Date(), promos = ENEBA_PROMOS): EnebaPromo | null {
+  return promos.find(p => now.getTime() < Date.parse(p.endsAt)) ?? null
+}
+
 export function isGaming(product: Pick<Product, 'categoryId'>): boolean {
   return product.categoryId === GAMING_CATEGORY
 }

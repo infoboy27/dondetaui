@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gamingKind, gamingShowcase, isGaming } from './gaming'
+import { activeEnebaPromo, gamingKind, gamingShowcase, isGaming } from './gaming'
 import { compareByRelevance } from './offers'
 import type { Product } from '../types'
 
@@ -61,5 +61,15 @@ describe('gaming', () => {
     expect(gamingShowcase([gone, robux, game]).map(p => p.name)).toEqual(['Roblox 800 Robux', 'Hogwarts Legacy (PC, Steam)'])
     expect([gone, game, robux].sort(compareByRelevance).map(p => p.name))
       .toEqual(['Roblox 800 Robux', 'Hogwarts Legacy (PC, Steam)', 'Free Fire 100 diamantes'])
+  })
+})
+
+describe('activeEnebaPromo', () => {
+  const promos = [{ code: 'BFSPREE', label: 'x', endsAt: '2026-11-30T04:00:00Z' }]
+  it('shows the promo until it ends', () => {
+    expect(activeEnebaPromo(new Date('2026-11-29T23:00:00-04:00'), promos)?.code).toBe('BFSPREE')
+  })
+  it('hides it from the end time on', () => {
+    expect(activeEnebaPromo(new Date('2026-11-30T00:00:00-04:00'), promos)).toBeNull()
   })
 })
