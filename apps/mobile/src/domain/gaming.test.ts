@@ -10,7 +10,7 @@ function product(name: string, price: number, categoryId = 'gaming', history: nu
     id: name, name, brand: '', model: '', subtitle: '', image: '', rating: 0, reviews: 0,
     category: categoryId, categoryId, discount: 0, previousPrice: 0,
     prices: [{ store: 'Eneba', abbr: 'EN', color: '#000', price, shipping: 'Gratis', available: true, updated: '' }],
-    priceHistory: history.map((value, i) => ({ date: `2026-10-0${i + 1}`, price: value })),
+    priceHistory: history.map((value, i) => ({ date: `2026-10-0${i * 4 + 1}`, price: value })),
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { feedRows, parseEnebaPrice, selectEnebaItems, withAffiliateId, type EnebaFeedRow } from './eneba.catalog'
+import { dropOverpricedPacks, feedRows, parseEnebaPrice, selectEnebaItems, withAffiliateId, type EnebaFeedRow } from './eneba.catalog'
 import { acceptsCategory } from './ingestion.repository'
 
 const HEADER = 'id, title, original_title, description, link, image_link, availability, price, google_product_category, brand, region, condition, identifier_exists'
@@ -96,5 +96,28 @@ describe('Eneba catalog', () => {
       'Call of Duty: Modern Warfare 4 Vault Edition (PC, Steam)',
       'Call of Duty: Modern Warfare 4 Vault Edition (Xbox / Windows)',
     ])
+  })
+})
+
+describe('dropOverpricedPacks', () => {
+  const pack = (name: string, price: number, group: 'recargas' | 'juegos' = 'recargas') => ({ rule: { group }, name, price })
+
+  it('drops a pack a bigger one beats, and per-unit outliers (feed of 2026-11-27)', () => {
+    const items = [
+      pack('Minecraft 330 Minecoins', 134.53), pack('Minecraft 1000 Minecoins', 1721.63), pack('Minecraft 1720 Minecoins', 411.38),
+      pack('Minecraft 3500 Minecoins', 1062.9), pack('Minecraft 8800 Minecoins', 2678.89),
+      pack('Fortnite 1000 V-Bucks', 1869.91), pack('Fortnite 2800 V-Bucks', 4920.16), pack('Fortnite 5000 V-Bucks', 4920.82),
+      pack('EA SPORTS FC 26 1050 FC Points (PC)', 594.44), pack('EA SPORTS FC 26 2800 FC Points (PC)', 1347.65),
+    ]
+    expect(dropOverpricedPacks(items).map(i => i.name)).toEqual([
+      'Minecraft 330 Minecoins', 'Minecraft 1720 Minecoins', 'Minecraft 3500 Minecoins', 'Minecraft 8800 Minecoins',
+      'Fortnite 1000 V-Bucks', 'Fortnite 5000 V-Bucks',
+      'EA SPORTS FC 26 1050 FC Points (PC)', 'EA SPORTS FC 26 2800 FC Points (PC)',
+    ])
+  })
+
+  it('leaves games and single packs alone', () => {
+    const items = [pack('Cyberpunk 2077 (PC, GOG)', 9000, 'juegos'), pack('Hogwarts Legacy (PC, Steam)', 300, 'juegos'), pack('Roblox 400 Robux', 5000)]
+    expect(dropOverpricedPacks(items)).toHaveLength(3)
   })
 })

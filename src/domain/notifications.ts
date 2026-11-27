@@ -13,6 +13,8 @@ export interface PriceDropNotification {
 // price didn't drop. Ingested products never populate the static
 // products.discount column (see apps/api/src/ingestion/ingestion.repository.ts),
 // so this is the only honest way to tell a real product actually went on sale.
+export const MIN_DROP_HELD_DAYS = 3
+
 export function getRecentPriceDrop(product: Product): Omit<PriceDropNotification, 'product'> | null {
   const history = product.priceHistory
   if (history.length < 2) return null
@@ -20,6 +22,11 @@ export function getRecentPriceDrop(product: Product): Omit<PriceDropNotification
   const previous = history[history.length - 2]
   const latest = history[history.length - 1]
   if (latest.price >= previous.price) return null
+  // The "before" price must have held MIN_DROP_HELD_DAYS: a wrong price a
+  // store fixes within a day or two is not a sale (same rule as web-seo topDrops).
+  let since = history.length - 2
+  while (since > 0 && history[since - 1]!.price === previous.price) since--
+  if (!(Date.parse(latest.date) - Date.parse(history[since]!.date) >= MIN_DROP_HELD_DAYS * 86_400_000)) return null
   // The history is the day's lowest price across every offer ever attached to
   // the product. When it disagrees with the offers shown now (a stale listing,
   // or a bundle wrongly merged in) the "drop" is an artifact, not a sale.

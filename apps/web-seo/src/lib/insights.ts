@@ -98,6 +98,12 @@ export interface PriceDrop {
 
 // Latest move in the price history, if it went down by at least minPct.
 // Gaming (Eneba marketplace) prices wobble daily; it isn't a "bajó de precio".
+// The "before" price must have held this long: a store that lists a wrong
+// price for a day or two and then fixes it is not a price drop (2026-11-27:
+// Plaza Lama showed RD$99,995 for two days on hoods that cost RD$14,995).
+export const MIN_DROP_HELD_DAYS = 3
+const DAY_MS = 86_400_000
+
 export function topDrops(products: Product[], limit = 10, minPct = 3): PriceDrop[] {
   const drops: PriceDrop[] = []
   for (const product of products) {
@@ -107,6 +113,10 @@ export function topDrops(products: Product[], limit = 10, minPct = 3): PriceDrop
     const previous = history[history.length - 2]
     const latest = history[history.length - 1]
     if (latest.price >= previous.price) continue
+    let since = history.length - 2
+    while (since > 0 && history[since - 1].price === previous.price) since--
+    const heldMs = Date.parse(latest.date) - Date.parse(history[since].date)
+    if (!(heldMs >= MIN_DROP_HELD_DAYS * DAY_MS)) continue
     const pct = Math.round(((previous.price - latest.price) / previous.price) * 100)
     if (pct >= minPct) drops.push({ product, pct, oldPrice: previous.price, newPrice: latest.price, date: latest.date })
   }
