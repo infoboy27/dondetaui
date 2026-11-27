@@ -1,6 +1,6 @@
 import { formatCount } from '../../../src/domain/currency'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActionSheetIOS, FlatList, Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Stack, useRouter } from 'expo-router'
 import type { SearchBarCommands } from 'react-native-screens'
 import type { Product } from '../../../src/types'
@@ -14,6 +14,9 @@ import EmptyState from '../../../src/components/ui/EmptyState'
 import Touchable from '../../../src/components/ui/Touchable'
 import { ProductRowSkeleton } from '../../../src/components/ui/Skeleton'
 import { useRecentSearches } from '../../../src/hooks/useRecentSearches'
+import SearchOptionsSheet from '../../../src/components/SearchOptionsSheet'
+import { NO_FILTERS, SORT_LABELS, activeFilterCount, availableSortKeys, applySearchOptions, pruneFilters, type SearchFilters, type SortKey } from '../../../src/domain/searchOptions'
+import { haptics } from '../../../src/design/haptics'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
 
@@ -35,6 +38,11 @@ export default function SearchScreen() {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
   const [visibleCount, setVisibleCount] = useState(BATCH)
+  // Sort and filters stay while the user refines the query; selections the
+  // new results don't have (a store, a brand) are dropped.
+  const [sort, setSort] = useState<SortKey>('relevance')
+  const [filters, setFilters] = useState<SearchFilters>(NO_FILTERS)
+  const [optionsOpen, setOptionsOpen] = useState(false)
   // Only the newest request may update the screen: a slow response for an
   // older query must not overwrite the results of the current one.
   const requestId = useRef(0)
@@ -52,6 +60,7 @@ export default function SearchScreen() {
       const found = await productsApi.search(value)
       if (id !== requestId.current) return
       setResults(found)
+      setFilters(current => pruneFilters(current, found))
       setVisibleCount(BATCH)
       setStatus('done')
     } catch (e) {
@@ -81,6 +90,33 @@ export default function SearchScreen() {
   }
 
   const term = query.trim()
+  const shown = useMemo(() => applySearchOptions(results, sort, filters), [results, sort, filters])
+  const filterCount = activeFilterCount(filters)
+
+  useEffect(() => setVisibleCount(BATCH), [sort, filters])
+
+  const chooseSort = () => {
+    if (Platform.OS !== 'ios') {
+      setOptionsOpen(true)
+      return
+    }
+    const keys = availableSortKeys(results)
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: 'Ordenar por', options: [...keys.map(key => SORT_LABELS[key]), 'Cancelar'], cancelButtonIndex: keys.length, tintColor: colors.primaryDark },
+      index => {
+        const key = keys[index]
+        if (key) {
+          haptics.selection()
+          setSort(key)
+        }
+      },
+    )
+  }
+
+  const clearOptions = () => {
+    setSort('relevance')
+    setFilters(NO_FILTERS)
+  }
 
   return (
     <>
@@ -162,11 +198,11 @@ export default function SearchScreen() {
         </ScrollView>
       ) : (
         <FlatList
-          data={status === 'done' ? withAdSlots(results.slice(0, visibleCount)) : []}
+          data={status === 'done' ? withAdSlots(shown.slice(0, visibleCount)) : []}
           keyExtractor={entry => (entry.kind === 'ad' ? entry.key : entry.item.id)}
           renderItem={({ item: entry }) =>
             entry.kind === 'ad' ? <NativeAdCard /> : <ProductCard product={entry.item} onPress={() => openProduct(entry.item)} />}
-          onEndReached={() => setVisibleCount(count => (count < results.length ? count + BATCH : count))}
+          onEndReached={() => setVisibleCount(count => (count < shown.length ? count + BATCH : count))}
           onEndReachedThreshold={0.6}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
@@ -176,8 +212,21 @@ export default function SearchScreen() {
           ListHeaderComponent={
             status === 'done' && results.length > 0 ? (
               <View>
+                <View style={styles.toolbar}>
+                  <Touchable onPress={chooseSort} style={[styles.pill, sort !== 'relevance' && styles.pillActive]} accessibilityRole="button" accessibilityLabel={`Ordenar por: ${SORT_LABELS[sort]}`}>
+                    <Icon name="sort" size={14} color={sort !== 'relevance' ? colors.primaryDark : colors.navy} />
+                    <Text style={[type.subheadline, styles.pillText, sort !== 'relevance' && styles.pillTextActive]} numberOfLines={1}>{SORT_LABELS[sort]}</Text>
+                    <Icon name="chevronDown" size={11} color={sort !== 'relevance' ? colors.primaryDark : colors.tertiaryLabel} weight="semibold" />
+                  </Touchable>
+                  <Touchable onPress={() => setOptionsOpen(true)} style={[styles.pill, filterCount > 0 && styles.pillActive]} accessibilityRole="button" accessibilityLabel={filterCount ? `Filtros, ${filterCount} activos` : 'Filtros'}>
+                    <Icon name="filter" size={14} color={filterCount ? colors.primaryDark : colors.navy} />
+                    <Text style={[type.subheadline, styles.pillText, filterCount > 0 && styles.pillTextActive]}>{filterCount ? `Filtros · ${filterCount}` : 'Filtros'}</Text>
+                  </Touchable>
+                </View>
                 <Text style={[type.footnote, styles.count]}>
-                  {results.length === 1 ? '1 resultado' : `${formatCount(results.length)} resultados`} para “{term}”
+                  {filterCount
+                    ? `${formatCount(shown.length)} de ${formatCount(results.length)} resultados para “${term}”`
+                    : `${results.length === 1 ? '1 resultado' : `${formatCount(results.length)} resultados`} para “${term}”`}
                 </Text>
               </View>
             ) : null
@@ -185,6 +234,8 @@ export default function SearchScreen() {
           ListEmptyComponent={
             status === 'loading' ? (
               <View><ProductRowSkeleton /><ProductRowSkeleton /><ProductRowSkeleton /><ProductRowSkeleton /></View>
+            ) : status === 'done' && results.length > 0 ? (
+              <EmptyState icon="filter" title="Ningún resultado con estos filtros" message="Prueba quitando algún filtro o cambiando el rango de precio." actionTitle="Quitar filtros" onAction={clearOptions} />
             ) : status === 'error' ? (
               <EmptyState icon="wifiSlash" title="Algo salió mal" message={error} actionTitle="Reintentar" onAction={() => void run(query)} />
             ) : (
@@ -197,6 +248,16 @@ export default function SearchScreen() {
           }
         />
       )}
+
+      <SearchOptionsSheet
+        visible={optionsOpen}
+        onClose={() => setOptionsOpen(false)}
+        results={results}
+        sort={sort}
+        onSortChange={setSort}
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
     </>
   )
 }
@@ -216,6 +277,11 @@ const styles = StyleSheet.create({
   chip: { backgroundColor: colors.card, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   chipText: { color: colors.navy },
   count: { color: colors.secondaryLabel, marginBottom: spacing.sm, marginTop: spacing.xs },
+  toolbar: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, marginBottom: spacing.xs },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.card, borderRadius: radii.full, paddingHorizontal: 14, minHeight: 36, flexShrink: 1 },
+  pillActive: { backgroundColor: colors.primaryLight },
+  pillText: { color: colors.navy, flexShrink: 1 },
+  pillTextActive: { color: colors.primaryDark },
   androidField: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm, height: 52, borderRadius: 26,
     backgroundColor: colors.fillStrong, paddingHorizontal: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.sm, marginBottom: spacing.xs,
