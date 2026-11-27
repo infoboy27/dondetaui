@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { digestsApi } from '../api/digests'
-import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon } from '../components/Icons'
+import { BellIcon, HeartIcon, ShieldIcon, HelpCircleIcon, LogOutIcon, ChevronRight, SettingsIcon, UserIcon, DiscordIcon, InstagramIcon, FacebookIcon } from '../components/Icons'
 import { SiteLinks, DONATE_URL } from '../components/SiteLinks'
 import AppStoreButtons from '../components/AppStoreButtons'
 import { COUNTRY_SITES, countryForHost } from '../domain/countries'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
+const FACEBOOK_URL = 'https://www.facebook.com/dondetard'
 import { userInitials } from '../domain/user'
 import { CURRENCY_SYMBOL } from '../domain/currency'
 import type { User } from '../types'
@@ -306,6 +307,31 @@ export default function ProfileScreen({ user, favoriteCount, alertCount, onFavor
             color: '#0F1D2D',
           }}>
             Síguenos en Instagram
+          </span>
+          <ChevronRight size={16} color="#B0C4D8" />
+        </button>
+        <button
+          onClick={() => window.open(FACEBOOK_URL, '_blank', 'noopener,noreferrer')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '14px 16px', background: '#fff', border: '1px solid #E8EDF2',
+            borderRadius: 16, cursor: 'pointer', textAlign: 'left', marginTop: 10,
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: '#1877F214',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <FacebookIcon size={18} />
+          </div>
+          <span style={{
+            flex: 1, fontSize: 14, fontWeight: 500,
+            fontFamily: "'DM Sans', sans-serif",
+            color: '#0F1D2D',
+          }}>
+            Síguenos en Facebook
           </span>
           <ChevronRight size={16} color="#B0C4D8" />
         </button>
