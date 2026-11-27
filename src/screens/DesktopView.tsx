@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatPrice, CATEGORIES } from '../data/mock'
 import { AD_SIZES } from '../data/adSizes'
 import { appConfig } from '../config/env'
-import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, DondeTaMark } from '../components/Icons'
+import { SearchIcon, BellIcon, HeartIcon, FilterIcon, CheckIcon, TruckIcon, ChevronDown, StarIcon, TrendingDownIcon, UserIcon, DiscordIcon, InstagramIcon, FacebookIcon, DondeTaMark } from '../components/Icons'
 import { getBestOffer, getOfferTotal, getOutboundUrl, getSavingsRange, getTopComparisons } from '../domain/offers'
 import { matchesCategory } from '../domain/categories'
 import { getPriceDropNotifications, getRecentPriceDrop } from '../domain/notifications'
@@ -37,6 +37,7 @@ type DesktopScreen = 'results' | 'categories' | 'stores' | 'deals' | 'alerts'
 
 const DISCORD_INVITE_URL = 'https://discord.gg/sxcSngrTZv'
 const INSTAGRAM_URL = 'https://www.instagram.com/dondetard'
+const FACEBOOK_URL = 'https://www.facebook.com/dondetard'
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: 'price-asc', label: 'Precio ↑' },
@@ -1425,6 +1426,19 @@ export default function DesktopView({ onRequireLogin, alertedIds, onToggleAlert,
               }}
             >
               <InstagramIcon size={20} />
+            </a>
+            <a
+              href={FACEBOOK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="DóndeTa en Facebook"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 44, height: 44,
+                border: '1px solid #E8EDF2', borderRadius: 12,
+              }}
+            >
+              <FacebookIcon size={20} />
             </a>
           </div>
 
