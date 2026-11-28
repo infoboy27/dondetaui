@@ -5,13 +5,14 @@ import { EmailProvider } from './email.provider'
 import { SmsProvider } from './sms.provider'
 import { PushProvider } from './push.provider'
 import { NotificationsService } from './notifications.service'
+import { PromoPushController } from './promo-push.controller'
 import { PushBroadcastController } from './push-broadcast.controller'
 import { PushTokensController } from './push-tokens.controller'
 import { PushTokensRepository } from './push-tokens.repository'
 
 @Module({
   imports: [AuthModule],
-  controllers: [PushTokensController, PushBroadcastController],
+  controllers: [PushTokensController, PushBroadcastController, PromoPushController],
   providers: [EmailProvider, SmsProvider, PushProvider, NotificationsService, PushTokensRepository, AdminGuard, AdminIdentityGuard],
   exports: [NotificationsService],
 })

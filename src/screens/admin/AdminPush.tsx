@@ -14,8 +14,8 @@ const field: React.CSSProperties = {
   padding: '10px 12px', fontFamily: fonts.body, fontSize: 15, color: colors.navy, background: colors.card,
 }
 
-// /admin/notificaciones: one-off push to every phone that allowed
-// notifications in the app (Dominican Republic stack only).
+// /admin/notificaciones: one-off push to every phone that turned on
+// "Ofertas y recordatorios" in the app (Dominican Republic stack only).
 export default function AdminPush() {
   const [devices, setDevices] = useState<PushDevices | null>(null)
   const [title, setTitle] = useState('')
@@ -57,14 +57,14 @@ export default function AdminPush() {
         <Link to="/admin" style={{ color: colors.primary, fontSize: 14 }}>← Volver</Link>
         <h1 style={{ fontFamily: fonts.display, fontSize: 24, margin: '12px 0 4px' }}>Enviar notificación</h1>
         <p style={{ color: colors.navy400, fontSize: 14, marginTop: 0 }}>
-          Llega a todos los teléfonos que permitieron notificaciones en la app de República Dominicana.
-          Al tocarla se abre la app en el inicio.
+          Llega solo a los teléfonos que activaron <strong>Ofertas y recordatorios</strong> en la app (iPhone y Android)
+          de República Dominicana; así lo exige Apple. Al tocarla se abre la app en el inicio.
         </p>
 
         <div style={{ background: colors.card, border: `1px solid ${colors.border}`, borderRadius: radii.lg, padding: 16, marginBottom: 16, fontSize: 14 }}>
           {devices === null ? 'Contando teléfonos…' : (
             <>
-              <strong style={{ fontFamily: fonts.display, fontSize: 20 }}>{devices.total}</strong> {devices.total === 1 ? 'teléfono registrado' : 'teléfonos registrados'}
+              <strong style={{ fontFamily: fonts.display, fontSize: 20 }}>{devices.total}</strong> {devices.total === 1 ? 'teléfono aceptó ofertas' : 'teléfonos aceptaron ofertas'}
               <span style={{ color: colors.navy400 }}> · iPhone {devices.ios} · Android {devices.android}</span>
             </>
           )}
@@ -110,7 +110,7 @@ export default function AdminPush() {
             fontFamily: fonts.display, fontWeight: 700, fontSize: 15, cursor: canSend ? 'pointer' : 'not-allowed',
           }}
         >
-          {sending ? 'Enviando…' : devices?.total ? `Enviar a ${devices.total === 1 ? '1 teléfono' : `${devices.total} teléfonos`}` : 'No hay teléfonos registrados'}
+          {sending ? 'Enviando…' : devices?.total ? `Enviar a ${devices.total === 1 ? '1 teléfono' : `${devices.total} teléfonos`}` : 'Nadie ha activado los avisos todavía'}
         </button>
       </div>
     </div>

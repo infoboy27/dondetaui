@@ -4,6 +4,7 @@ import { useAuth, type AuthApi } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { usePriceAlerts } from '../hooks/usePriceAlerts'
 import { usePushNotifications, type PushApi } from '../hooks/usePushNotifications'
+import { usePromoPush, type PromoPushApi } from '../hooks/usePromoPush'
 import { getCountry } from '../domain/currentCountry'
 import type { User } from '../types'
 
@@ -23,6 +24,8 @@ interface AppState {
   toggleAlert: (productId: string) => boolean
   // Price-drop push on this device (Perfil switch, permission prompts).
   push: PushApi
+  // "Ofertas y recordatorios" on this device (Home card, Perfil switch).
+  promo: PromoPushApi
 }
 
 const AppStateContext = createContext<AppState | null>(null)
@@ -33,6 +36,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const favorites = useFavorites(user)
   const priceAlerts = usePriceAlerts(user)
   const push = usePushNotifications(user)
+  const promo = usePromoPush()
   // Sign-out first removes this device from the account (needs the session).
   const auth: AuthApi = {
     ...baseAuth,
@@ -115,6 +119,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     alertedIds,
     toggleAlert,
     push,
+    promo,
   }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>

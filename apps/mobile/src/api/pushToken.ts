@@ -17,3 +17,14 @@ export const pushTokenApi = {
     })
   },
 }
+
+// "Ofertas y recordatorios" (no account needed): PUT /push/promos.
+export const promoPushApi = {
+  set(token: string, platform: 'android' | 'ios', promos: boolean): Promise<void> {
+    return apiFetch<void>('/push/promos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, platform, promos }),
+    })
+  },
+}

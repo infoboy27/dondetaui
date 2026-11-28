@@ -35,3 +35,6 @@ export const pushSupported = !!notifications && !!device?.isDevice
 
 // Same id the API sends in channelId (apps/api push messages).
 export const PRICE_ALERTS_CHANNEL = 'price-alerts'
+
+// Android channel for "Ofertas y recordatorios" (apps/api PROMOS_CHANNEL).
+export const PROMOS_CHANNEL = 'promos'

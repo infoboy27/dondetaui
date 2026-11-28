@@ -143,6 +143,10 @@ export class PushBudget {
   }
 }
 
+// Android channel for promotional pushes; the app creates it when the user
+// turns on "Ofertas y recordatorios" (apps/mobile expoNotifications.ts).
+export const PROMOS_CHANNEL = 'promos'
+
 // Manual broadcasts from /admin/notificaciones (and broadcast-push.cli).
 // iOS shows ~40 characters of title and ~120 of body on the lock screen
 // before cutting; the hard caps below leave room for longer text when needed.

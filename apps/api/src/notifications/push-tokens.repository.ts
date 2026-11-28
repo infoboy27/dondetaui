@@ -20,19 +20,44 @@ export class PushTokensRepository {
     )
   }
 
+  /** Signing out: the device stops getting this account's price drops. Its
+   * "Ofertas y recordatorios" consent is the device's, so it stays. */
   async unregister(userId: string, token: string): Promise<void> {
+    await this.pool.query('update push_tokens set user_id = null where user_id = $1 and token = $2 and promos_opt_in', [userId, token])
     await this.pool.query('delete from push_tokens where user_id = $1 and token = $2', [userId, token])
   }
 
-  async activeTokens(): Promise<string[]> {
-    const result = await this.pool.query<{ token: string }>('select distinct token from push_tokens where disabled_at is null')
+  /** The device's "Ofertas y recordatorios" choice; works with or without an account. */
+  async setPromos(token: string, platform: string, on: boolean): Promise<void> {
+    if (on) {
+      await this.pool.query(
+        `insert into push_tokens (token, platform, promos_opt_in, promos_opt_in_at)
+        values ($1, $2, true, now())
+        on conflict (token) do update set
+          platform = excluded.platform,
+          promos_opt_in = true,
+          promos_opt_in_at = coalesce(push_tokens.promos_opt_in_at, now()),
+          last_seen_at = now(),
+          disabled_at = null`,
+        [token, platform],
+      )
+      return
+    }
+    await this.pool.query('update push_tokens set promos_opt_in = false, promos_opt_in_at = null where token = $1', [token])
+    // A device with no account and no consent has nothing left to receive.
+    await this.pool.query('delete from push_tokens where token = $1 and user_id is null', [token])
+  }
+
+  /** Devices that opted in to promotional pushes (Guideline 4.5.4). */
+  async promoTokens(): Promise<string[]> {
+    const result = await this.pool.query<{ token: string }>('select distinct token from push_tokens where disabled_at is null and promos_opt_in')
     return result.rows.map(row => row.token)
   }
 
-  /** Active devices per platform, for the /admin broadcast screen. */
-  async activeCounts(): Promise<{ ios: number; android: number; total: number }> {
+  /** Opted-in devices per platform, for the /admin broadcast screen. */
+  async promoCounts(): Promise<{ ios: number; android: number; total: number }> {
     const result = await this.pool.query<{ platform: string; devices: string }>(
-      'select platform, count(distinct token) as devices from push_tokens where disabled_at is null group by platform',
+      'select platform, count(distinct token) as devices from push_tokens where disabled_at is null and promos_opt_in group by platform',
     )
     const counts = { ios: 0, android: 0, total: 0 }
     for (const row of result.rows) {
