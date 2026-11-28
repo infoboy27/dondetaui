@@ -1,9 +1,9 @@
 import { Pool } from 'pg'
 import { PushProvider } from './push.provider'
 import { PushTokensRepository } from './push-tokens.repository'
-import { parseBroadcast } from './push-messages'
+import { PROMOS_CHANNEL, parseBroadcast } from './push-messages'
 
-// One-off push to every registered device (e.g. the Black Friday kickoff).
+// One-off push to every device that opted in to "Ofertas y recordatorios" (e.g. the Black Friday kickoff).
 // Dry run by default: it only reports how many devices would receive it.
 // Manual and explicit, so it does not depend on PUSH_NOTIFICATIONS_ENABLED.
 //
@@ -28,15 +28,15 @@ const pool = new Pool({ connectionString: databaseUrl, max: 2 })
 const pushTokens = new PushTokensRepository(pool)
 
 async function main() {
-  const tokens = await pushTokens.activeTokens()
+  const tokens = await pushTokens.promoTokens()
   console.log(`[broadcast] "${title}" — "${body}"`)
-  console.log(`[broadcast] ${tokens.length} active device(s) registered`)
+  console.log(`[broadcast] ${tokens.length} opted-in device(s)`)
 
   if (!send) {
     console.log('[broadcast] dry run — nothing sent (pass --send to send)')
     return
   }
-  const outcome = await new PushProvider().send(tokens.map(to => ({ to, title, body, sound: 'default' as const })))
+  const outcome = await new PushProvider().send(tokens.map(to => ({ to, title, body, sound: 'default' as const, channelId: PROMOS_CHANNEL })))
   await pushTokens.savePendingTickets(outcome.pending)
   await pushTokens.disable(outcome.disable)
   console.log(`[broadcast] sent: ${outcome.pending.length} accepted, ${outcome.disable.length} token(s) disabled`)

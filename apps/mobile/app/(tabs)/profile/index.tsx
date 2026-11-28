@@ -11,6 +11,7 @@ import Touchable from '../../../src/components/ui/Touchable'
 import { ListRow, ListSection, ListSwitchRow } from '../../../src/components/ui/GroupedList'
 import { colors, radii, spacing } from '../../../src/design/tokens'
 import { type } from '../../../src/design/type'
+import { PROMO_COPY } from '../../../src/domain/promoPush'
 
 const BENEFITS: { icon: IconName; text: string }[] = [
   { icon: 'bellFill', text: 'Alertas cuando baje el precio de lo que te interesa' },
@@ -79,6 +80,8 @@ export default function ProfileScreen() {
               </ListSection>
             )}
 
+            <PromoPushSection />
+
             {country.code === 'DO' && (
               <ListSection footer="El miércoles, el viernes y el Cyber Monday: solo los precios que de verdad bajaron.">
                 <ListRow icon="tag" iconColor={colors.navy} title="Ofertas reales de Black Friday" onPress={() => router.push('/black-friday-alerts')} />
@@ -126,12 +129,24 @@ export default function ProfileScreen() {
               <Button title="Crear cuenta gratis" onPress={() => router.push({ pathname: '/auth', params: { mode: 'register' } })} style={styles.guestButton} />
               <Button title="Ya tengo cuenta" variant="plain" onPress={() => router.push('/auth')} />
             </View>
+            <PromoPushSection />
             <SupportLinks />
           </>
         )}
         <Text style={[type.caption, styles.version]}>DóndeTa {Constants.expoConfig?.version ?? ''}</Text>
       </ScrollView>
     </>
+  )
+}
+
+// "Ofertas y recordatorios": for everyone, signed in or not (consent is per device).
+function PromoPushSection() {
+  const { promo } = useAppState()
+  if (!promo.supported) return null
+  return (
+    <ListSection footer={PROMO_COPY.footer}>
+      <ListSwitchRow icon="tag" iconColor={colors.accent} title={PROMO_COPY.title} value={promo.enabled} onValueChange={on => void promo.setEnabled(on)} />
+    </ListSection>
   )
 }
 

@@ -24,6 +24,7 @@ import { DealCardSkeleton, ProductRowSkeleton } from '../../../src/components/ui
 import { formatCount, formatPrice } from '../../../src/domain/currency'
 import CountryBanner from '../../../src/components/CountryBanner'
 import SignupNudgeCard from '../../../src/components/SignupNudgeCard'
+import PromoPushCard from '../../../src/components/PromoPushCard'
 import { useCountry } from '../../../src/hooks/useCountry'
 import { useCountryPreference } from '../../../src/state/CountryContext'
 import { friendlyError } from '../../../src/api/errors'
@@ -117,6 +118,7 @@ export default function HomeScreen() {
       )}
 
       <SignupNudgeCard />
+      <PromoPushCard />
 
 
       {loading ? (

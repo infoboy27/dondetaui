@@ -2,7 +2,7 @@
   "expo": {
     "name": "DóndeTa",
     "slug": "dondeta",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "dondeta",
@@ -288,7 +288,16 @@
           "userTrackingPermission": "DóndeTa usa este permiso para mostrarte anuncios más relevantes. Los anuncios ayudan a mantener la app gratis."
         }
       ],
-      "./plugins/withSceneLifecycle"
+      "./plugins/withSceneLifecycle",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
